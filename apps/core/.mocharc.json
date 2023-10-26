@@ -1,0 +1,8 @@
+{
+  "timeout": 5000,
+  "extension": ["ts"],
+  "spec": ["test/**/*.spec.ts"],
+  "import": "tsx",
+  "parallel": true,
+  "reporter": "spec"
+}

@@ -27,6 +27,10 @@
     },
     "lint": {},
     "lint:fix": {},
-    "test": {}
+    "test": {},
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    }
   }
 }
