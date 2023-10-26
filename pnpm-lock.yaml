@@ -69,6 +69,9 @@ importers:
         specifier: ^3.22.4
         version: 3.22.4
     devDependencies:
+      '@next/tsconfig':
+        specifier: workspace:^
+        version: link:../../packages/tsconfig
       '@next/types':
         specifier: workspace:^
         version: link:../../packages/types
@@ -78,9 +81,6 @@ importers:
       '@types/node':
         specifier: ^20.8.7
         version: 20.8.7
-      '@ufabcnext/tsconfig':
-        specifier: workspace:*
-        version: link:../../packages/tsconfig
       c8:
         specifier: ^8.0.1
         version: 8.0.1
@@ -121,6 +121,9 @@ importers:
         specifier: ^1.27.1
         version: 1.27.1
     devDependencies:
+      '@next/tsconfig':
+        specifier: workspace:^
+        version: link:../../packages/tsconfig
       '@types/jsonwebtoken':
         specifier: ^9.0.4
         version: 9.0.4
@@ -130,9 +133,6 @@ importers:
       '@ufabcnext/common':
         specifier: workspace:^
         version: link:../../packages/common
-      '@ufabcnext/tsconfig':
-        specifier: workspace:*
-        version: link:../../packages/tsconfig
       tsup:
         specifier: ^7.2.0
         version: 7.2.0(typescript@5.2.2)
@@ -164,12 +164,12 @@ importers:
         specifier: ^3.22.4
         version: 3.22.4
     devDependencies:
+      '@next/tsconfig':
+        specifier: workspace:^
+        version: link:../../packages/tsconfig
       '@ufabcnext/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@ufabcnext/tsconfig':
-        specifier: workspace:*
-        version: link:../../packages/tsconfig
       tsup:
         specifier: ^7.2.0
         version: 7.2.0(typescript@5.2.2)
@@ -183,12 +183,12 @@ importers:
         specifier: ^8.16.1
         version: 8.16.1
     devDependencies:
+      '@next/tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
       '@types/node':
         specifier: ^20.8.7
         version: 20.8.7
-      '@ufabcnext/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
       pino-pretty:
         specifier: ^10.2.3
         version: 10.2.3
@@ -201,12 +201,12 @@ importers:
 
   packages/constants:
     devDependencies:
+      '@next/tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
       '@types/node':
         specifier: ^20.8.7
         version: 20.8.7
-      '@ufabcnext/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
       tsup:
         specifier: ^7.2.0
         version: 7.2.0(typescript@5.2.2)
@@ -225,8 +225,8 @@ importers:
       '@fastify/oauth2':
         specifier: ^7.5.0
         version: 7.5.0
-      '@ufabcnext/tsconfig':
-        specifier: workspace:*
+      '@next/tsconfig':
+        specifier: workspace:^
         version: link:../tsconfig
       typescript:
         specifier: ^5.2.2
