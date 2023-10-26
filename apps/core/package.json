@@ -1,5 +1,5 @@
 {
-  "name": "@ufabcnext/core",
+  "name": "@next/core",
   "version": "1.0.0",
   "description": "Core logic of the backend",
   "type": "module",
