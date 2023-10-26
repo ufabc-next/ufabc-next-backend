@@ -1,5 +1,5 @@
 {
-  "name": "@ufabcnext/common",
+  "name": "@next/common",
   "version": "1.0.0",
   "description": "Common functions for the backend",
   "type": "module",
