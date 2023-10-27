@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildApp } from '@/app.js';
+import { buildApp } from '../src/app.js';
 import type { FastifyInstance } from 'fastify';
 
 describe('Core Server', () => {
@@ -9,11 +9,11 @@ describe('Core Server', () => {
     app = await buildApp();
   });
 
-  after(async () => {
-    await app.close();
+  after(() => {
+    app.close.bind(app);
   });
 
-  it('should register plugins', () => {
+  it('should register some plugins', () => {
     assert.deepStrictEqual(app.mongoose, app.mongoose);
     assert.deepStrictEqual(app.redis, app.redis);
     assert.deepStrictEqual(app.jwt, app.jwt);

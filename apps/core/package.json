@@ -14,8 +14,8 @@
     "build:type-check": "tsc",
     "start": "node --env-file=.env.production dist/server.js",
     "start:watch": "node --env-file=.env.production --watch dist/server.js",
-    "test": "mocha",
-    "test:watch": "mocha --watch",
+    "test": "NODE_ENV=test mocha",
+    "test:watch": "NODE_ENV=test mocha --watch",
     "lint": "eslint .",
     "lint:fix": "pnpm run lint --fix"
   },
@@ -40,13 +40,16 @@
     "@total-typescript/ts-reset": "^0.5.1",
     "@types/mocha": "^10.0.3",
     "@types/node": "^20.8.7",
+    "@types/sinon": "^10.0.20",
     "c8": "^8.0.1",
     "esbuild": "^0.19.5",
     "esbuild-plugin-pino": "^2.0.2",
     "mocha": "^10.2.0",
     "pino-pretty": "^10.2.3",
     "rimraf": "^5.0.5",
+    "sinon": "^17.0.0",
     "tsx": "^3.14.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
   }
 }

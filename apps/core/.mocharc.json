@@ -2,7 +2,7 @@
   "timeout": 5000,
   "extension": ["ts"],
   "spec": ["test/**/*.spec.ts"],
-  "import": "tsx",
-  "parallel": true,
-  "reporter": "spec"
+  "node-option": ["import=tsx,env-file=.env"],
+  "reporter": "spec",
+  "exit": true
 }
