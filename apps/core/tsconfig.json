@@ -11,7 +11,7 @@
     "**.config.ts",
     "esbuild.ts",
     "test/**/*.spec.ts",
-    "test/test.fixtures.ts"
+    "test/**/*.ts"
   ],
   "exclude": ["node_modules/**/*"]
 }
