@@ -47,7 +47,7 @@
     "@vitest/ui": "^0.34.6",
     "esbuild": "^0.19.5",
     "esbuild-plugin-pino": "^2.0.2",
-    "mongoose": "^7.6.3",
+    "mongoose": "^8.0.0",
     "pino-pretty": "^10.2.3",
     "rimraf": "^5.0.5",
     "tsx": "^3.14.0",
