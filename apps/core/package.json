@@ -35,7 +35,7 @@
     "fastify": "^4.24.3",
     "fastify-plugin": "^4.5.1",
     "fastify-type-provider-zod": "^1.1.9",
-    "mongoose": "^7.6.3",
+    "mongoose": "^7.6.5",
     "ofetch": "^1.3.3",
     "zod": "^3.22.4"
   },
@@ -48,7 +48,6 @@
     "@vitest/ui": "^0.34.6",
     "esbuild": "^0.19.8",
     "esbuild-plugin-pino": "^2.1.0",
-    "mongoose": "^7.6.5",
     "pino-pretty": "^10.2.3",
     "rimraf": "^5.0.5",
     "tsx": "^3.14.0",
