@@ -48,8 +48,6 @@ FROM builder as deployer
 WORKDIR /workspace
 RUN export NODE_ENV=prod
 RUN pnpm --filter ${APP_NAME} deploy --prod --ignore-scripts ./out
-COPY ./private-container-file-key ./out
-
 
 FROM runtime as runner
 WORKDIR /workspace
@@ -76,18 +74,16 @@ COPY --chown=core:backend --from=deployer /workspace/out/node_modules/ ./node_mo
 COPY --chown=core:backend --from=deployer /workspace/out/dist/ ./dist
 COPY --chown=core:backend --from=deployer /workspace/.env.prod.secret .
 COPY --chown=core:backend --from=deployer /workspace/.gitsecret  ./.gitsecret
-# COPY --chown=core:backend --from=deployer /workspace/out/private-container-file-key ./
 
+# Decrypt .env.prod file
+RUN echo "$GIT_SECRET_PRIVATE_KEY" >> ./private-container-file-key
+RUN gpg --batch --yes --pinentry-mode loopback --import ./private-container-file-key
 
+# Assuming that the .env.prod file is encrypted using git-secret
+RUN git secret reveal -p ${GIT_SECRET_PASSWORD}
 
-
-# decrypt .env.prod file 
-RUN echo "$GIT_SECRET_PRIVATE_KEY" > ./private-container-file-key
- 
-RUN gpg --batch --yes --pinentry-mode  loopback --import ./private-container-file-key
-
-RUN git secret reveal -p ${GIT_SECRET_PASSWORD} 
-
+# Remove the secret key file after decryption
+RUN rm -f ./private-container-file-key
 
 EXPOSE 5000
 
