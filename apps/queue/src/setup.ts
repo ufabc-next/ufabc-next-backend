@@ -10,7 +10,6 @@ import { updateTeachersWorker } from './jobs/enrollments/updateTeachers.js';
 const emailWorker = createWorker('Send:Email', sendEmailWorker);
 const enrollmentsWorker = createWorker(
   'Update:Enrollments',
-  // @ts-expect-error
   updateEnrollmentsWorker,
 );
 const userEnrollmentsWorker = createWorker(

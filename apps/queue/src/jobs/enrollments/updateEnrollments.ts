@@ -1,16 +1,15 @@
 import { asyncParallelMap, logger } from '@next/common';
 import { generateIdentifier } from '@/helpers/identifier.js';
 import { createQueue } from '@/helpers/queueUtil.js';
-import type {
-  Enrollment,
-  EnrollmentDocument,
-  EnrollmentModel,
-} from '@/types/models.js';
+import type { EnrollmentDocument, EnrollmentModel } from '@/types/models.js';
+import type { Job } from 'bullmq';
 
-function updateEnrollments(
-  payload: { json: EnrollmentDocument[] },
-  enrollmentModel: EnrollmentModel,
-) {
+type UpdateEnrollments = {
+  payload: { json: EnrollmentDocument[] };
+  enrollmentModel: EnrollmentModel;
+};
+
+function updateEnrollments({ payload, enrollmentModel }: UpdateEnrollments) {
   const data = payload.json;
   // for the record: if it has an _id it is obligatory a Document
   const updateEnrollment = async (enrollment: EnrollmentDocument) => {
@@ -55,21 +54,16 @@ function updateEnrollments(
 
 export const updateEnrollmentsQueue = createQueue('Update:Enrollments');
 
-export const addEnrollmentsToQueue = async (payload: {
-  json: Enrollment[];
-}) => {
+export const addEnrollmentsToQueue = async (
+  payload: Job<UpdateEnrollments>,
+) => {
   await updateEnrollmentsQueue.add('Update:Enrollments', payload);
 };
 
-export const updateEnrollmentsWorker = async (
-  job: {
-    data: { json: EnrollmentDocument[] };
-  },
-  enrollmentModel: EnrollmentModel,
-) => {
-  const payload = job.data;
+export const updateEnrollmentsWorker = async (job: Job<UpdateEnrollments>) => {
   try {
-    await updateEnrollments(payload, enrollmentModel);
+    const payload = job.data;
+    await updateEnrollments(payload);
   } catch (error) {
     logger.error(
       { error },
