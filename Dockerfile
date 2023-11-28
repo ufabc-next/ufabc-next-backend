@@ -14,8 +14,7 @@ ARG GIT_SECRET_PASSWORD
 ENV GIT_SECRET_PASSWORD=$GIT_SECRET_PASSWORD
 
 # Necessary for turborepo
-RUN apk add --no-cache libc6-compat
-RUN apk update
+RUN apk update && apk add --no-cache libc6-compat
 WORKDIR /workspace
 # enable corepack for pnpm
 RUN corepack enable
@@ -79,7 +78,6 @@ COPY --chown=core:backend --from=deployer /workspace/.gitsecret  ./.gitsecret
 RUN echo "$GIT_SECRET_PRIVATE_KEY" >> ./private-container-file-key
 RUN gpg --batch --yes --pinentry-mode loopback --import ./private-container-file-key
 
-# Assuming that the .env.prod file is encrypted using git-secret
 RUN git secret reveal -p ${GIT_SECRET_PASSWORD}
 
 # Remove the secret key file after decryption

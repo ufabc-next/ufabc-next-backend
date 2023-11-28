@@ -13,7 +13,7 @@
     "workers": "controller"
   },
   "material-icon-theme.files.associations": {
-    ".env.production.secret": "console"
+    ".env.prod.secret": "tune"
   },
   "cSpell.words": ["Ufabc"]
 }
