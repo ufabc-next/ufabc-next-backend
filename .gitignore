@@ -42,5 +42,4 @@ test.html
 dist
 build
 
-
-
+.gitsecret/keys/random_seed
