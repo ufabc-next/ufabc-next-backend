@@ -1,33 +1,159 @@
 import { currentQuad, logger } from '@next/common';
+import { ofetch } from 'ofetch';
 import { createQueue } from '@/helpers/queueUtil.js';
+import { batchInsertItems } from '@/helpers/batch-insert.js';
 import type { DisciplinaModel } from '@/types/models.js';
 import type { Job, JobsOptions } from 'bullmq';
+import type { ObjectId } from 'mongoose';
 
 type SyncParams = {
-  enrollmentId: string;
-  enrollment: Record<string, number[]>;
-  DisciplinaModel?: DisciplinaModel;
+  operation: string;
+  redis: any;
+  disciplinaModel: DisciplinaModel;
 };
 
-async function syncMatricula({
-  enrollmentId,
-  enrollment,
-  DisciplinaModel,
-}: SyncParams) {
-  try {
-    const season = currentQuad();
-    await DisciplinaModel!.findOneAndUpdate(
-      {
-        disciplina_id: enrollmentId,
-        season,
-      },
-      { ['alunos_matriculados']: enrollment[enrollmentId] },
-      { upsert: true, new: true },
-    );
-  } catch (error) {
-    logger.error({ error, msg: 'Unknown error Syncing matrículas' });
-    throw error;
+type SyncDisciplinas = {
+  _id: ObjectId;
+  disciplina_id: number;
+  season: string;
+  after_kick: number[];
+  alunos_matriculados: number[];
+  before_kick: number[];
+  createdAt: Date;
+  obrigatorias: number[];
+  quad: 1 | 2 | 3;
+  updatedAt: Date;
+  year: number;
+};
+
+const valueToJson = (payload: string, max?: number) => {
+  const parts = payload.split('=');
+  if (parts.length < 2) {
+    return [];
   }
+
+  const jsonStr = parts[1].split(';')[0];
+  const json = JSON.parse(jsonStr) as number[];
+  if (max) {
+    return json.slice(0, max);
+  }
+  return json;
+};
+
+const parseEnrollments = (data: Record<string, number[]>) => {
+  const matriculas: Record<string, number[]> = {};
+
+  for (const aluno_id in data) {
+    const matriculasAluno = data[aluno_id];
+    matriculasAluno.forEach((matricula) => {
+      matriculas[matricula] = (matriculas[matricula] || []).concat([
+        Number.parseInt(aluno_id),
+      ]);
+    });
+  }
+
+  return matriculas;
+};
+
+//this function encapsulate the logic to sync stuff from matriculas
+//so it can be used by the queue and by the route
+export async function syncMatriculas(
+  operation: string = '',
+  redis: any,
+  disciplinaModel: DisciplinaModel,
+) {
+  const season = currentQuad();
+  const operationMap = new Map([
+    ['before_kick', 'before_kick'],
+    ['after_kick', 'after_kick'],
+    ['sync', 'alunos_matriculados'],
+  ]);
+
+  const operationField = operationMap.get(operation) ?? 'alunos_matriculados';
+  const isSync = operationField === 'alunos_matriculados';
+
+  const matriculas = await ofetch(
+    'https://api.ufabcnext.com/snapshot/assets/matriculas.js',
+    {
+      parseResponse: valueToJson,
+    },
+  );
+
+  const enrollments = parseEnrollments(matriculas);
+
+  const updateEnrolledStudents = async (
+    enrollmentId: string,
+    payload: Record<string, number[]>,
+  ): Promise<'OK' | SyncDisciplinas | null> => {
+    const cacheKey = `disciplina_${season}_${enrollmentId}`;
+    // only get cache result if we are doing a sync operation
+    const cachedMatriculas = isSync ? await redis.get(cacheKey) : {};
+    const isPayloadEqual =
+      JSON.stringify(cachedMatriculas) ===
+      JSON.stringify(payload[enrollmentId]);
+    // only update disciplinas that matriculas has changed
+    if (isPayloadEqual) {
+      return cachedMatriculas as SyncDisciplinas;
+    }
+
+    // find and update disciplina
+    const query = {
+      disciplina_id: enrollmentId,
+      season,
+    };
+    const toUpdate = { [operationField]: payload[enrollmentId] };
+    const opts = {
+      // returns the updated document
+      upsert: true,
+      // create if it not exists
+      new: true,
+    };
+    const saved = await disciplinaModel.findOneAndUpdate<SyncDisciplinas>(
+      query,
+      toUpdate,
+      opts,
+    );
+    // save matriculas for this disciplina on cache if is sync operation
+    if (isSync) {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(payload[enrollmentId]),
+        'EX',
+        60 * 2,
+        'NX',
+      );
+
+      await disciplinaModel!.findOneAndUpdate(
+        {
+          disciplina_id: enrollmentId,
+          season,
+        },
+        { [operationField]: payload[enrollmentId] },
+        { upsert: true, new: true },
+      );
+    }
+
+    return saved;
+  };
+
+  const start = Date.now();
+
+  const errors = await batchInsertItems(
+    Object.keys(enrollments),
+    async (enrollmentId: string): Promise<any> => {
+      const updatedStudents = await updateEnrolledStudents(
+        enrollmentId,
+        enrollments,
+      );
+      return updatedStudents;
+    },
+  );
+
+  return {
+    status: 'Sync has been successfully',
+    duration: Date.now() - start,
+    errors,
+  };
 }
 
 export const syncQueue = createQueue('Sync:Matriculas');
@@ -44,8 +170,9 @@ export const addSyncToQueue = async (payload: SyncParams) => {
 
 export const syncWorker = async (job: Job<SyncParams>) => {
   try {
-    const { enrollment, enrollmentId, DisciplinaModel } = job.data;
-    await syncMatricula({ enrollment, enrollmentId, DisciplinaModel });
+    //TODO: discover if I pass the fastifyRedis instance to the queue the redis client will work
+    const { operation, redis, disciplinaModel } = job.data;
+    await syncMatriculas(operation, redis, disciplinaModel);
   } catch (error) {
     logger.error({ error }, 'SyncWorker: Error Syncing');
     throw error;
