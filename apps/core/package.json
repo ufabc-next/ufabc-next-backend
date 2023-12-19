@@ -33,6 +33,7 @@
     "@next/models": "workspace:^",
     "@next/queue": "workspace:^",
     "close-with-grace": "^1.2.0",
+    "dotenv": "^16.3.1",
     "fastify": "^4.24.3",
     "fastify-plugin": "^4.5.1",
     "fastify-type-provider-zod": "^1.1.9",
