@@ -7,6 +7,8 @@ import { updateUserEnrollmentsWorker } from './jobs/enrollments/updateUserEnroll
 import { syncWorker } from './jobs/matriculas/sync.js';
 import { updateTeachersWorker } from './jobs/enrollments/updateTeachers.js';
 
+logger.info('Starting queue workers');
+
 const emailWorker = createWorker('Send:Email', sendEmailWorker);
 const enrollmentsWorker = createWorker(
   'Update:Enrollments',
@@ -25,6 +27,8 @@ const updateTeachersEnrollmentsWorker = createWorker(
   'Update:TeachersEnrollments',
   updateTeachersWorker,
 );
+
+logger.info('Queue workers started');
 
 emailWorker.on('completed', (job) => {
   logger.info(`Job ${job.queueName} completed`);
