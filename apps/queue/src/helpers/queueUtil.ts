@@ -5,14 +5,14 @@ import {
   Worker,
   type WorkerOptions,
 } from 'bullmq';
+import { Config } from '@/config/config.js';
 
-const { REDIS_PORT } = process.env;
 const DEFAULT_REDIS_PORT = 6379;
 const connection = {
-  username: process.env.REDIS_USER,
-  password: process.env.REDIS_PASSWORD,
-  host: process.env.HOST,
-  port: DEFAULT_REDIS_PORT ?? (REDIS_PORT as unknown as number),
+  username: Config.REDIS_USER,
+  password: Config.REDIS_PASSWORD,
+  host: Config.REDIS_HOST,
+  port: DEFAULT_REDIS_PORT ?? (Config.REDIS_PORT as unknown as number),
 } satisfies RedisOptions;
 
 /**

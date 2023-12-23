@@ -1,8 +1,9 @@
 import { createCipheriv, randomBytes } from 'node:crypto';
 import { Buffer } from 'node:buffer';
+import { Config } from '@/config/config.js';
 
 const ALGORITHM = 'aes-256-ctr';
-const ENCRYPTION_KEY = Buffer.from(process.env.JWT_SECRET!, 'hex');
+const ENCRYPTION_KEY = Buffer.from(Config.JWT_SECRET, 'hex');
 export function createToken(text: string) {
   const IV_LENGTH = 16;
   const iv = randomBytes(IV_LENGTH);
