@@ -194,6 +194,9 @@ importers:
         specifier: ^3.21.4
         version: 3.22.4
     devDependencies:
+      '@next/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@next/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
