@@ -22,16 +22,16 @@ export type GraduationHistoryDocument = {
   _id: ObjectId;
   locked: boolean;
   creditsBreakdown: {
-    year?: number | undefined;
-    quad?: number | undefined;
-    choosableCredits?: number | undefined;
+    year?: number;
+    quad?: number;
+    choosableCredits?: number;
   }[];
-  curso?: string | undefined;
-  grade?: string | undefined;
-  mandatory_credits_number?: number | undefined;
-  limited_credits_number?: number | undefined;
-  free_credits_number?: number | undefined;
-  credits_total?: number | undefined;
+  curso?: string;
+  grade?: string;
+  mandatory_credits_number?: number;
+  limited_credits_number?: number;
+  free_credits_number?: number;
+  credits_total?: number;
 };
 
 export type GraduationHistoryModel = Model<GraduationHistoryDocument>;
