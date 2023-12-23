@@ -123,7 +123,7 @@ export async function syncMatriculas(
         'NX',
       );
 
-      await disciplinaModel!.findOneAndUpdate(
+      await disciplinaModel.findOneAndUpdate(
         {
           disciplina_id: enrollmentId,
           season,

@@ -11,6 +11,7 @@ export async function sync(
 
   // for some reason, there is a type mismatch between the DisciplinaModel from the queue and the one from the models
   // TODO: fix this type mismatch
+  // @ts-expect-error Mongoose Types
   const result = await syncMatriculas(operation, redis, DisciplinaModel);
 
   reply.send(result);
