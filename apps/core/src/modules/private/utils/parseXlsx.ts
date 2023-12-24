@@ -1,71 +1,61 @@
-import { PassThrough } from 'node:stream';
+import { Readable } from 'node:stream';
+import fs from 'node:fs';
 import { ofetch } from 'ofetch';
-import { read } from 'xlsx';
-import _ from 'lodash-es';
-import errors from '@/errors';
+import { set_fs, stream, read as xlsxRead, utils as xlsxUtils } from 'xlsx';
+// import _ from 'lodash-es';
+import { logger } from '@next/common';
 
-_.insert = function (arr, index, item) {
-  arr.splice(index, 0, item);
+set_fs(fs);
+stream.set_readable(Readable);
+
+type RenameOptions = {
+  from: 'RA' | 'TURMA' | 'DOCENTE TEORIA' | 'DOCENTE PRATICA' | 'TEORIA';
+  as: 'ra' | 'nome' | 'teoria' | 'pratica' | 'horarios';
 };
-
-type ParseXlsxBody = {
+type ParseXlSXBody = {
   link: string;
-  rename: [{ from: string; as: string }];
+  rename: Array<RenameOptions>;
   season?: string;
 };
 
-export async function parseXlsx(body: ParseXlsxBody) {
-  const params = _.defaults(body, {
+type JSONFileData = {
+  RA: number;
+  CODIGO_DA_TURMA: string;
+};
+
+export async function parseXlsx<TBody extends ParseXlSXBody>(body: TBody) {
+  const bodyDefaults = {
     link: 'http://prograd.ufabc.edu.br/pdf/turmas_salas_docentes_sa_2018.3.pdf',
-    numberOfColumns: 6,
-    startPage: 0,
-    pickColumns: [
-      {
-        position: 0,
-        name: 'ra',
-      },
-    ],
     rename: [
       { from: 'TURMA', as: 'nome' },
       { from: 'DOCENTE TEORIA', as: 'teoria' },
-      { from: 'DOCENTE PRÁTICA', as: 'pratica' },
+      { from: 'DOCENTE PRATICA', as: 'pratica' },
     ],
-    rowDifference: 5,
-    allowedPercentage: 0.3,
+  } satisfies ParseXlSXBody;
+  const params = Object.assign(body, bodyDefaults);
+
+  const file = await ofetch(params.link, {
+    responseType: 'arrayBuffer',
   });
 
-  const isPdf = params.link.endsWith('pdf');
+  const { SheetNames, Sheets } = xlsxRead(file);
+  const fileData = xlsxUtils.sheet_to_json<JSONFileData>(Sheets[SheetNames[0]]);
+  const columns = Object.keys(fileData[0]);
+  logger.debug({ msg: 'File Columns', columns });
 
-  const response = await ofetch({
-    method: 'GET',
-    url: params.link,
-    responseType: 'stream',
-  });
-
-  const forBuffer = new PassThrough();
-  const buffers: any[] = [];
-
-  return new Promise((resolve, reject) => {
-    response.data.pipe(forBuffer);
-    forBuffer.on('data', (chunk) => buffers.push(chunk));
-    forBuffer.on('finish', () => {
-      const workbook = read(Buffer.concat(buffers), { type: 'buffer' });
-      const sheet_name_list = workbook.SheetNames;
-      const data = xlsx.utils.sheet_to_json(
-        workbook.Sheets[sheet_name_list[0]],
-      );
-
-      console.log('columns', _.keys(data[0]));
-
-      const parsed = data.map((d) => {
-        params.rename.forEach((name) => {
-          _.set(d, name.as, d[name.from]);
-        });
-
-        return _.pick(d, _.map(params.rename, 'as'));
-      });
-
-      resolve(parsed);
+  const parsedEnrollments = fileData.map((enrollment) => {
+    const updatedEnrollment = {};
+    params.rename.forEach((name) => {
+      // @ts-expect-error WHY TS IS SO FUCKING DUMB
+      updatedEnrollment[name.as] = enrollment[name.from];
     });
+
+    return Object.fromEntries(
+      Object.entries(updatedEnrollment).filter(([key]) =>
+        params.rename.some(({ as }) => as === key),
+      ),
+    );
   });
+
+  return parsedEnrollments;
 }
