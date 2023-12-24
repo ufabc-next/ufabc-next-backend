@@ -170,7 +170,7 @@ export const addSyncToQueue = async (payload: SyncParams) => {
 
 export const syncWorker = async (job: Job<SyncParams>) => {
   try {
-    //TODO: discover if I pass the fastifyRedis instance to the queue the redis client will work
+    logger.info('[QUEUE] start sync matriculas');
     const { operation, redis, disciplinaModel } = job.data;
     await syncMatriculas(operation, redis, disciplinaModel);
   } catch (error) {
