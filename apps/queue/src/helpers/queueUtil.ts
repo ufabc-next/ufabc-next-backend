@@ -12,7 +12,7 @@ const connection = {
   username: Config.REDIS_USER,
   password: Config.REDIS_PASSWORD,
   host: Config.REDIS_HOST,
-  port: DEFAULT_REDIS_PORT ?? (Config.REDIS_PORT as unknown as number),
+  port: DEFAULT_REDIS_PORT ?? Config.REDIS_PORT,
 } satisfies RedisOptions;
 
 /**
