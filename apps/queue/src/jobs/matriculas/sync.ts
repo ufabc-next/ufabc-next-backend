@@ -7,7 +7,7 @@ import type { Job, JobsOptions } from 'bullmq';
 import type { ObjectId } from 'mongoose';
 
 type SyncParams = {
-  operation: string;
+  operation: 'alunos_matriculados' | 'before_kick' | 'after_kick';
   redis: any;
   disciplinaModel: DisciplinaModel;
 };
