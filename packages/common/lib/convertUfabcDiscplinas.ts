@@ -4,8 +4,9 @@ import {
   get as lodashGet,
   startCase,
 } from 'lodash-es';
+import latinize from 'latinize';
 
-type Disciplina = {
+export type Disciplina = {
   id: string;
   campus?: 'santo andre' | 'sao bernardo' | null;
   turno?: 'noturno' | 'diurno' | 'tarde' | null;
@@ -19,7 +20,9 @@ type Disciplina = {
 };
 
 // This convert an disciplina from the .json from matriculas.ufabc
-export function convertUfabcDisciplinas(disciplina: Disciplina) {
+export function convertUfabcDisciplinas(
+  disciplina: Disciplina,
+): Disciplina | Disciplina[] | null {
   const clonedDisciplinas = structuredClone(disciplina);
   clonedDisciplinas.campus = undefined;
   clonedDisciplinas.turno = undefined;
@@ -48,10 +51,14 @@ export function convertUfabcDisciplinas(disciplina: Disciplina) {
 
     const matchedHorarios = clonedDisciplinas.horarios.match(/\d{2}:\d{2}/g);
 
+    if (!matchedHorarios) {
+      return [];
+    }
+
     if (matchedHorarios?.length % 2 === 0) {
       const hours = lodashChunk(matchedHorarios, 2);
       hours.forEach((hour) => {
-        const [start] = hour.map((h) => Number.parseInt(h.split(':')[0] ?? ''));
+        const [start] = hour.map((h) => Number.parseInt(h.split(':')[0]!));
         if (start >= 12 && start < 18) {
           afterNoon = true;
         }
@@ -135,7 +142,7 @@ export function convertUfabcDisciplinas(disciplina: Disciplina) {
 const removeLineBreaks = (str: string) => str?.replaceAll(/\r?\n|\r/g, ' ');
 
 const extractCampus = (disciplina: Disciplina['campus']) => {
-  const min = disciplina?.toLowerCase();
+  const min = latinize(disciplina!.toLowerCase());
   if (!min) {
     return null;
   }

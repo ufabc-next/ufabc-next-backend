@@ -224,6 +224,9 @@ importers:
 
   packages/common:
     dependencies:
+      latinize:
+        specifier: ^2.0.0
+        version: 2.0.0
       pino:
         specifier: ^8.16.2
         version: 8.17.1
@@ -231,6 +234,9 @@ importers:
       '@next/tsconfig':
         specifier: workspace:^
         version: link:../tsconfig
+      '@types/latinize':
+        specifier: ^0.2.18
+        version: 0.2.18
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -2032,6 +2038,10 @@ packages:
     resolution: {integrity: sha512-VRLSGzik+Unrup6BsouBeHsf4d1hOEgYWTm/7Nmw1sXoN1+tRly/Gy/po3yeahnP4jfnQWWAhQAqcNfH7ngOkA==}
     dependencies:
       '@types/node': 20.10.5
+    dev: true
+
+  /@types/latinize@0.2.18:
+    resolution: {integrity: sha512-QjX4tcVEOcqDakv96sLMA2ESMcxSJel5KHxmcBgeTlZI7v6gFx9Tjqmt5+Pp8ijfGGr6CxuXzDNYk8A/iZ/GiA==}
     dev: true
 
   /@types/lodash-es@4.17.10:
@@ -4125,6 +4135,10 @@ packages:
     dependencies:
       json-buffer: 3.0.1
     dev: true
+
+  /latinize@2.0.0:
+    resolution: {integrity: sha512-bMWAnS0C6s9rNqahOEzBEIb9RWECgD1sfmDPws/YoFGAVbC3cjNGCS3Y1THhaQ5wtTJfrq1RO69IM2dGA0DuEg==}
+    dev: false
 
   /levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
