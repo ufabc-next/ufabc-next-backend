@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { ofetch } from 'ofetch';
 import { beforeEach, describe, it } from 'node:test';
 import { pick as lodashPick } from 'lodash-es';
-import { convertUfabcDisciplinas } from './convertUfabcDiscplinas';
-import { logger } from './logger';
+import {
+  type Disciplina,
+  convertUfabcDisciplinas,
+} from './convertUfabcDiscplinas';
 
 const valueToJson = (payload: string, max?: number) => {
   const parts = payload.split('=');
@@ -20,10 +22,10 @@ const valueToJson = (payload: string, max?: number) => {
 };
 
 describe('common.lib.convertUfabcDisciplinas', () => {
-  let disciplinas: any;
+  let disciplinas: Disciplina[];
   const pick = ['disciplina', 'ideal_quad', 'turma', 'campus', 'turno'];
   beforeEach(async () => {
-    disciplinas = await ofetch<any[]>(
+    disciplinas = await ofetch(
       'https://matricula.ufabc.edu.br/cache/todasDisciplinas.js',
       {
         parseResponse: valueToJson,
@@ -32,15 +34,25 @@ describe('common.lib.convertUfabcDisciplinas', () => {
   });
 
   it('should parse everything correctly', () => {
-    const parsedDisciplinas = disciplinas.map((disciplina: any) =>
+    const parsedDisciplinas: any = disciplinas.map((disciplina) =>
       lodashPick(convertUfabcDisciplinas(disciplina), pick),
     );
-    logger.info(parsedDisciplinas.every((d) => d));
-    assert(
-      parsedDisciplinas.every((d) =>
-        ['sao bernardo', 'santo andre'].includes(d.campus),
+
+    assert.ok(
+      parsedDisciplinas?.every((disciplina: Disciplina) =>
+        ['diurno', 'noturno', 'tarde'].includes(disciplina.turno!),
       ),
     );
-    // assert(resp.every((r) => r.turma.length > 0 && r.turma.length <= 3));
+    assert.ok(
+      parsedDisciplinas.every((disciplina: Disciplina) =>
+        ['sao bernardo', 'santo andre'].includes(disciplina.campus!),
+      ),
+    );
+    assert.ok(
+      parsedDisciplinas.every(
+        (disciplina: Disciplina) =>
+          disciplina.turma!.length > 0 && disciplina.turma!.length <= 3,
+      ),
+    );
   });
 });
