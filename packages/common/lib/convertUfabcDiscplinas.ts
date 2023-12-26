@@ -4,7 +4,6 @@ import {
   get as lodashGet,
   startCase,
 } from 'lodash-es';
-import { logger } from './logger';
 
 type Disciplina = {
   id: string;
@@ -72,7 +71,6 @@ export function convertUfabcDisciplinas(disciplina: Disciplina) {
     breakRule = ' ';
     splitted = splitted[0]!.split(/\s+/);
   }
-  logger.info({ msg: 'Splitted teste', splitted });
   splitted.forEach((item, i) => {
     // Theres probably a bug in here
     clonedDisciplinas.campus =
@@ -108,7 +106,6 @@ export function convertUfabcDisciplinas(disciplina: Disciplina) {
   const ufabcDisciplina = splitted.join('-').split(/\s+/).filter(Boolean);
   clonedDisciplinas.turma = ufabcDisciplina.at(-1);
   ufabcDisciplina.pop();
-  logger.info(ufabcDisciplina);
   // fix disciplina
   clonedDisciplinas.disciplina = ufabcDisciplina.join(' ').trim();
 
@@ -135,7 +132,7 @@ export function convertUfabcDisciplinas(disciplina: Disciplina) {
   return clonedDisciplinas;
 }
 
-const removeLineBreaks = (str: string) => str.replaceAll(/\r?\n|\r/g, ' ');
+const removeLineBreaks = (str: string) => str?.replaceAll(/\r?\n|\r/g, ' ');
 
 const extractCampus = (disciplina: Disciplina['campus']) => {
   const min = disciplina?.toLowerCase();
