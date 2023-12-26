@@ -12,7 +12,8 @@ type RenameOptions = {
   from: 'RA' | 'TURMA' | 'DOCENTE TEORIA' | 'DOCENTE PRATICA' | 'TEORIA';
   as: 'ra' | 'nome' | 'teoria' | 'pratica' | 'horarios';
 };
-type ParseXlSXBody = {
+
+export type ParseXlSXBody = {
   link: string;
   rename: Array<RenameOptions>;
   season?: string;
@@ -25,15 +26,14 @@ type JSONFileData = {
 
 export async function parseXlsx<TBody extends ParseXlSXBody>(body: TBody) {
   const bodyDefaults = {
-    link: 'http://prograd.ufabc.edu.br/pdf/turmas_salas_docentes_sa_2018.3.pdf',
+    link: '',
     rename: [
       { from: 'TURMA', as: 'nome' },
       { from: 'DOCENTE TEORIA', as: 'teoria' },
       { from: 'DOCENTE PRATICA', as: 'pratica' },
     ],
   } satisfies ParseXlSXBody;
-  const params = Object.assign(body, bodyDefaults);
-
+  const params = Object.assign(bodyDefaults, body);
   const file = await ofetch(params.link, {
     responseType: 'arrayBuffer',
   });
@@ -41,12 +41,12 @@ export async function parseXlsx<TBody extends ParseXlSXBody>(body: TBody) {
   const { SheetNames, Sheets } = xlsxRead(file);
   const fileData = xlsxUtils.sheet_to_json<JSONFileData>(Sheets[SheetNames[0]]);
   const columns = Object.keys(fileData[0]);
-  logger.debug({ msg: 'File Columns', columns });
+  logger.info({ msg: 'File Columns', columns });
 
   const parsedEnrollments = fileData.map((enrollment) => {
     const updatedEnrollment = {};
     params.rename.forEach((name) => {
-      // @ts-expect-error WHY TS IS SO FUCKING DUMB
+      // @ts-expect-error WHY IS TS SO FUCKING DUMB
       updatedEnrollment[name.as] = enrollment[name.from];
     });
 
