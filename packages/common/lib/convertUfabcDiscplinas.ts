@@ -7,11 +7,11 @@ import {
 import latinize from 'latinize';
 
 export type Disciplina = {
+  nome: string;
   id: string;
   campus?: 'santo andre' | 'sao bernardo' | null;
   turno?: 'noturno' | 'diurno' | 'tarde' | null;
   horarios: string | string[];
-  nome: string;
   turma?: string;
   disciplina: string;
   disciplina_id: string;
