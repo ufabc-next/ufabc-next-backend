@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { camelCase } from 'lodash-es';
 import type { Disciplina } from '@next/models';
 
+type KeysOptions = keyof Disciplina;
 const DEFAULT_FIELDS_TO_ENCODE = [
   'disciplina',
   'turno',
@@ -14,7 +15,7 @@ const DEFAULT_FIELDS_TO_ENCODE = [
  * */
 export function generateIdentifier(
   disciplina: Disciplina,
-  keys = DEFAULT_FIELDS_TO_ENCODE,
+  keys: KeysOptions[] | readonly KeysOptions[] = DEFAULT_FIELDS_TO_ENCODE,
 ) {
   const unorderedDisciplinas = keys.map((key) => String(disciplina[key]));
   const disciplinaToEncode = unorderedDisciplinas

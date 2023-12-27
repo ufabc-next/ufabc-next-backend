@@ -231,6 +231,9 @@ importers:
         specifier: ^8.16.2
         version: 8.17.1
     devDependencies:
+      '@next/models':
+        specifier: workspace:^
+        version: link:../../apps/models
       '@next/tsconfig':
         specifier: workspace:^
         version: link:../tsconfig
