@@ -59,7 +59,7 @@ export function convertUfabcDisciplinas(
       const hours = lodashChunk(matchedHorarios, 2);
       hours.forEach((hour) => {
         const [start] = hour.map((h) => Number.parseInt(h.split(':')[0]!));
-        if (start >= 12 && start < 18) {
+        if (start! >= 12 && start! < 18) {
           afterNoon = true;
         }
       });
@@ -80,8 +80,7 @@ export function convertUfabcDisciplinas(
   }
   splitted.forEach((item, i) => {
     // Theres probably a bug in here
-    clonedDisciplinas.campus =
-      clonedDisciplinas.campus || extractCampus(item as Disciplina['campus']);
+    clonedDisciplinas.campus = clonedDisciplinas.campus || extractCampus(item);
     clonedDisciplinas.turno =
       clonedDisciplinas.turno || extractTurno(item as Disciplina['turno']);
 
@@ -141,7 +140,7 @@ export function convertUfabcDisciplinas(
 
 const removeLineBreaks = (str: string) => str?.replaceAll(/\r?\n|\r/g, ' ');
 
-const extractCampus = (disciplina: Disciplina['campus']) => {
+const extractCampus = (disciplina: string) => {
   const min = latinize(disciplina!.toLowerCase());
   if (!min) {
     return null;

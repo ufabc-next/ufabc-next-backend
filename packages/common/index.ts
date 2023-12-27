@@ -1,3 +1,4 @@
-export * from './lib/find-quad';
-export * from './lib/logger';
-export * from './lib/asyncParallelMap';
+export { currentQuad, findQuarter } from './lib/find-quad';
+export { logger } from './lib/logger';
+export { asyncParallelMap } from './lib/asyncParallelMap';
+export { convertUfabcDisciplinas } from './lib/convertUfabcDiscplinas';
