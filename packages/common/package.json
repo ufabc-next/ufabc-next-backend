@@ -26,7 +26,6 @@
     "pino": "^8.16.2"
   },
   "devDependencies": {
-    "@next/models": "workspace:^",
     "@next/tsconfig": "workspace:^",
     "@types/latinize": "^0.2.18",
     "@types/lodash-es": "^4.17.12",
