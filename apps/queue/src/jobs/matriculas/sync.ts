@@ -1,14 +1,15 @@
 import { currentQuad, logger } from '@next/common';
 import { ofetch } from 'ofetch';
+import { Redis } from 'ioredis';
 import { createQueue } from '@/helpers/queueUtil.js';
 import { batchInsertItems } from '@/helpers/batch-insert.js';
+import { Config } from '@/config/config.js';
 import type { DisciplinaModel } from '@/types/models.js';
 import type { Job, JobsOptions } from 'bullmq';
 import type { ObjectId } from 'mongoose';
 
 type SyncParams = {
-  operation: 'alunos_matriculados' | 'before_kick' | 'after_kick';
-  redis: any;
+  operation: 'alunos_matriculados' | 'before_kick' | 'after_kick' | '';
   disciplinaModel: DisciplinaModel;
 };
 
@@ -59,7 +60,6 @@ const parseEnrollments = (data: Record<string, number[]>) => {
 //so it can be used by the queue and by the route
 export async function syncMatriculas(
   operation: string = '',
-  redis: any,
   disciplinaModel: DisciplinaModel,
 ) {
   const season = currentQuad();
@@ -80,6 +80,18 @@ export async function syncMatriculas(
   );
 
   const enrollments = parseEnrollments(matriculas);
+
+  //maybe we should use a redis connection pool
+  //or anything more thought out and performant
+  //but for now this will do
+  //TODO: find a bulletproof way to handle redis connections
+  // so we don't have to create a new connection every time
+  const redis = new Redis({
+    username: Config.REDIS_USER,
+    password: Config.REDIS_PASSWORD,
+    host: Config.REDIS_HOST,
+    port: Config.REDIS_PORT,
+  });
 
   const updateEnrolledStudents = async (
     enrollmentId: string,
@@ -149,6 +161,8 @@ export async function syncMatriculas(
     },
   );
 
+  await redis.quit();
+
   return {
     status: 'Sync has been successfully',
     duration: Date.now() - start,
@@ -171,8 +185,8 @@ export const addSyncToQueue = async (payload: SyncParams) => {
 export const syncWorker = async (job: Job<SyncParams>) => {
   try {
     logger.info('[QUEUE] start sync matriculas');
-    const { operation, redis, disciplinaModel } = job.data;
-    await syncMatriculas(operation, redis, disciplinaModel);
+    const { operation, disciplinaModel } = job.data;
+    await syncMatriculas(operation, disciplinaModel);
   } catch (error) {
     logger.error({ error }, 'SyncWorker: Error Syncing');
     throw error;
