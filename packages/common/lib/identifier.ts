@@ -1,38 +1,25 @@
 import { createHash } from 'node:crypto';
 import { camelCase } from 'lodash-es';
-import { logger } from './logger';
+import type { Disciplina } from '@next/models';
+
+const DEFAULT_FIELDS_TO_ENCODE = [
+  'disciplina',
+  'turno',
+  'campus',
+  'turma',
+] as const;
 
 /**
  * Generates a unique identifier for a given disciplina
  * */
 export function generateIdentifier(
-  disciplina: Record<string, unknown>,
-  keys: string[] = ['disciplina', 'turno', 'campus', 'turma'],
-  silent = true,
+  disciplina: Disciplina,
+  keys = DEFAULT_FIELDS_TO_ENCODE,
 ) {
-  //TODO: Find a way of doing this without lodash
-  // const disc = chain(disciplina)
-  //   .pick(keys)
-  //   .mapValues(String)
-  //   .mapValues((value: string) => {
-  //     camelCase(value);
-  //   })
-  //   .toPairs()
-  //   .sortBy(0)
-  //   .fromPairs()
-  //   .values()
-  //   .value()
-  //   .join('');
-
-  // TODO2: See if it behaves the same
-  const disc = keys
-    .map((key) => String(disciplina[key]))
-    .map((value) => camelCase(value)) // Use camelCase
+  const unorderedDisciplinas = keys.map((key) => String(disciplina[key]));
+  const disciplinaToEncode = unorderedDisciplinas
+    .map((disciplina) => camelCase(disciplina))
     .join('');
 
-  if (!silent) {
-    logger.info(disc);
-  }
-
-  return createHash('md5').update(disc).digest('hex');
+  return createHash('md5').update(disciplinaToEncode).digest('hex');
 }
