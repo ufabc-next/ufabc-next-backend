@@ -36,7 +36,7 @@ const DEFAULT_FIELDS_TO_ENCODE = [
  * Generates a unique identifier for a given disciplina
  * */
 export function generateIdentifier(
-  disciplina: Disciplina,
+  disciplina: Partial<Disciplina>,
   keys: KeysOptions[] | readonly KeysOptions[] = DEFAULT_FIELDS_TO_ENCODE,
 ) {
   const unorderedDisciplinas = keys.map((key) => String(disciplina[key]));

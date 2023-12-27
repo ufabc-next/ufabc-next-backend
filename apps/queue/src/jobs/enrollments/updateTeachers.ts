@@ -32,7 +32,7 @@ export async function updateTeachers({
   const teachers = await teacherModel.find({});
 
   const updateTeacherInEnrollments = async (enrollment: parsedData) => {
-    const keys = ['ra', 'year', 'quad', 'disciplina'];
+    const keys = ['ra', 'year', 'quad', 'disciplina'] as const;
 
     const key = {
       ra: enrollment.ra,
@@ -41,7 +41,8 @@ export async function updateTeachers({
       disciplina: enrollment.disciplina,
     };
 
-    const identifier = generateIdentifier(key, keys);
+    // TODO: remove any later
+    const identifier = generateIdentifier(key, keys as any);
 
     try {
       const insertOpts = { new: true, upsert: true };

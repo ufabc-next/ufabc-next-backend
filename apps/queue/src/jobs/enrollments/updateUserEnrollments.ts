@@ -81,7 +81,7 @@ export async function updateUserEnrollments({
       disciplina: discipline.disciplina,
     };
 
-    const keys = ['ra', 'year', 'quad', 'disciplina'];
+    const keys = ['ra', 'year', 'quad', 'disciplina'] as const;
 
     const coef = getLastPeriod(
       doc.coefficients,
@@ -107,7 +107,9 @@ export async function updateUserEnrollments({
 
     await enrollmentModel.findOneAndUpdate(
       {
-        identifier: discipline.identifier || generateIdentifier(disc, keys),
+        // TODO: remove any later
+        identifier:
+          discipline.identifier || generateIdentifier(disc, keys as any),
       },
       modifiedPayload,
       {

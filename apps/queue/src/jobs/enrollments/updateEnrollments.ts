@@ -12,7 +12,7 @@ function updateEnrollments({ payload, enrollmentModel }: UpdateEnrollments) {
   const data = payload.json;
   // for the record: if it has an _id it is obligatory a Document
   const updateEnrollment = async (enrollment: EnrollmentDocument) => {
-    const keys = ['ra', 'year', 'quad', 'disciplina'];
+    const keys = ['ra', 'year', 'quad', 'disciplina'] as const;
 
     const key = {
       ra: enrollment.ra,
@@ -21,7 +21,8 @@ function updateEnrollments({ payload, enrollmentModel }: UpdateEnrollments) {
       disciplina: enrollment.disciplina,
     };
 
-    const identifier = generateIdentifier(key, keys);
+    // TODO: remove any later
+    const identifier = generateIdentifier(key, keys as any);
 
     try {
       const insertOpts = { new: true, upsert: true };
