@@ -6,7 +6,6 @@ import {
   type Disciplina,
   convertUfabcDisciplinas,
 } from './convertUfabcDiscplinas';
-import { logger } from './logger';
 
 const valueToJson = (payload: string, max?: number) => {
   const parts = payload.split('=');
