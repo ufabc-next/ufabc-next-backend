@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
-import { DisciplinaModel } from '@next/models';
+import {
+  DisciplinaModel,
+  type Enrollment,
+  EnrollmentModel,
+} from '@next/models';
 import { ofetch } from 'ofetch';
-import { convertUfabcDisciplinas } from '@next/common';
+import { convertUfabcDisciplinas, generateIdentifier } from '@next/common';
+import { updateEnrollmentsQueue } from '@next/queue';
 import { type ParseXlSXBody, parseXlsx } from '../utils/parseXlsx.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
@@ -53,47 +58,91 @@ export async function syncEnrollments(
     )
     .lean({ virtuals: true });
 
+  // @ts-expect-error Experimenting
+  const disciplinasMap = new Map([...disciplinas.map((d) => [d._id, d])]);
   // eslint-disable-next-line unused-imports/no-unused-vars
-  const disciplinasMap = disciplinas.map((d): any => [d._id, d]);
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const _keys = ['ra', 'year', 'quad', 'disciplina'];
+  const keys = ['ra', 'year', 'quad', 'disciplina'] as const;
   const rawEnrollments = (await parseXlsx(request.body)).map(
-    (ufabcDisciplina) => convertUfabcDisciplinas(ufabcDisciplina),
+    (ufabcDisciplina): any => convertUfabcDisciplinas(ufabcDisciplina as any),
   );
   // eslint-disable-next-line unused-imports/no-unused-vars
-  const _filteredEnrollments = rawEnrollments
-    .filter((enrollment) => enrollment?.ra)
+  const filteredEnrollments: any[] = rawEnrollments
+    .filter((enrollment: Enrollment) => enrollment?.ra)
     .map((studentEnrollment) =>
       Object.assign({}, studentEnrollment, { year, quad }),
     );
 
-  // const enrollments = filteredEnrollments.map((enrollment) =>
-  //   _.extend(enrollment, {
-  //     ..._.omit(disciplinasMap.get(app.helpers.transform.identifier(e)) || {}, [
-  //       'id',
-  //       '_id',
-  //     ]),
-  //     identifier: app.helpers.transform.identifier(e, keys),
-  //     disciplina_identifier: app.helpers.transform.identifier(e),
-  //   }),
-  // );
+  const enrollments = filteredEnrollments.map((enrollment) => {
+    const enrollmentIdentifier = generateIdentifier(enrollment);
+    const { id, _id, ...disciplinasWithoutId } =
+      disciplinasMap.get(enrollmentIdentifier) || {};
+    const identifiers = {
+      identifier: generateIdentifier(enrollment, keys as any),
+      disciplina_identifier: generateIdentifier(enrollment),
+    };
+    const shallowEnrollment = Object.assign(
+      {},
+      enrollment,
+      identifiers,
+      disciplinasWithoutId,
+    );
+
+    return shallowEnrollment;
+  });
 
   const enrollmentsHash = createHash('md5')
-    .update(JSON.stringify({ name: 'Joabe' }))
+    .update(JSON.stringify(enrollments))
     .digest('hex');
 
   if (enrollmentsHash !== hash) {
     return {
       hash: enrollmentsHash,
-      size: [].length,
+      size: enrollments.slice(0, 500),
     };
   }
 
-  // const chunks = _.chunk(enrollments, Math.ceil(enrollments.length / 3));
+  const chunkSize = Math.ceil(enrollments.length / 3);
+  const chunks = [];
 
-  // app.agenda.now('updateEnrollments', { json: chunks[0] });
-  // app.agenda.schedule('in 2 minutes', 'updateEnrollments', { json: chunks[1] });
-  // app.agenda.schedule('in 4 minutes', 'updateEnrollments', { json: chunks[2] });
+  for (let i = 0; i < enrollments.length; i += chunkSize) {
+    chunks.push(enrollments.slice(i, i + chunkSize));
+  }
 
+  const TW0_MINUTES = 1_000 * 120;
+  const FOUR_MINUTES = 1_000 * 240;
+
+  updateEnrollmentsQueue.add(
+    'Update:Enrollments',
+    {
+      json: chunks[0][0],
+      enrollmentModel: EnrollmentModel,
+    },
+    {
+      removeOnComplete: true,
+    },
+  );
+
+  // updateEnrollmentsQueue.add(
+  //   'Update:Enrollments',
+  //   {
+  //     json: chunks[1],
+  //     enrollmentModel: EnrollmentModel,
+  //   },
+  //   {
+  //     delay: TW0_MINUTES,
+  //     removeOnComplete: true,
+  //   },
+  // );
+  // updateEnrollmentsQueue.add(
+  //   'Update:Enrollments',
+  //   {
+  //     json: chunks[1],
+  //     enrollmentModel: EnrollmentModel,
+  //   },
+  //   {
+  //     delay: FOUR_MINUTES,
+  //     removeOnComplete: true,
+  //   },
+  // );
   return reply.send({ published: true });
 }
