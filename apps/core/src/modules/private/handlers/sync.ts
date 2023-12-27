@@ -8,11 +8,10 @@ export async function sync(
   }>,
   reply: FastifyReply,
 ) {
-  const { redis } = request.server;
   const operation = request.query;
 
   // @ts-expect-error Mongoose Types
-  const result = await syncMatriculas(operation, redis, DisciplinaModel);
+  const result = await syncMatriculas(operation, DisciplinaModel);
 
   reply.send(result);
 }
