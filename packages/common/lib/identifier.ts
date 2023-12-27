@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { logger } from '@next/common';
 import { camelCase } from 'lodash-es';
+import { logger } from './logger';
 
 /**
  * Generates a unique identifier for a given disciplina

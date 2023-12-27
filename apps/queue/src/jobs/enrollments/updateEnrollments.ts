@@ -1,5 +1,4 @@
-import { asyncParallelMap, logger } from '@next/common';
-import { generateIdentifier } from '@/helpers/identifier.js';
+import { asyncParallelMap, generateIdentifier, logger } from '@next/common';
 import { createQueue } from '@/helpers/queueUtil.js';
 import type { EnrollmentDocument, EnrollmentModel } from '@/types/models.js';
 import type { Job } from 'bullmq';

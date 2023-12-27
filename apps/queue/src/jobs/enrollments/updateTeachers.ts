@@ -1,5 +1,4 @@
-import { asyncParallelMap, logger } from '@next/common';
-import { generateIdentifier } from '@/helpers/identifier.js';
+import { asyncParallelMap, generateIdentifier, logger } from '@next/common';
 import { createQueue } from '@/helpers/queueUtil.js';
 import { resolveProfessors } from '@/helpers/resolveProfessors.js';
 import type { EnrollmentModel, TeacherModel } from '@/types/models.js';
