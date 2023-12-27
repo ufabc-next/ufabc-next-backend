@@ -4,6 +4,7 @@ import { ofetch } from 'ofetch';
 import { set_fs, stream, read as xlsxRead, utils as xlsxUtils } from 'xlsx';
 // import _ from 'lodash-es';
 import { logger } from '@next/common';
+import type { Disciplina } from '@next/models';
 
 set_fs(fs);
 stream.set_readable(Readable);
@@ -24,7 +25,11 @@ type JSONFileData = {
   CODIGO_DA_TURMA: string;
 };
 
-export async function parseXlsx<TBody extends ParseXlSXBody>(body: TBody) {
+type XLSXOutput = Partial<Disciplina>;
+
+export async function parseXlsx<TBody extends ParseXlSXBody>(
+  body: TBody,
+): Promise<XLSXOutput[]> {
   const bodyDefaults = {
     link: '',
     rename: [
@@ -57,5 +62,5 @@ export async function parseXlsx<TBody extends ParseXlSXBody>(body: TBody) {
     );
   });
 
-  return parsedEnrollments;
+  return parsedEnrollments as XLSXOutput[];
 }
