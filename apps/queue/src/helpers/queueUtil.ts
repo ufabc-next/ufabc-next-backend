@@ -1,4 +1,5 @@
 import {
+  type Job,
   type Processor,
   Queue,
   type RedisOptions,
@@ -19,7 +20,8 @@ const connection = {
  * Creates a queue with the given name
  * creates a connection in every instance(aka if you have 3 instances, it will create 3 connections)
  * */
-export const createQueue = (name: string) => new Queue(name, { connection });
+export const createQueue = <TQueueData>(name: string) =>
+  new Queue<Job<TQueueData>>(name, { connection });
 
 /**
  * Creates a worker attached to a given queue

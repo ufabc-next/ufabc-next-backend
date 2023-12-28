@@ -2,6 +2,7 @@ export { addEmailToConfirmationQueue } from './jobs/confirmationEmail/email.js';
 export {
   addEnrollmentsToQueue,
   updateEnrollmentsQueue,
+  updateEnrollmentsWorker,
 } from './jobs/enrollments/updateEnrollments.js';
 export {
   addUserEnrollmentsToQueue,
