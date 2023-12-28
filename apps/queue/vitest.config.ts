@@ -7,5 +7,13 @@ export default defineConfig({
     alias: {
       '@/': new URL('./src/', import.meta.url).pathname,
     },
+    coverage: {
+      all: true,
+      reportOnFailure: true,
+      statements: 10,
+      branches: 10,
+      functions: 10,
+      lines: 10,
+    },
   },
 });
