@@ -20,7 +20,7 @@
     "lint:fix": "pnpm run lint --fix",
     "test": "node --import=tsx --test lib/*.spec.ts",
     "test:watch": "node --import=tsx --watch --test lib/*.spec.ts",
-    "test:coverage": "c8 node --test --import=tsx lib/*.spec.ts"
+    "test:coverage": "c8 --all --src=lib node --test --import=tsx lib/*.spec.ts"
   },
   "dependencies": {
     "latinize": "^2.0.0",
