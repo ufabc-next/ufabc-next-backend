@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it, mock } from 'node:test';
 import { buildLogger } from './logger';
 
-describe('Logger Tests', () => {
+describe('common.lib.logger', () => {
   it('should create a logger in dev environment', () => {
     const devLogger = buildLogger('dev');
     const pinoStub = mock.fn(devLogger.info);
