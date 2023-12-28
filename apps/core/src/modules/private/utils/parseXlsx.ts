@@ -2,7 +2,6 @@ import { Readable } from 'node:stream';
 import fs from 'node:fs';
 import { ofetch } from 'ofetch';
 import { set_fs, stream, read as xlsxRead, utils as xlsxUtils } from 'xlsx';
-// import _ from 'lodash-es';
 import { logger } from '@next/common';
 import type { Disciplina } from '@next/models';
 

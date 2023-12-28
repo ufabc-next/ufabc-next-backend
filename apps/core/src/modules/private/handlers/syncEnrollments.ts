@@ -60,18 +60,15 @@ export async function syncEnrollments(
 
   // @ts-expect-error Experimenting
   const disciplinasMap = new Map([...disciplinas.map((d) => [d._id, d])]);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const keys = ['ra', 'year', 'quad', 'disciplina'] as const;
   const rawEnrollments = (await parseXlsx(request.body)).map(
     (ufabcDisciplina): any => convertUfabcDisciplinas(ufabcDisciplina as any),
   );
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const filteredEnrollments: any[] = rawEnrollments
     .filter((enrollment: Enrollment) => enrollment?.ra)
     .map((studentEnrollment) =>
       Object.assign({}, studentEnrollment, { year, quad }),
     );
-
   const enrollments = filteredEnrollments.map((enrollment) => {
     const enrollmentIdentifier = generateIdentifier(enrollment);
     const { id, _id, ...disciplinasWithoutId } =
@@ -114,8 +111,7 @@ export async function syncEnrollments(
   updateEnrollmentsQueue.add(
     'Update:Enrollments',
     {
-      json: chunks[0][0],
-      enrollmentModel: EnrollmentModel,
+      enrollments,
     },
     {
       removeOnComplete: true,
