@@ -1,8 +1,14 @@
-import {
-  type Enrollment,
-  type EnrollmentDocument,
+export {
   EnrollmentModel,
+  DisciplinaModel,
+  TeacherModel,
+  GraduationHistoryModel,
+  GraduationModel,
+  SubjectModel,
 } from '@next/models';
-
-export { EnrollmentModel };
-export type { Enrollment, EnrollmentDocument };
+export type {
+  Enrollment,
+  EnrollmentDocument,
+  DisciplinaDocument,
+  Disciplina,
+} from '@next/models';
