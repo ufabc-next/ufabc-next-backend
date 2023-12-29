@@ -43,7 +43,11 @@ userEnrollmentsWorker.on('completed', (job) => {
 });
 
 syncMatriculasWorker.on('completed', (job) => {
-  logger.info(`Job ${job.queueName} completed`);
+  logger.info({
+    msg: `[QUEUE] Job ${job.queueName} completed`,
+    id: job.id,
+    data: job.data,
+  });
 });
 
 updateTeachersEnrollmentsWorker.on('completed', (job) => {
