@@ -20,7 +20,8 @@
     "lint:fix": "pnpm run lint --fix"
   },
   "dependencies": {
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "mongoose": "^7.6.7"
   },
   "devDependencies": {
     "@next/tsconfig": "workspace:^",

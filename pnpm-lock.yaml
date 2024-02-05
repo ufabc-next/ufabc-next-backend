@@ -211,6 +211,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      mongoose:
+        specifier: ^7.6.7
+        version: 7.6.7
     devDependencies:
       '@next/tsconfig':
         specifier: workspace:^
