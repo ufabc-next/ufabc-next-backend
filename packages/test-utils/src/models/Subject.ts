@@ -1,10 +1,17 @@
+import { generateRandomName, generateRandomNumberInRange } from '../utils';
 import type { Subject, SubjectModel } from '../types';
 
 export async function createSubject(
   subjectModel: SubjectModel,
-  subject: Subject,
+  subject?: Subject,
 ) {
-  const createdSubject = await subjectModel.create(subject);
+  const createdSubject = await subjectModel.create(
+    subject || {
+      name: generateRandomName(),
+      search: generateRandomName(),
+      creditos: generateRandomNumberInRange(2, 6),
+    },
+  );
   return createdSubject;
 }
 

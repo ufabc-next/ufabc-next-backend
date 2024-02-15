@@ -1,10 +1,13 @@
+import { generateRandomNumber } from '../utils';
 import type { Teacher, TeacherModel } from '../types';
 
 export async function createTeacher(
   teacherModel: TeacherModel,
   teacher: Teacher,
 ) {
-  const createdTeacher = await teacherModel.create(teacher);
+  const createdTeacher = await teacherModel.create(
+    teacher || { name: generateRandomNumber() },
+  );
   return createdTeacher;
 }
 
