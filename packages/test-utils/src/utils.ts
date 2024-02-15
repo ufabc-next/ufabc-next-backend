@@ -27,3 +27,7 @@ export function generateRandomName(): string {
 export function generateRandomNumber(length: number = 11): number {
   return Math.floor(Math.random() * 10 ** length);
 }
+
+export function generateRandomNumberInRange(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
