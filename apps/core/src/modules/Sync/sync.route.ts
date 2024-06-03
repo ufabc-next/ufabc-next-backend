@@ -1,5 +1,6 @@
 import { admin } from '@/hooks/admin.js';
 import { authenticate } from '@/hooks/authenticate.js';
+import { syncDisciplineCategories } from "@/modules/Sync/handlers/syncUpdateDisciplineInfo.js";
 import {
   type SyncDisciplinasRequest,
   syncDisciplinasHandler,
@@ -17,7 +18,6 @@ import {
   parseTeachersHandler,
 } from './handlers/syncTeachersToSubject.js';
 import type { FastifyInstance } from 'fastify';
-import { syncDisciplineCategories } from "@/modules/Sync/handlers/syncUpdateDisciplineInfo.js";
 
 // eslint-disable-next-line require-await
 export async function syncRoutes(app: FastifyInstance) {

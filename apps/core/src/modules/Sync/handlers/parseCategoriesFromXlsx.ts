@@ -1,7 +1,7 @@
 import { Readable } from 'node:stream';
 import fs from 'node:fs';
 import { ofetch } from 'ofetch';
-import { set_fs, stream, read as xlsxRead, utils as xlsxUtils } from 'xlsx';
+import { set_fs, stream, read as xlsxRead } from 'xlsx';
 import { logger } from '@next/common';
 
 set_fs(fs);

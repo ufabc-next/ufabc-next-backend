@@ -50,6 +50,7 @@ export async function parseXlsx<TBody extends ParseXlSXBody>(body: TBody) {
     ],
   } satisfies ParseXlSXBody;
   const params = Object.assign(bodyDefaults, body);
+  
   const file = await ofetch(params.link, {
     responseType: 'arrayBuffer',
   });
