@@ -45,8 +45,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/common
       bullmq:
-        specifier: ^4.17.0
-        version: 4.17.0
+        specifier: ^5.0.0
+        version: 5.8.3
       close-with-grace:
         specifier: ^1.3.0
         version: 1.3.0
@@ -57,8 +57,8 @@ importers:
         specifier: ^4.5.1
         version: 4.5.1
       fastify-type-provider-zod:
-        specifier: ^1.1.9
-        version: 1.2.0(fastify@4.28.1)(zod@3.23.8)
+        specifier: ^2.0.0
+        version: 2.0.0(fastify@4.28.1)(zod@3.23.8)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -1367,8 +1367,8 @@ packages:
     resolution: {integrity: sha512-8f9ZJCUXyT1M35Jx7MkBgmBMo3oHTTBIPLiY9xyL0pl3T5RwcPEY8cUHr5LBNfu/fk6c2T4DJZuVM/8ZZT2D2A==}
     engines: {node: '>=10.0.0'}
 
-  bullmq@4.17.0:
-    resolution: {integrity: sha512-URnHgB01rlCP8RTpmW3kFnvv3vdd2aI1OcBMYQwnqODxGiJUlz9MibDVXE83mq7ee1eS1IvD9lMQqGszX6E5Pw==}
+  bullmq@5.8.3:
+    resolution: {integrity: sha512-RJgQu/vgSZqjOYrZ7F1UJsSAzveNx7FFpR3Tp/1TxOMXXN9TtZMSly5MT+vjzOhQX//3+YWNRbMWpC1mkqBc9w==}
 
   bundle-require@4.0.2:
     resolution: {integrity: sha512-jwzPOChofl67PSTW2SGubV9HBQAhhR2i6nskiOThauo9dzwDUgOWQScFVaJkjEfYX+UXiD+LEx8EblQMc2wIag==}
@@ -1720,8 +1720,8 @@ packages:
     resolution: {integrity: sha512-pvYwdtbZUJr/aTD7ZE0rGlvtYpx7IThHKVLBoqCKmT3FJpwm23XA2+PDmq8ZzfqqG4ajpyrHd5bkIixcIFjPhQ==}
     engines: {node: '>=18.0.0'}
 
-  fastify-type-provider-zod@1.2.0:
-    resolution: {integrity: sha512-2zkPEWFIBYzkGQ0kmn8gOW5tlQOmdDWn5edF5LQ2r0RiydFGhD86FVZX6wLraXAmdFm8P1CMmo19lwlGb0mZrA==}
+  fastify-type-provider-zod@2.0.0:
+    resolution: {integrity: sha512-LSbz6DikD9BcQmSDFn7uXFmrFS2gRMiSkwiQeIeAH3XEGOyjokJKsH4DRRuxSn7fTz1UNTNiujib4+MTNw+nOg==}
     peerDependencies:
       fastify: ^4.0.0
       zod: ^3.14.2
@@ -1839,11 +1839,6 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
-
-  glob@8.1.0:
-    resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
-    engines: {node: '>=12'}
     deprecated: Glob versions prior to v9 are no longer supported
 
   globalthis@1.0.4:
@@ -2180,9 +2175,6 @@ packages:
 
   lodash.union@4.6.0:
     resolution: {integrity: sha512-c4pB2CdGrGdjMKYLA+XiRDO7Y0PRQbm/Gzg8qMj+QH+pFVAoTp5sBpO0odL3FjoPCGjK96p6qsP+yQoiLoOBcw==}
-
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
   lru-cache@10.2.0:
     resolution: {integrity: sha512-2bIM8x+VAf6JT4bKAljS1qUWgMsqZRPGJS6FSahIMPVvctcNhyVp7AJu7quxOW9jwkryBReKZY5tY5JYv2n/7Q==}
@@ -2889,9 +2881,6 @@ packages:
 
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
-
-  tslib@2.6.2:
-    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
   tslib@2.6.3:
     resolution: {integrity: sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==}
@@ -4558,16 +4547,14 @@ snapshots:
   buildcheck@0.0.6:
     optional: true
 
-  bullmq@4.17.0:
+  bullmq@5.8.3:
     dependencies:
       cron-parser: 4.9.0
-      glob: 8.1.0
       ioredis: 5.4.1
-      lodash: 4.17.21
       msgpackr: 1.10.2
       node-abort-controller: 3.1.1
       semver: 7.6.2
-      tslib: 2.6.2
+      tslib: 2.6.3
       uuid: 9.0.1
     transitivePeerDependencies:
       - supports-color
@@ -5015,7 +5002,7 @@ snapshots:
 
   fastify-tsconfig@2.0.0: {}
 
-  fastify-type-provider-zod@1.2.0(fastify@4.28.1)(zod@3.23.8):
+  fastify-type-provider-zod@2.0.0(fastify@4.28.1)(zod@3.23.8):
     dependencies:
       fastify: 4.28.1
       zod: 3.23.8
@@ -5166,14 +5153,6 @@ snapshots:
       minimatch: 3.1.2
       once: 1.4.0
       path-is-absolute: 1.0.1
-
-  glob@8.1.0:
-    dependencies:
-      fs.realpath: 1.0.0
-      inflight: 1.0.6
-      inherits: 2.0.4
-      minimatch: 5.1.6
-      once: 1.4.0
 
   globalthis@1.0.4:
     dependencies:
@@ -5529,8 +5508,6 @@ snapshots:
   lodash.sortby@4.7.0: {}
 
   lodash.union@4.6.0: {}
-
-  lodash@4.17.21: {}
 
   lru-cache@10.2.0: {}
 
@@ -6274,8 +6251,6 @@ snapshots:
   tree-kill@1.2.2: {}
 
   ts-interface-checker@0.1.13: {}
-
-  tslib@2.6.2: {}
 
   tslib@2.6.3: {}
 
