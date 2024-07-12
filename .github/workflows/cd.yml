@@ -24,11 +24,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: ⚙️ Get runner ip address
-        uses: haythem/public-ip@v1.3
+      - name: Get IP Addresses
         id: ip
-        with:
-          maxRetries: 10
+        uses: candidob/get-runner-ip@v1.0.0  
 
       - name: ⚙️ Whitelist runner ip address
         id: whitelist-ip
@@ -37,7 +35,7 @@ jobs:
             --group-id $AWS_INSTANCE_SG_ID \
             --protocol tcp \
             --port 22 \
-            --cidr ${{ steps.ip.outputs.ipv4 }}/32
+            --cidr ${{ steps.ip.outputs.ipv4}}/32
 
       - name: 🔐 Login to Amazon ECR
         id: login-ecr
@@ -65,6 +63,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SECRET_SSH_KEY }}
           script: |
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.${{ secrets.ECR_REGISTRY }}
             docker pull ${{ secrets.AWS_ACCOUNT_ID }}.${{ secrets.ECR_REGISTRY }}/unext-backend-ecr:${{ github.sha }}
             docker stop unext-backend
             docker rm unext-backend
