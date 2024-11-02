@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
-import { batchInsertItems, generateIdentifier, logger } from '@next/common';
+import { batchInsertItems, generateIdentifier } from '@next/common';
 import { TeacherModel } from '@/models/Teacher.js';
-import { ComponentModel } from '@/models/Component.js';
+import { ComponentModel, type Component } from '@/models/Component.js';
 import { z } from 'zod';
 import { ufProcessor } from '@/services/ufprocessor.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { SubjectModel } from '@/models/Subject.js';
 
 const validateComponentTeachersBody = z.object({
   hash: z.string().optional(),
@@ -72,8 +73,8 @@ export async function componentsTeachers(
         disciplina_id: component.UFComponentId,
         codigo: component.UFComponentCode,
         disciplina: component.name,
-        campus: component.campus,
-        turma: component.turma,
+        campus: component.campus === 'sa' ? 'santo andre' : 'sao bernardo',
+        turma: component.turma.toLocaleUpperCase(),
         turno: component.turno,
         vagas: component.vacancies,
         teoria,
@@ -110,38 +111,125 @@ export async function componentsTeachers(
   }
 
   const start = Date.now();
-  const insertComponentsErrors = await batchInsertItems(
-    nextComponentWithTeachers,
-    async (component) => {
-      // @ts-ignore migrating
-      const identifier = generateIdentifier(component);
-      await ComponentModel.findOneAndUpdate(
-        {
-          identifier,
-          season,
-        },
-        {
-          $set: {
-            teoria: component.teoria,
-            pratica: component.pratica,
-          },
-        },
-        { new: true },
-      );
-    },
+  const batchSize = 100;
+  const insertComponentsErrors = [];
+
+  const allSeasonComponents = await ComponentModel.find({ season }).lean();
+
+  const componentMap = new Map(
+    allSeasonComponents.map((comp) => [
+      comp.disciplina.toLocaleLowerCase(),
+      comp,
+    ]),
   );
+
+  const batches = [];
+  for (let i = 0; i < nextComponentWithTeachers.length; i += batchSize) {
+    batches.push(nextComponentWithTeachers.slice(i, i + batchSize));
+  }
+
+  for (const batch of batches) {
+    try {
+      const existingComponents = batch.map((component) => {
+        const lookupKey = component.disciplina.toLocaleLowerCase();
+        return componentMap.get(lookupKey) || null;
+      });
+
+      const updatePromises = batch.map(async (component, index) => {
+        const existingComponent = existingComponents[index];
+        if (!existingComponent) {
+          insertComponentsErrors.push({
+            error: 'Component not found',
+            component,
+          });
+          return;
+        }
+
+        try {
+          await ComponentModel.updateOne(
+            { _id: existingComponent._id },
+            {
+              $set: {
+                teoria: component.teoria,
+                pratica: component.pratica,
+              },
+            },
+          );
+        } catch (error) {
+          insertComponentsErrors.push({
+            error: error.message,
+            component,
+          });
+        }
+      });
+
+      await Promise.all(updatePromises);
+    } catch (error) {
+      insertComponentsErrors.push({
+        error: error.message,
+        batch,
+      });
+    }
+  }
 
   if (insertComponentsErrors.length > 0) {
     request.log.error({
       msg: 'errors happened during insert',
       errors: insertComponentsErrors,
+      size: insertComponentsErrors.length,
     });
-    return reply.internalServerError('Error inserting disciplinas');
+
+    const toRetryPromises = insertComponentsErrors.map((a) =>
+      // @ts-expect-error
+      retryFileComponents(a.component),
+    );
+
+    const toRetry = await Promise.all(toRetryPromises);
+    return { toRetry };
   }
 
   return {
     status: 'ok',
     time: Date.now() - start,
     errors: [...new Set(errors)],
+  };
+}
+
+async function retryFileComponents(
+  component: any,
+): Promise<Partial<Component>> {
+  const allSubjects = await SubjectModel.find({}).lean();
+  const matchingSubject = allSubjects.find(
+    (s) => s.name.toLocaleLowerCase() === component.disciplina,
+  );
+
+  const identifier = generateIdentifier(component, [
+    'disciplina',
+    'turno',
+    'campus',
+    'turma',
+  ]);
+  const [year, quad] = component.season.split(':');
+
+  return {
+    disciplina_id: null,
+    codigo: component.codigo,
+    disciplina: component.disciplina,
+    campus: component.campus,
+    turma: component.turma,
+    turno: component.turno,
+    vagas: component.vagas,
+    teoria: component.teoria,
+    pratica: component.pratica,
+    season: component.season,
+    subject: matchingSubject?._id,
+    obrigatorias: [],
+    identifier,
+    after_kick: [],
+    alunos_matriculados: [],
+    before_kick: [],
+    quad: Number(quad),
+    year: Number(year),
+    ideal_quad: false,
   };
 }
