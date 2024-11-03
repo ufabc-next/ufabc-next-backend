@@ -80,6 +80,7 @@ export async function componentsTeachers(
         teoria,
         pratica,
         season,
+        creditos: component.credits,
       };
     },
   );
@@ -185,7 +186,8 @@ export async function componentsTeachers(
     );
 
     const toRetry = await Promise.all(toRetryPromises);
-    return { toRetry };
+    const data = await ComponentModel.insertMany(toRetry);
+    return { inserted: data, size: data.length };
   }
 
   return {
@@ -203,6 +205,13 @@ async function retryFileComponents(
     (s) => s.name.toLocaleLowerCase() === component.disciplina,
   );
 
+  if (!matchingSubject) {
+    return {
+      name: component.disciplina,
+      creditos: component.creditos,
+    };
+  }
+
   const identifier = generateIdentifier(component, [
     'disciplina',
     'turno',
@@ -210,9 +219,15 @@ async function retryFileComponents(
     'turma',
   ]);
   const [year, quad] = component.season.split(':');
+  const componentUFId = await ComponentModel.findOne(
+    {
+      codigo: component.codigo,
+    },
+    { disciplina_id: 1, _id: 0 },
+  ).lean();
 
   return {
-    disciplina_id: null,
+    disciplina_id: componentUFId?.disciplina_id ?? null,
     codigo: component.codigo,
     disciplina: component.disciplina,
     campus: component.campus,
