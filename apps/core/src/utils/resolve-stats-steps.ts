@@ -2,16 +2,15 @@ import type { Component } from '@/models/Component.js';
 import type { FilterQuery } from 'mongoose';
 
 export function resolveStep(
-  action: 'overview' | 'component' | 'courses',
+  action?: 'overview' | 'component' | 'courses',
   turno?: string,
   courseId?: number,
 ) {
-  console.log('aaa', action);
   switch (action) {
     case 'overview':
       return getOverviewSteps();
     case 'component':
-      return getDisciplineSteps();
+      return getComponentSteps();
     case 'courses':
       return getCourseSteps(turno, courseId);
     default:
@@ -32,7 +31,7 @@ function getOverviewSteps() {
   ];
 }
 
-function getDisciplineSteps() {
+function getComponentSteps() {
   return [
     {
       $group: {

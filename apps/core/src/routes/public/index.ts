@@ -319,7 +319,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         pipeline.push({ $match: { ratio: { $gt: ratio } } });
       }
 
-      pipeline.push(...resolveStep(action ?? 'overview', turno, courseId));
+      pipeline.push(...resolveStep(action, turno, courseId));
 
       pipeline.push(
         {
@@ -359,6 +359,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         },
       );
 
+      app.log.warn([pipeline]);
       const [result] = await ComponentModel.aggregate(pipeline);
       return result;
     },

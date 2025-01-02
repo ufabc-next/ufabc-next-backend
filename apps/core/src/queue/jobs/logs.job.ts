@@ -27,7 +27,7 @@ export async function uploadLogsToS3(ctx: QueueContext<S3UploadJob>) {
   } = ctx.job;
 
   try {
-    ctx.app.log.info('init logs processing');
+    ctx.app.log.info(ctx.job.data, 'init logs processing');
     if (!existsSync(LOGS_DIR)) {
       ctx.app.log.warn('No logs directory found, skipping...');
       return;

@@ -109,7 +109,7 @@ export class Jobs implements JobImpl {
     return this.getQueue(jobName).add(jobName, jobParameters, jobOptions);
   }
 
-  schedule<T extends JobNames>(
+  async schedule<T extends JobNames>(
     jobName: T,
     jobParameters?: Omit<JobDataType<T>, 'app'>,
     { toWait, toWaitInMs }: { toWait?: string; toWaitInMs?: number } = {},
@@ -129,7 +129,13 @@ export class Jobs implements JobImpl {
       options.delay = toWaitInMs;
     }
 
-    return this.getQueue(jobName).add(jobName, jobParameters, options);
+    const scheduledJob = await this.getQueue(jobName).add(
+      jobName,
+      jobParameters,
+      options,
+    );
+
+    return scheduledJob;
   }
 
   async cancel(jobId: string) {

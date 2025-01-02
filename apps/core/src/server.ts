@@ -16,13 +16,13 @@ export async function start() {
     app.log.info(app.printRoutes());
   }
 
-  app.job.schedule('EnrolledSync');
-  app.job.schedule('ComponentsSync');
-  app.job.schedule('LogsUpload', {
+  await app.job.schedule('EnrolledSync');
+  await app.job.schedule('ComponentsSync');
+  await app.job.schedule('LogsUpload', {
     bucket: app.config.AWS_LOGS_BUCKET,
     localOnly: app.config.NODE_ENV === 'dev',
     retentionDays: 7,
-  });
+  }, { toWait: '1 minute' });
 
   gracefullyShutdown({ delay: 500 }, async ({ err, signal }) => {
     if (err) {
