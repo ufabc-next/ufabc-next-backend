@@ -2,7 +2,7 @@
   "name": "ufabc-next-backend",
   "version": "0.0.1",
   "private": false,
-  "packageManager": "pnpm@9.7.0",
+  "packageManager": "pnpm@10.5.2",
   "type": "module",
   "scripts": {
     "dev": "turbo run dev --parallel",
@@ -20,6 +20,6 @@
   },
   "engines": {
     "node": "^22",
-    "pnpm": "^9"
+    "pnpm": "^10.0.0"
   }
 }
