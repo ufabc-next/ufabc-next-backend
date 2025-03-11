@@ -1,22 +1,49 @@
 import { ofetch } from 'ofetch';
 
+type Weekdays =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday';
+
+type ComponentHours = {
+  [key in Weekdays]?: {
+    periodicity: 'weekly' | 'biweekly';
+    classPeriod: string[];
+  };
+};
+
+type TPI = {
+  theory: number;
+  practice: number;
+  individual: number;
+};
+
 export type UfabcParserComponent = {
-  /** The id as we consume */
   UFComponentId: number;
-  /** The code as we consume */
   UFComponentCode: string;
-  campus: 'sbc' | 'sa';
   name: string;
-  turma: string;
-  turno: 'diurno' | 'noturno';
+  campus: 'sa' | 'sbc';
+  class: string;
+  shift: 'morning' | 'night';
   credits: number;
-  courses: Array<{
-    name: string | '-';
-    UFCourseId: number;
-    category: 'limitada' | 'obrigatoria';
-  }>;
   vacancies: number;
-  hours: Record<string, { periodicity: string; classPeriod: string[] }>[];
+  courses: Array<{
+    category: 'limited' | 'mandatory';
+    UFCourseId: number;
+    name: string;
+  }>;
+  hours: ComponentHours;
+  tpi: TPI;
+  season: string;
+  teachers: {
+    professor: string | undefined;
+    practice: string | undefined;
+    secondaryProfessor: string | undefined;
+    secondaryPractice: string | undefined;
+  };
 };
 
 type StudentRA = string;
@@ -64,7 +91,7 @@ export const ufabcParserService = ofetch.create({
 
 export async function getComponents() {
   const components =
-    await ufabcParserService<UfabcParserComponent[]>('/components');
+    await ufabcParserService<UfabcParserComponent[]>('/v2/components');
   return components;
 }
 
