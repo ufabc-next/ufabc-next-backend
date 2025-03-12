@@ -109,10 +109,12 @@ export const JOBS = {
   SendEmail: {
     queue: 'send:email',
     handler: sendConfirmationEmail,
+    every: null,
   },
   EnrolledSync: {
     queue: 'sync:enrolled',
     handler: syncEnrolled,
+    every: null,
   },
   ProcessSingleEnrolled: {
     queue: 'sync:enrolled',
@@ -122,6 +124,7 @@ export const JOBS = {
   ComponentsSync: {
     queue: 'sync:components',
     handler: syncComponents,
+    every: null,
   },
   ProcessSingleComponent: {
     queue: 'sync:components',
@@ -131,22 +134,27 @@ export const JOBS = {
   UserEnrollmentsUpdate: {
     queue: 'userEnrollments:update',
     handler: userEnrollmentsUpdate,
+    every: null,
   },
   ProcessComponentsEnrollments: {
     queue: 'userEnrollments:update',
     handler: processComponentEnrollment,
+    every: null,
   },
   TeacherUpdate: {
     queue: 'teacher:updateEnrollments',
     handler: updateTeachers,
+    every: null,
   },
   EnrollmentSync: {
     queue: 'enrollments:update',
     handler: processSingleEnrollment,
+    // every: '1 day',
   },
   ComponentsTeachersSync: {
     queue: 'sync:components:teachers',
     handler: processComponentsTeachers,
+    every: null,
   },
   LogsUpload: {
     queue: 'logs:upload',

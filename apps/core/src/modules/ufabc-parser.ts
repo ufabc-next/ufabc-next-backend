@@ -95,12 +95,13 @@ export async function getComponents() {
   return components;
 }
 
-export async function getEnrollments(link: string) {
+export async function getEnrollments(kind: 'settlement' | 'resettlement') {
   const enrollments = await ufabcParserService<UFProcessorEnrollment>(
     '/enrollments',
     {
       query: {
-        link,
+        kind,
+        granted: true,
       },
     },
   );
@@ -112,6 +113,9 @@ export async function getEnrolledStudents() {
   return enrolled;
 }
 
+/**
+ * @deprecated
+ */
 export async function getComponentsFile(link: string) {
   const componentsFile = await ufabcParserService<UFProcessorComponentFile[]>(
     '/componentsFile',

@@ -74,7 +74,7 @@ export class Jobs implements JobImpl {
     }
 
     for (const [name, jobDefinition] of Object.entries(JOBS)) {
-      if ('every' in jobDefinition) {
+      if (jobDefinition.every != null && 'every' in jobDefinition) {
         const queue = this.queues[jobDefinition.queue];
         const {
           mongoose: _mongoose,
