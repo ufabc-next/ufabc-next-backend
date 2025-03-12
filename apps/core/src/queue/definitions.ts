@@ -1,5 +1,8 @@
 import { sendConfirmationEmail } from './jobs/email.job.js';
-import { processSingleEnrollment } from './jobs/enrollments.job.js';
+import {
+  processSingleEnrollment,
+  syncEnrollments,
+} from './jobs/enrollments.job.js';
 import { processSingleEnrolled, syncEnrolled } from './jobs/enrolled.job.js';
 import { updateTeachers } from './jobs/teacher-update.job.js';
 import { processComponent, syncComponents } from './jobs/components.job.js';
@@ -25,8 +28,8 @@ export const QUEUE_JOBS: Record<any, WorkerOptions> = {
   /**
    * Queue for updating enrollments
    */
-  'enrollments:update': {
-    concurrency: 10,
+  'sync:enrollments': {
+    concurrency: 150,
     removeOnComplete: {
       count: 1000, // Keep last 1000 successful jobs
       age: 24 * 60 * 60, // Remove jobs older than 24 hours
@@ -36,7 +39,7 @@ export const QUEUE_JOBS: Record<any, WorkerOptions> = {
       age: 24 * 60 * 60,
     },
     limiter: {
-      max: 50,
+      max: 250,
       duration: 1_000,
     },
   },
@@ -146,10 +149,15 @@ export const JOBS = {
     handler: updateTeachers,
     every: null,
   },
-  EnrollmentSync: {
-    queue: 'enrollments:update',
+  EnrollmentsSync: {
+    queue: 'sync:enrollments',
+    handler: syncEnrollments,
+    every: null,
+  },
+  ProcessSingleEnrollment: {
+    queue: 'sync:enrollments',
     handler: processSingleEnrollment,
-    // every: '1 day',
+    every: '1 day',
   },
   ComponentsTeachersSync: {
     queue: 'sync:components:teachers',
