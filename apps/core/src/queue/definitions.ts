@@ -11,9 +11,13 @@ import {
   userEnrollmentsUpdate,
 } from './jobs/user-enrollments.job.js';
 import type { WorkerOptions } from 'bullmq';
+import type { QueueContext } from './types.js';
 import { processComponentsTeachers } from './jobs/components-teacher.job.js';
 import { uploadLogsToS3 } from './jobs/logs.job.js';
-import { QueueContext } from './types.js';
+import {
+  processSingleEnrollmentAjuste,
+  syncEnrollmentsAjuste,
+} from './jobs/enrollments-ajuste.job.js';
 
 type Queues =
   | 'sync:enrolled'
@@ -129,16 +133,7 @@ export const QUEUE_JOBS: Record<Queues, WorkerOptions> = {
   },
 } as const;
 
-type Jobs = Record<
-  string,
-  {
-    queue: keyof typeof QUEUE_JOBS;
-    handler: (ctx: QueueContext<any>) => Promise<unknown>;
-    every: string | null;
-  }
->;
-
-export const JOBS: Jobs = {
+export const JOBS = {
   SendEmail: {
     queue: 'send:email',
     handler: sendConfirmationEmail,
@@ -164,6 +159,26 @@ export const JOBS: Jobs = {
     handler: processComponent,
     every: '2 minutes',
   },
+  EnrollmentsSyncAjuste: {
+    queue: 'sync:enrollments:ajuste',
+    handler: syncEnrollmentsAjuste,
+    every: null,
+  },
+  ProcessSingleEnrollmentAjuste: {
+    queue: 'sync:enrollments:ajuste',
+    handler: processSingleEnrollmentAjuste,
+    every: '1 day',
+  },
+  EnrollmentsSyncReajuste: {
+    queue: 'sync:enrollments:reajuste',
+    handler: syncEnrollments,
+    every: null,
+  },
+  ProcessSingleEnrollmentReajuste: {
+    queue: 'sync:enrollments:reajuste',
+    handler: processSingleEnrollment,
+    every: null,
+  },
   UserEnrollmentsUpdate: {
     queue: 'userEnrollments:update',
     handler: userEnrollmentsUpdate,
@@ -177,26 +192,6 @@ export const JOBS: Jobs = {
   TeacherUpdate: {
     queue: 'teacher:updateEnrollments',
     handler: updateTeachers,
-    every: null,
-  },
-  EnrollmentsSyncAjuste: {
-    queue: 'sync:enrollments:ajuste',
-    handler: syncEnrollments,
-    every: null,
-  },
-  ProcessSingleEnrollmentAjuste: {
-    queue: 'sync:enrollments:ajuste',
-    handler: processSingleEnrollment,
-    every: '1 day',
-  },
-  EnrollmentsSyncReajuste: {
-    queue: 'sync:enrollments:reajuste',
-    handler: syncEnrollments,
-    every: null,
-  },
-  ProcessSingleEnrollmentReajuste: {
-    queue: 'sync:enrollments:reajuste',
-    handler: processSingleEnrollment,
     every: null,
   },
   ComponentsTeachersSync: {

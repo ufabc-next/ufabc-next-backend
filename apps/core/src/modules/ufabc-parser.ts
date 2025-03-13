@@ -52,11 +52,11 @@ export type StudentComponent = {
   name: string | null;
   errors: string[] | [];
 };
-export type UFProcessorEnrollment = Record<StudentRA, StudentComponent[]>;
+export type UfabcParserEnrollment = Record<StudentRA, StudentComponent[]>;
 
 type ComponentId = number;
 type StudentIds = number;
-export type UFProcessorEnrolled = Record<ComponentId, StudentIds[]>;
+export type UfabcParserEnrolled = Record<ComponentId, StudentIds[]>;
 
 export type UFProcessorComponentFile = {
   /** The id as we consume */
@@ -96,7 +96,7 @@ export async function getComponents() {
 }
 
 export async function getEnrollments(kind: 'settlement' | 'resettlement') {
-  const enrollments = await ufabcParserService<UFProcessorEnrollment>(
+  const enrollments = await ufabcParserService<UfabcParserEnrollment>(
     '/enrollments',
     {
       query: {
@@ -109,7 +109,7 @@ export async function getEnrollments(kind: 'settlement' | 'resettlement') {
 }
 
 export async function getEnrolledStudents() {
-  const enrolled = await ufabcParserService<UFProcessorEnrolled>('/enrolled');
+  const enrolled = await ufabcParserService<UfabcParserEnrolled>('/enrolled');
   return enrolled;
 }
 

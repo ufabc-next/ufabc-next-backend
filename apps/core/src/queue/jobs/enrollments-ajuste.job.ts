@@ -40,28 +40,40 @@ export async function syncEnrollmentsAjuste({
   job,
 }: QueueContext<unknown>) {
   const season = currentQuad();
-  const [tenantYear, tenantQuad] = season.split(':').map(Number);
+  const [tenantYear, tenantQuad] = season.split(':').map(Number) as [
+    number,
+    1 | 2 | 3,
+  ];
 
   try {
     const components = await ComponentModel.find({
       season,
     }).lean();
-    const rawEnrollments = await getAllEnrollments();
-    const kvEnrollments = Object.entries(rawEnrollments);
+    const rawEnrollments = await getEnrollments('settlement');
+    const allowedRas = [
+      '11202231117',
+      '11202230754',
+      '11202232364',
+      '11202231147',
+      '11202020521',
+    ];
+    const kvEnrollments = Object.entries(rawEnrollments).filter(([ra]) =>
+      allowedRas.includes(ra),
+    );
 
     const tenantEnrollments = kvEnrollments.map(([ra, studentComponents]) => {
       const hydratedStudentComponents = hydrateComponent(
         ra,
         studentComponents,
         components,
-        Number(tenantYear),
-        Number(tenantQuad) as 1 | 2 | 3,
+        tenantYear,
+        tenantQuad,
       );
 
       return {
         ra,
-        year: Number(tenantYear),
-        quad: Number(tenantQuad),
+        year: tenantYear,
+        quad: tenantQuad,
         season,
         components: hydratedStudentComponents,
       };
@@ -78,9 +90,10 @@ export async function syncEnrollmentsAjuste({
 
     const enrollmentJobs = enrollments.map(async (enrollment) => {
       try {
-        await app.job.dispatch('EnrollmentsSync', enrollment);
+        await app.job.dispatch('ProcessSingleEnrollmentAjuste', enrollment);
       } catch (error) {
         app.log.error({
+          stack: error instanceof Error ? error.stack : String(error),
           error: error instanceof Error ? error.message : String(error),
           enrollment,
           msg: 'Failed to dispatch enrollment processing job',
@@ -167,22 +180,11 @@ export async function processSingleEnrollmentAjuste(
     ctx.app.log.error({
       msg: 'Error processing single enrollment',
       error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : String(error),
       enrollment,
     });
     throw error;
   }
-}
-
-/**
- * Function to get enrollments from settlement and resettlement endpoints
- */
-async function getAllEnrollments() {
-  const settlementEnrollments = await getEnrollments('settlement');
-
-  const resettlementEnrollments = await getEnrollments('resettlement');
-
-  // Merge both enrollment types, with resettlement taking precedence
-  return { ...settlementEnrollments, ...resettlementEnrollments };
 }
 
 /**

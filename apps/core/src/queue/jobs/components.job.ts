@@ -29,6 +29,7 @@ export async function syncComponents({ app }: QueueContext<unknown>) {
     } catch (error) {
       app.log.error({
         error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : String(error),
         component: component.name,
         msg: 'Failed to dispatch component processing job',
       });
@@ -123,6 +124,7 @@ export async function processComponent({
       info: job.data,
       msg: 'Error processing component',
       error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : String(error),
       component: component.name,
     });
 
