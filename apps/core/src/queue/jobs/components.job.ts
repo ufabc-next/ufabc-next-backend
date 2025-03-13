@@ -221,14 +221,10 @@ async function processTeachers(teachers: UfabcParserComponent['teachers']) {
 
   const [teoria, pratica, secondaryTeoria, secondaryPratica] =
     await Promise.all([
-      findTeacher(teachers.professor ? teachers.professor : null),
-      findTeacher(teachers.practice ? teachers.practice : null),
-      findTeacher(
-        teachers.secondaryProfessor ? teachers.secondaryProfessor : null,
-      ),
-      findTeacher(
-        teachers.secondaryPractice ? teachers.secondaryPractice : null,
-      ),
+      findTeacher(teachers.professor ?? null),
+      findTeacher(teachers.practice ?? null),
+      findTeacher(teachers.secondaryProfessor ?? null),
+      findTeacher(teachers.secondaryPractice ?? null),
     ]);
 
   return {

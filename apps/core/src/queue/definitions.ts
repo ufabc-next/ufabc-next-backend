@@ -13,22 +13,31 @@ import {
 import type { WorkerOptions } from 'bullmq';
 import { processComponentsTeachers } from './jobs/components-teacher.job.js';
 import { uploadLogsToS3 } from './jobs/logs.job.js';
+import { QueueContext } from './types.js';
 
-const MONTH = 60 * 60 * 24 * 30;
+type Queues =
+  | 'sync:enrolled'
+  | 'sync:enrollments:ajuste'
+  | 'sync:enrollments:reajuste'
+  | 'sync:components'
+  | 'sync:components:teachers'
+  | 'userEnrollments:update'
+  | 'logs:upload'
+  | 'send:email'
+  | 'teacher:updateEnrollments';
 
-export const QUEUE_JOBS: Record<any, WorkerOptions> = {
+// i need this to be Record<key itself, WorkerOptions>
+export const QUEUE_JOBS: Record<Queues, WorkerOptions> = {
   /**
-   * Queue for sending emails
+   * Queue for Syncing Matriculas with UFABC
    */
-  'send:email': {
-    removeOnComplete: {
-      age: MONTH,
-    },
+  'sync:enrolled': {
+    concurrency: 5,
   },
   /**
-   * Queue for updating enrollments
+   * Queue for updating enrollments in ajuste
    */
-  'sync:enrollments': {
+  'sync:enrollments:ajuste': {
     concurrency: 150,
     removeOnComplete: {
       count: 1000, // Keep last 1000 successful jobs
@@ -44,32 +53,23 @@ export const QUEUE_JOBS: Record<any, WorkerOptions> = {
     },
   },
   /**
-   * Queue for updating enrollments the teacher had lectures in
+   * Queue for updating enrollments in ajuste
    */
-  'teacher:updateEnrollments': {
-    concurrency: 5,
-  },
-  /**
-   * Queue for Syncing Matriculas with UFABC
-   */
-  'sync:enrolled': {
-    concurrency: 5,
-  },
-  /**
-   * Queue for updating our 
-   codebase with the users enrollments
-   */
-  'userEnrollments:update': {
-    concurrency: 5,
-    removeOnComplete: {
-      count: 400,
-      age: 0,
+  'sync:enrollments:reajuste': {
+    concurrency: 150,
+    removeOnFail: {
+      count: 500, // Keep last 500 failed jobs for debugging
+      age: 24 * 60 * 60,
+    },
+    limiter: {
+      max: 250,
+      duration: 1_000,
     },
   },
   /**
-   * Queue for updating our 
-   codebase with the UFABC components
-  */
+   * Queue for updating our
+   * codebase with the UFABC components
+   */
   'sync:components': {
     concurrency: 10,
     removeOnComplete: {
@@ -97,6 +97,17 @@ export const QUEUE_JOBS: Record<any, WorkerOptions> = {
     },
   },
   /**
+   * Queue for updating our 
+   codebase with the users enrollments
+   */
+  'userEnrollments:update': {
+    concurrency: 5,
+    removeOnComplete: {
+      count: 400,
+      age: 0,
+    },
+  },
+  /**
    * Queue for sending production logs to the bucket
    */
   'logs:upload': {
@@ -106,9 +117,28 @@ export const QUEUE_JOBS: Record<any, WorkerOptions> = {
       age: 24 * 60 * 60,
     },
   },
+  /**
+   * Queue for sending emails
+   */
+  'send:email': {},
+  /**
+   * Queue for updating enrollments the teacher had lectures in
+   */
+  'teacher:updateEnrollments': {
+    concurrency: 5,
+  },
 } as const;
 
-export const JOBS = {
+type Jobs = Record<
+  string,
+  {
+    queue: keyof typeof QUEUE_JOBS;
+    handler: (ctx: QueueContext<any>) => Promise<unknown>;
+    every: string | null;
+  }
+>;
+
+export const JOBS: Jobs = {
   SendEmail: {
     queue: 'send:email',
     handler: sendConfirmationEmail,
@@ -149,15 +179,25 @@ export const JOBS = {
     handler: updateTeachers,
     every: null,
   },
-  EnrollmentsSync: {
-    queue: 'sync:enrollments',
+  EnrollmentsSyncAjuste: {
+    queue: 'sync:enrollments:ajuste',
     handler: syncEnrollments,
     every: null,
   },
-  ProcessSingleEnrollment: {
-    queue: 'sync:enrollments',
+  ProcessSingleEnrollmentAjuste: {
+    queue: 'sync:enrollments:ajuste',
     handler: processSingleEnrollment,
     every: '1 day',
+  },
+  EnrollmentsSyncReajuste: {
+    queue: 'sync:enrollments:reajuste',
+    handler: syncEnrollments,
+    every: null,
+  },
+  ProcessSingleEnrollmentReajuste: {
+    queue: 'sync:enrollments:reajuste',
+    handler: processSingleEnrollment,
+    every: null,
   },
   ComponentsTeachersSync: {
     queue: 'sync:components:teachers',
