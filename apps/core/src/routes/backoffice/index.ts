@@ -1,6 +1,6 @@
 import { UserModel } from '@/models/User.js';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
-import { z } from 'zod';
+import { z } from '@/lib/custom-zod.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.post(

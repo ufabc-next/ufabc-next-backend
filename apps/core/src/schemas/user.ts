@@ -1,5 +1,5 @@
 import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
-import { z } from 'zod';
+import { z } from '@/lib/custom-zod.js';
 
 const tags = ['User'];
 

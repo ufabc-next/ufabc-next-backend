@@ -1,5 +1,5 @@
 import env, { type FastifyEnvOptions } from '@fastify/env';
-import { z } from 'zod';
+import { z } from '@/lib/custom-zod.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 declare module 'fastify' {

@@ -1,6 +1,6 @@
 import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { camelCase, startCase } from 'lodash-es';
-import { z } from 'zod';
+import { z } from '@/lib/custom-zod.js';
 
 export const listTeachersSchema = {
   tags: ['Teachers'],

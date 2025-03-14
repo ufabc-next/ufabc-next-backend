@@ -1,6 +1,6 @@
 import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { Types } from 'mongoose';
-import { z } from 'zod';
+import { z } from '@/lib/custom-zod.js';
 
 const tags = ['Comments'];
 

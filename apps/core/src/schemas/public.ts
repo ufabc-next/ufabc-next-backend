@@ -1,6 +1,6 @@
 import { currentQuad } from '@next/common';
 import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
-import { z } from 'zod';
+import { z } from '@/lib/custom-zod.js';
 
 const graduationsListSchema = z.object({
   curso: z.string(),

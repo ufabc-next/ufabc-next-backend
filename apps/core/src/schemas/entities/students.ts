@@ -1,5 +1,5 @@
 import { currentQuad } from '@next/common';
-import { z } from 'zod';
+import { z } from '@/lib/custom-zod.js';
 import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 
 const tags = ['Students'];
