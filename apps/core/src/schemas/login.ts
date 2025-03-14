@@ -1,7 +1,6 @@
 import type { FastifySchema } from 'fastify';
 import { Types } from 'mongoose';
 import { z } from '@/lib/custom-zod.js';
-import 'zod-openapi/extend';
 
 const SOURCE_TYPE = {
   SOURCE_TYPE_UNSPECIFIED: 'SOURCE_TYPE_UNSPECIFIED',

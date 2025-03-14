@@ -1,7 +1,6 @@
 import { currentQuad } from '@next/common';
 import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { z } from '@/lib/custom-zod.js';
-import 'zod-openapi/extend';
 
 const NonPaginatedComponentsSchema = z.object({
   identifier: z.string(),

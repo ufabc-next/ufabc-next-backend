@@ -1,6 +1,5 @@
 import { z } from '@/lib/custom-zod.js';
 import { Types } from 'mongoose';
-import 'zod-openapi/extend';
 import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 
 const OauthSchema = z.object({
