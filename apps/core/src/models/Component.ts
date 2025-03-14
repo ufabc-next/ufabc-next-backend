@@ -1,63 +1,37 @@
 import {
-  type InferSchemaType,
-  Schema,
   type UpdateQuery,
   model,
 } from 'mongoose';
 import { findQuarter } from '@next/common';
+import { z } from '@/lib/custom-zod.js'
+import { zId, zodSchema } from '@zodyac/zod-mongoose';
 
-const CAMPUS = ['sao bernardo', 'santo andre', 'sbc', 'sa'] as const;
+export const CAMPUS = ['sao bernardo', 'santo andre', 'sbc', 'sa'] as const;
+export const SHIFTS = ['diurno', 'noturno'] as const
 
-const componentSchema = new Schema(
-  {
-    disciplina_id: { type: Number, required: true },
-    disciplina: { type: String, required: true },
-    turno: { type: String, required: true, enum: ['diurno', 'noturno'] },
-    turma: { type: String, required: true },
-    vagas: { type: Number, required: true },
-    obrigatorias: { type: [Number], default: [] },
-    codigo: { type: String, required: true },
-    campus: { type: String, enum: CAMPUS, required: true },
-    ideal_quad: { type: Boolean, default: false, required: true },
-    identifier: {
-      type: String,
-      required: true,
-    },
-    // lista de alunos matriculados no momento
-    alunos_matriculados: {
-      type: [Number],
-      default: [],
-      required: true,
-    },
-    // como estava o estado da matrícula antes do chute
-    before_kick: {
-      type: [Number],
-      default: [],
-      required: true,
-    },
-    // como estava o estado da matrícula após o chute
-    after_kick: {
-      type: [Number],
-      default: [],
-      required: true,
-    },
-    year: { type: Number, required: true },
-    quad: { type: Number, required: true },
-    season: { type: String, required: true },
-    subject: {
-      type: Schema.Types.ObjectId,
-      ref: 'subjects',
-      required: true,
-    },
-    teoria: {
-      type: Schema.Types.ObjectId,
-      ref: 'teachers',
-    },
-    pratica: {
-      type: Schema.Types.ObjectId,
-      ref: 'teachers',
-    },
-  },
+const zComponent = z.object({
+  disciplina_id: z.number().int(),
+  disciplina: z.string(),
+  turno: z.enum(SHIFTS),
+  turma: z.string(),
+  vagas: z.number().int(),
+  obrigatorias: z.number().int().array().default([]),
+  codigo: z.string(),
+  campus: z.enum(CAMPUS),
+  ideal_quad: z.boolean().default(false),
+  identifier: z.string(),
+  alunos_matriculados: z.number().int().array().default([]),
+  after_kick: z.number().int().array().default([]),
+  before_kick: z.number().int().array().default([]),
+  year: z.number().int(),
+  quad: z.number().int(),
+  subject: zId().ref('subjects'),
+  pratica: zId().ref('teachers').nullish(),
+  teoria: zId().ref('teachers').nullish(),
+  season: z.string(),
+})
+
+const componentSchema = zodSchema(zComponent,
   {
     timestamps: true,
   },
@@ -70,9 +44,10 @@ function setQuarter(component: UpdateQuery<Component> | null) {
   }
   component.year = year;
   component.quad = quad;
-}
+}   
 
 componentSchema.index({ identifier: 'asc' });
+componentSchema.index({ season: 'asc' })
 
 componentSchema.pre('findOneAndUpdate', function () {
   const updatedComponent: UpdateQuery<Component> | null = this.getUpdate();
@@ -81,7 +56,7 @@ componentSchema.pre('findOneAndUpdate', function () {
   }
 });
 
-export type Component = InferSchemaType<typeof componentSchema>;
+export type Component = z.infer<typeof zComponent>;
 export type ComponentDocument = ReturnType<(typeof ComponentModel)['hydrate']>;
 
 export const ComponentModel = model('disciplinas', componentSchema);

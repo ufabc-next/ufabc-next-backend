@@ -1,58 +1,34 @@
 import { type InferSchemaType, Schema, model } from 'mongoose';
 import { GroupModel } from './Group.js';
+import { z } from '@/lib/custom-zod.js'
+import zodSchema, { zId } from '@zodyac/zod-mongoose';
+import { CAMPUS, SHIFTS } from './Component.js';
 
 const COMMENT_TYPE = ['teoria', 'pratica'] as const;
-const enrollmentSchema = new Schema(
-  {
-    year: {
-      type: Number,
-      required: true,
-    },
-    quad: {
-      type: Number,
-      required: true,
-    },
-    identifier: String,
-    ra: Number,
-    disciplina: String,
-    subject: {
-      type: Schema.Types.ObjectId,
-      ref: 'subjects',
-    },
-    campus: String,
-    turno: String,
-    turma: String,
-    teoria: {
-      type: Schema.Types.ObjectId,
-      ref: 'teachers',
-      required: false,
-    },
-    pratica: {
-      type: Schema.Types.ObjectId,
-      ref: 'teachers',
-      required: false,
-    },
-    mainTeacher: {
-      type: Schema.Types.ObjectId,
-      ref: 'teachers',
-      required: false,
-    },
-    comments: [
-      {
-        type: String,
-        enum: COMMENT_TYPE,
-      },
-    ],
 
-    // vem do portal
-    conceito: String,
-    creditos: Number,
+const zEnrollment =  z.object({
+  year: z.number().int(),
+  quad: z.number().int(),
+  identifier: z.string(),
+  ra: z.number().nullish(),
+  disciplina: z.string(),
+  subject: zId().ref('subjects'),
+  campus: z.enum(CAMPUS),
+  turno: z.enum(SHIFTS),
+  turma: z.string(),
+  pratica: zId().ref('teachers').nullish(),
+  teoria: zId().ref('teachers').nullish(),
+  mainTeacher: zId().ref('teachers').nullish(),
+  comments: z.enum(COMMENT_TYPE),
+  conceito: z.string().nullable(),
+  creditos: z.number().int(),
+  ca_acumulado: z.number().nullish(),
+  cr_acumulado: z.number().nullish(),
+  cp_acumulado: z.number().nullish(),
+  season: z.string(),
+})
 
-    ca_acumulado: Number,
-    cr_acumulado: Number,
-    cp_acumulado: Number,
-    season: String,
-  },
+const enrollmentSchema = zodSchema(zEnrollment,
   { timestamps: true },
 );
 
@@ -118,7 +94,7 @@ enrollmentSchema.post('findOneAndUpdate', async function (doc) {
   }
 });
 
-export type Enrollment = InferSchemaType<typeof enrollmentSchema>;
+export type Enrollment = z.infer<typeof zEnrollment>;
 export type EnrollmentDocument = ReturnType<
   (typeof EnrollmentModel)['hydrate']
 >;
