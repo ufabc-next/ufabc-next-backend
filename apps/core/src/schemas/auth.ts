@@ -76,8 +76,8 @@ export const completeUserSchema = {
       content: {
         'application/json': {
           schema: z.object({
-            ra: z.number(),
-            email: z.string().email(),
+            ra: z.number().nullable(),
+            email: z.string().email().nullable(),
           }),
         },
       },

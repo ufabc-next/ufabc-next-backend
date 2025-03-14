@@ -11,7 +11,6 @@ import {
   userEnrollmentsUpdate,
 } from './jobs/user-enrollments.job.js';
 import type { WorkerOptions } from 'bullmq';
-import type { QueueContext } from './types.js';
 import { processComponentsTeachers } from './jobs/components-teacher.job.js';
 import { uploadLogsToS3 } from './jobs/logs.job.js';
 import {

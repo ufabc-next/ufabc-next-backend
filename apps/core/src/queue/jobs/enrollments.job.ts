@@ -75,7 +75,7 @@ export async function syncEnrollments({ app, job }: QueueContext<unknown>) {
 
     const enrollmentJobs = enrollments.map(async (enrollment) => {
       try {
-        await app.job.dispatch('EnrollmentsSync', enrollment);
+        // await app.job.dispatch('EnrollmentsSync', enrollment);
       } catch (error) {
         app.log.error({
           error: error instanceof Error ? error.message : String(error),
