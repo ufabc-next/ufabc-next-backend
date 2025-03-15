@@ -2,12 +2,13 @@ import { orderBy as LodashOrderBy } from 'lodash-es';
 import { type Component, ComponentModel } from '@/models/Component.js';
 import { StudentModel } from '@/models/Student.js';
 import {
+  listComponentsSchema,
   listKickedSchema,
   type NonPaginatedComponents,
 } from '@/schemas/entities/components.js';
 import type { preHandlerAsyncHookHandler } from 'fastify';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
-import type { SubjectDocument } from '@/models/Subject.js';
+import { SubjectModel, type SubjectDocument } from '@/models/Subject.js';
 import type { TeacherDocument } from '@/models/Teacher.js';
 import { currentQuad } from '@next/common';
 
@@ -31,9 +32,8 @@ const validateStudent: preHandlerAsyncHookHandler = async (request, reply) => {
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const componentsListCache = app.cache<NonPaginatedComponents[]>();
 
-  app.get('/', async (request, reply) => {
-    // @ts-ignore
-    const cacheKey = `list:components:${request.query.season}`;
+  app.get('/', { schema: listComponentsSchema }, async ({ query }, reply) => {
+    const cacheKey = `list:components:${query.season}`;
 
     const cachedResponse = componentsListCache.get(cacheKey);
     if (cachedResponse) {
@@ -42,8 +42,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
     const components = await ComponentModel.find(
       {
-        // @ts-ignore
-        season: request.query.season ?? currentQuad(),
+        season: query.season ?? currentQuad(),
       },
       {
         _id: 0,
@@ -73,16 +72,15 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       requisicoes: component.alunos_matriculados.length ?? [],
       teoria: component.teoria?.name,
       pratica: component.pratica?.name,
-      subject: component.subject?.name,
+      subject: component.subject?.name ?? 'gotcha',
       subjectId: component.subject?._id.toString(),
       teoriaId: component.teoria?._id.toString(),
       praticaId: component.pratica?._id.toString(),
     }));
 
-    componentsListCache.set(cacheKey, nonPaginatedComponents);
-
     return nonPaginatedComponents;
   });
+
   app.get(
     '/:componentId/kicks',
     { preHandler: [validateStudent], schema: listKickedSchema },
@@ -210,6 +208,66 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       return uniqueStudents;
     },
   );
+
+  app.get('/lost', async (request, reply) => {
+    // @ts-ignore
+    const { season } = request.query;
+
+    // Get components with the specified season
+    const components = await ComponentModel.find({}).populate<SubjectDocument>(
+      'subject',
+    );
+
+    // Filter components with missing subject references
+    const withMissingRefs = components.filter(
+      (component) => component.subject == null,
+    );
+    return withMissingRefs;
+
+    if (withMissingRefs.length === 0) {
+      return [];
+    }
+
+    // Find potential matching subjects by name
+    const allSubjects = await SubjectModel.find({});
+
+    // Array to store updated components
+    const updatedComponents = [];
+
+    // Process each component with missing reference
+    for (const component of withMissingRefs) {
+      const matchingSubject = allSubjects.find(
+        (subject) =>
+          subject.name.toLocaleLowerCase() ===
+          component.name.toLocaleLowerCase(),
+      );
+
+      if (matchingSubject) {
+        try {
+          // Update the component directly in the database
+          await ComponentModel.findByIdAndUpdate(component._id, {
+            subjectId: matchingSubject._id,
+          });
+
+          // Add updated component to results
+          updatedComponents.push({
+            ...component.toObject(),
+            subject: matchingSubject.toObject(),
+            subjectId: matchingSubject._id,
+          });
+        } catch (error) {
+          app.log.error(`Failed to update component ${component._id}:`, error);
+          // Still include the component in results, but without updates
+          updatedComponents.push(component.toObject());
+        }
+      } else {
+        // No matching subject found
+        updatedComponents.push(component.toObject());
+      }
+    }
+
+    return { updatedComponents };
+  });
 };
 
 function kickRule(idealQuad: boolean, season: string) {

@@ -110,7 +110,7 @@ export async function buildApp(
         message = error.message;
       }
 
-      return { message };
+      return { message, error };
     }
   });
 
