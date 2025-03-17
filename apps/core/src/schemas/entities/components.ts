@@ -8,6 +8,7 @@ const NonPaginatedComponentsSchema = z.object({
   disciplina_id: z
     .number()
     .int()
+    .nullish()
     .openapi({ description: 'Id da disciplina para a UFABC' }),
   subject: z.string().openapi({ description: 'Nome da matéria ofertada' }),
   turma: z.string(),

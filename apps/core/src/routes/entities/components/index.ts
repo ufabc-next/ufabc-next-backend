@@ -69,7 +69,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
     const nonPaginatedComponents = components.map((component) => ({
       ...component,
-      requisicoes: component.alunos_matriculados.length ?? [],
+      requisicoes: component.alunos_matriculados?.length ?? 0,
       teoria: component.teoria?.name,
       pratica: component.pratica?.name,
       subject: component.subject?.name ?? 'gotcha',
@@ -208,66 +208,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       return uniqueStudents;
     },
   );
-
-  app.get('/lost', async (request, reply) => {
-    // @ts-ignore
-    const { season } = request.query;
-
-    // Get components with the specified season
-    const components = await ComponentModel.find({}).populate<SubjectDocument>(
-      'subject',
-    );
-
-    // Filter components with missing subject references
-    const withMissingRefs = components.filter(
-      (component) => component.subject == null,
-    );
-    return withMissingRefs;
-
-    if (withMissingRefs.length === 0) {
-      return [];
-    }
-
-    // Find potential matching subjects by name
-    const allSubjects = await SubjectModel.find({});
-
-    // Array to store updated components
-    const updatedComponents = [];
-
-    // Process each component with missing reference
-    for (const component of withMissingRefs) {
-      const matchingSubject = allSubjects.find(
-        (subject) =>
-          subject.name.toLocaleLowerCase() ===
-          component.name.toLocaleLowerCase(),
-      );
-
-      if (matchingSubject) {
-        try {
-          // Update the component directly in the database
-          await ComponentModel.findByIdAndUpdate(component._id, {
-            subjectId: matchingSubject._id,
-          });
-
-          // Add updated component to results
-          updatedComponents.push({
-            ...component.toObject(),
-            subject: matchingSubject.toObject(),
-            subjectId: matchingSubject._id,
-          });
-        } catch (error) {
-          app.log.error(`Failed to update component ${component._id}:`, error);
-          // Still include the component in results, but without updates
-          updatedComponents.push(component.toObject());
-        }
-      } else {
-        // No matching subject found
-        updatedComponents.push(component.toObject());
-      }
-    }
-
-    return { updatedComponents };
-  });
 };
 
 function kickRule(idealQuad: boolean, season: string) {
