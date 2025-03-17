@@ -1,8 +1,4 @@
 import { sendConfirmationEmail } from './jobs/email.job.js';
-import {
-  processSingleEnrollment,
-  syncEnrollments,
-} from './jobs/enrollments.job.js';
 import { processSingleEnrolled, syncEnrolled } from './jobs/enrolled.job.js';
 import { updateTeachers } from './jobs/teacher-update.job.js';
 import { processComponent, syncComponents } from './jobs/components.job.js';
@@ -168,16 +164,6 @@ export const JOBS = {
     queue: 'sync:enrollments:ajuste',
     handler: processSingleEnrollmentAjuste,
     every: '1 day',
-  },
-  EnrollmentsSyncReajuste: {
-    queue: 'sync:enrollments:reajuste',
-    handler: syncEnrollments,
-    every: null,
-  },
-  ProcessSingleEnrollmentReajuste: {
-    queue: 'sync:enrollments:reajuste',
-    handler: processSingleEnrollment,
-    every: null,
   },
   UserEnrollmentsUpdate: {
     queue: 'userEnrollments:update',

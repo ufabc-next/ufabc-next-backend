@@ -95,13 +95,17 @@ export async function getComponents() {
   return components;
 }
 
-export async function getEnrollments(kind: 'settlement' | 'resettlement') {
+export async function getEnrollments(
+  kind: 'settlement' | 'resettlement',
+  season: string,
+) {
   const enrollments = await ufabcParserService<UfabcParserEnrollment>(
     '/enrollments',
     {
       query: {
         kind,
         granted: true,
+        season,
       },
     },
   );

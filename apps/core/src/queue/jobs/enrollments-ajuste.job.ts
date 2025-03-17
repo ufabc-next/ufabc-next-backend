@@ -39,7 +39,7 @@ export async function syncEnrollmentsAjuste({
   app,
   job,
 }: QueueContext<unknown>) {
-  const season = currentQuad();
+  const season = '2024:3';
   const [tenantYear, tenantQuad] = season.split(':').map(Number) as [
     number,
     1 | 2 | 3,
@@ -47,9 +47,9 @@ export async function syncEnrollmentsAjuste({
 
   try {
     const components = await ComponentModel.find({
-      season,
+      season: '2025:1',
     }).lean();
-    const rawEnrollments = await getEnrollments('settlement');
+    const rawEnrollments = await getEnrollments('settlement', season);
     const allowedRas = [
       '11202231117',
       '11202230754',
@@ -243,7 +243,7 @@ function hydrateComponent(
       teoria: component.teoria,
       pratica: component.pratica,
       subject: component.subject,
-      season: component.season,
+      season: `${year}:${quad}`.toString(),
     });
   }
 

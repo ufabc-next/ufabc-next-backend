@@ -29,7 +29,7 @@ const configSchema = z.object({
   USE_LOCALSTACK: z.coerce.boolean().default(true),
   AWS_LOGS_BUCKET: z.string().optional(),
   OAUTH_GOOGLE_CLIENT_ID: z.string(),
-  OAUTH_GOOGLE_SECRET: z.string().min(16),
+  OAUTH_GOOGLE_SECRET: z.string(),
   BACKOFFICE_EMAILS: z
     .string()
     .optional()
