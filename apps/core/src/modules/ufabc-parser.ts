@@ -118,3 +118,33 @@ export async function getSigUser(sigStudent: SigStudent, sessionId: string) {
   });
   return student;
 }
+
+type FullStudentRequest = {
+  student: ParsedSigStudent & { grade: string };
+  action: string;
+  viewState: string;
+  sessionId: string;
+};
+
+export async function getFullStudent({
+  student,
+  action,
+  viewState,
+  sessionId,
+}: FullStudentRequest) {
+  const fullStudent = await ufabcParserService<{
+    data: ParsedSigStudent | null;
+    error: string | null;
+  }>('/sig/grades', {
+    method: 'POST',
+    headers: {
+      sessionId,
+      viewState,
+    },
+    body: {
+      student,
+      action,
+    },
+  });
+  return fullStudent;
+}

@@ -21,7 +21,7 @@ import {
 import { currentQuad, lastQuad } from '@next/common';
 import { type Student, StudentModel } from '@/models/Student.js';
 import type { HistoryDocument } from '@/models/History.js';
-import { getSigUser } from '@/modules/ufabc-parser.js';
+import { getFullStudent, getSigUser } from '@/modules/ufabc-parser.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get(
@@ -183,6 +183,36 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       return sigStudent.data;
     },
   );
+
+  app.post('/sig/grades', async (request, reply) => {
+    const { student, action } = request.body;
+    const viewState = request.headers['view-state'];
+    const sessionId = request.sessionId;
+
+    if (!viewState || !sessionId) {
+      return reply.unauthorized('IXI');
+    }
+
+    const history = await getGraduation(
+      student.ra,
+      student.graduations[0].course,
+    );
+    const fullStudent = await getFullStudent({
+      student: {
+        ...student,
+        grade: history?.grade,
+      },
+      action,
+      viewState: viewState as string,
+      sessionId,
+    });
+
+    if (fullStudent.error || !fullStudent.data) {
+      return reply.badRequest(fullStudent.error);
+    }
+
+    return fullStudent.data;
+  });
 };
 
 function calculateGraduationMetrics(
