@@ -124,3 +124,51 @@ export const updateStudentSchema = {
     },
   },
 } satisfies FastifyZodOpenApiSchema;
+
+const rawSigStudentSchema = z.object({
+  matricula: z.string(),
+  email: z.string(),
+  entrada: z.string().openapi({
+    description: 'Quadrimestre de entrada',
+    example: '2022:2',
+  }),
+  nivel: z.enum(['graduacao', 'licenciatura']),
+  status: z.string(),
+  curso: z.string(),
+  sessionId: z.string(),
+});
+
+export type SigStudent = z.infer<typeof rawSigStudentSchema>;
+
+const parsedSigStudentSchema = z.object({
+  name: z.string(),
+  ra: z.string(),
+  login: z.string(),
+  email: z.union([z.string(), z.undefined()]),
+  graduations: z
+    .object({
+      course: z.string(),
+      campus: z.string(),
+      shift: z.string(),
+    })
+    .array(),
+  startedAt: z.string(),
+});
+
+export type ParsedSigStudent = z.infer<typeof parsedSigStudentSchema>;
+
+export const sigStudentSchema = {
+  body: rawSigStudentSchema,
+  headers: z.object({
+    'view-state': z.string(),
+  }),
+  response: {
+    200: {
+      content: {
+        'application/json': {
+          schema: parsedSigStudentSchema,
+        },
+      },
+    },
+  },
+} satisfies FastifyZodOpenApiSchema;

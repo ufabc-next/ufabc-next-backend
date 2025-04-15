@@ -1,3 +1,7 @@
+import type {
+  ParsedSigStudent,
+  SigStudent,
+} from '@/schemas/entities/students.js';
 import { ofetch } from 'ofetch';
 
 export type UfabcParserComponent = {
@@ -96,4 +100,26 @@ export async function getComponentsFile(link: string) {
   );
 
   return componentsFile;
+}
+
+export async function getSigUser(
+  sigStudent: SigStudent,
+  sessionId: string,
+  viewState: string,
+) {
+  const student = await ufabcParserService<{
+    data: ParsedSigStudent | null;
+    error: string | null;
+  }>('/sig/me', {
+    method: 'POST',
+    headers: {
+      sessionId,
+      viewState,
+    },
+    query: {
+      action: 'default',
+    },
+    body: sigStudent,
+  });
+  return student;
 }

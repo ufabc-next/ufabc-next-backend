@@ -6,6 +6,7 @@ import {
   listStudentSchema,
   listStudentsStatsComponents,
   type MatriculaStudent,
+  sigStudentSchema,
   updateStudentSchema,
 } from '@/schemas/entities/students.js';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
@@ -20,6 +21,7 @@ import {
 import { currentQuad, lastQuad } from '@next/common';
 import { type Student, StudentModel } from '@/models/Student.js';
 import type { HistoryDocument } from '@/models/History.js';
+import { getSigUser } from '@/modules/ufabc-parser.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get(
@@ -169,6 +171,22 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       msg: 'ok',
     };
   });
+
+  app.post(
+    '/sig',
+    { schema: sigStudentSchema },
+    async ({ sessionId, body: student, headers }, reply) => {
+      const sigStudent = await getSigUser(
+        student,
+        sessionId!,
+        headers['view-state'],
+      );
+      if (sigStudent.error && !sigStudent.data) {
+        return reply.badRequest('Could not extract user');
+      }
+      return sigStudent.data;
+    },
+  );
 };
 
 function calculateGraduationMetrics(

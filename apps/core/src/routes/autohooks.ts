@@ -19,13 +19,30 @@ const PUBLIC_ROUTES = [
   '/users/recover',
 ];
 
+const EXTENSION_ROUTES = ['/entities/students/sig'];
+
 const isPublicRoute = (url: string): boolean => {
   return PUBLIC_ROUTES.some((route) => url.startsWith(route));
 };
 
+const isExtensionRoute = (url: string) => {
+  return EXTENSION_ROUTES.some((route) => url.startsWith(route));
+};
+
 export default async function (app: FastifyInstance) {
+  app.decorateRequest('sessionId');
   app.addHook('onRequest', async (request, reply) => {
     const isPublic = isPublicRoute(request.url);
+    const isExtension = isExtensionRoute(request.url);
+
+    if (isExtension) {
+      try {
+        await request.isStudent(reply);
+        request.sessionId = request.headers['session-id'] as string | undefined;
+      } catch (error) {
+        return reply.unauthorized('Missing sessionId');
+      }
+    }
 
     if (isPublic) {
       return;
