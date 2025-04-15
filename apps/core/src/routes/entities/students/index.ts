@@ -211,7 +211,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       return reply.badRequest(fullStudent.error);
     }
 
-    return fullStudent.data;
+    return reply.send(fullStudent.data);
   });
 };
 
