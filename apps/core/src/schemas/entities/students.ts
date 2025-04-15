@@ -135,7 +135,6 @@ const rawSigStudentSchema = z.object({
   nivel: z.enum(['graduacao', 'licenciatura']),
   status: z.string(),
   curso: z.string(),
-  sessionId: z.string(),
 });
 
 export type SigStudent = z.infer<typeof rawSigStudentSchema>;
@@ -160,7 +159,7 @@ export type ParsedSigStudent = z.infer<typeof parsedSigStudentSchema>;
 export const sigStudentSchema = {
   body: rawSigStudentSchema,
   headers: z.object({
-    'view-state': z.string(),
+    'view-state': z.string().nullish(),
   }),
   response: {
     200: {

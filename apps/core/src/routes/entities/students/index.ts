@@ -176,12 +176,8 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     '/sig',
     { schema: sigStudentSchema },
     async ({ sessionId, body: student, headers }, reply) => {
-      const sigStudent = await getSigUser(
-        student,
-        sessionId!,
-        headers['view-state'],
-      );
-      if (sigStudent.error && !sigStudent.data) {
+      const sigStudent = await getSigUser(student, sessionId!);
+      if (sigStudent.error || !sigStudent.data) {
         return reply.badRequest('Could not extract user');
       }
       return sigStudent.data;

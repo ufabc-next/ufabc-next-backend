@@ -102,11 +102,7 @@ export async function getComponentsFile(link: string) {
   return componentsFile;
 }
 
-export async function getSigUser(
-  sigStudent: SigStudent,
-  sessionId: string,
-  viewState: string,
-) {
+export async function getSigUser(sigStudent: SigStudent, sessionId: string) {
   const student = await ufabcParserService<{
     data: ParsedSigStudent | null;
     error: string | null;
@@ -114,7 +110,6 @@ export async function getSigUser(
     method: 'POST',
     headers: {
       sessionId,
-      viewState,
     },
     query: {
       action: 'default',
