@@ -1,3 +1,8 @@
+import type {
+  ParsedSigStudent,
+  SigStudent,
+} from '@/schemas/entities/students.js';
+import { logger } from '@/utils/logger.js';
 import { ofetch } from 'ofetch';
 
 export type UfabcParserComponent = {
@@ -60,6 +65,35 @@ export type UFProcessorComponentFile = {
 export const ufabcParserService = ofetch.create({
   baseURL: process.env.UFABC_PARSER_URL,
   timeout: 45 * 1000, // 45 seconds,
+  onResponseError({ response, error }) {
+    logger.error(
+      {
+        error,
+        response,
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        data: response._data,
+      },
+      'ufabc-parser',
+      'ufabc-parser error',
+    );
+  },
+  onRequestError({ request, error, response }) {
+    logger.error(
+      {
+        error,
+        request,
+        response,
+        status: response?.status,
+        statusText: response?.statusText,
+        url: response?.url,
+        data: response?._data,
+      },
+      'ufabc-parser',
+      'ufabc-parser error',
+    );
+  },
 });
 
 export async function getComponents() {
@@ -96,4 +130,51 @@ export async function getComponentsFile(link: string) {
   );
 
   return componentsFile;
+}
+
+export async function getSigUser(sigStudent: SigStudent, sessionId: string) {
+  const student = await ufabcParserService<{
+    data: ParsedSigStudent | null;
+    error: string | null;
+  }>('/sig/me', {
+    method: 'POST',
+    headers: {
+      sessionId,
+    },
+    query: {
+      action: 'default',
+    },
+    body: sigStudent,
+  });
+  return student;
+}
+
+type FullStudentRequest = {
+  student: ParsedSigStudent & { grade: string };
+  action: string;
+  viewState: string;
+  sessionId: string;
+};
+
+export async function getFullStudent({
+  student,
+  action,
+  viewState,
+  sessionId,
+}: FullStudentRequest) {
+  const fullStudent = await ufabcParserService<{
+    data: ParsedSigStudent | null;
+    error: string | null;
+  }>('/sig/grades', {
+    method: 'POST',
+    headers: {
+      sessionId,
+      viewState,
+    },
+    body: {
+      student,
+      action,
+    },
+  });
+  return fullStudent;
 }

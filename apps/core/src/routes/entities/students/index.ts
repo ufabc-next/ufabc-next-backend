@@ -6,6 +6,7 @@ import {
   listStudentSchema,
   listStudentsStatsComponents,
   type MatriculaStudent,
+  sigStudentSchema,
   updateStudentSchema,
 } from '@/schemas/entities/students.js';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
@@ -20,6 +21,7 @@ import {
 import { currentQuad, lastQuad } from '@next/common';
 import { type Student, StudentModel } from '@/models/Student.js';
 import type { HistoryDocument } from '@/models/History.js';
+import { getFullStudent, getSigUser } from '@/modules/ufabc-parser.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get(
@@ -168,6 +170,49 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     return {
       msg: 'ok',
     };
+  });
+
+  app.post(
+    '/sig',
+    { schema: sigStudentSchema },
+    async ({ sessionId, body: student }, reply) => {
+      const sigStudent = await getSigUser(student, sessionId!);
+      if (sigStudent.error || !sigStudent.data) {
+        return reply.badRequest('Could not extract user');
+      }
+      return sigStudent.data;
+    },
+  );
+
+  app.post('/sig/grades', async (request, reply) => {
+    const { student, action } = request.body;
+    const viewState = request.headers['view-state'];
+    const sessionId = request.sessionId;
+
+    if (!viewState || !sessionId) {
+      return reply.unauthorized('IXI');
+    }
+
+    const history = await getGraduation(
+      student.ra,
+      student.graduations[0].course,
+    );
+    const fullStudent = await getFullStudent({
+      student: {
+        ...student,
+        grade: history?.grade,
+      },
+      action,
+      viewState: viewState as string,
+      sessionId,
+    });
+
+    if (fullStudent.error || !fullStudent.data) {
+      app.log.warn(fullStudent, 'Error fetching full student');
+      return reply.badRequest(fullStudent.error);
+    }
+
+    return reply.send(fullStudent.data);
   });
 };
 
