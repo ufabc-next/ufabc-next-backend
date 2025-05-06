@@ -24,7 +24,7 @@ async function isStudent(this: FastifyRequest, reply: FastifyReply) {
   const sessionId = this.headers['session-id'] ?? this.cookies.sessionId;
   if (!sessionId) {
     return reply
-      .status(403)
+      .status(401)
       .send('You are not authorized to access this resource.');
   }
 }

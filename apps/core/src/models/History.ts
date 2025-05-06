@@ -13,6 +13,8 @@ const POSSIBLE_SITUATIONS = [
   'reprovado por faltas',
   'reprovado por média e por faltas',
   'aprovado',
+  'recuperacao',
+  null,
 ] as const;
 // can be '-' if the component was dropped (trancamento)
 const CATEGORIES = [
@@ -61,6 +63,14 @@ const historiesDisciplinasSchema = new Schema(
       type: String,
       enum: CONCEITOS,
       default: null,
+    },
+    turma: {
+      type: String,
+      required: true,
+    },
+    teachers: {
+      type: [String],
+      required: false,
     },
     identifier: String,
   },

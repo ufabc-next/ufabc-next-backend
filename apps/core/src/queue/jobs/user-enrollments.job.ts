@@ -5,11 +5,10 @@ import {
 } from '@/models/Graduation.js';
 import { GraduationHistoryModel } from '@/models/GraduationHistory.js';
 import { SubjectModel, type SubjectDocument } from '@/models/Subject.js';
-import { EnrollmentModel, type Enrollment } from '@/models/Enrollment.js';
+import { EnrollmentModel } from '@/models/Enrollment.js';
 import {
   type History,
   type HistoryCoefficients,
-  type HistoryDocument,
   HistoryModel,
 } from '@/models/History.js';
 import type { QueueContext } from '../types.js';
@@ -17,56 +16,52 @@ import type { QueueContext } from '../types.js';
 type HistoryComponent = History['disciplinas'][number];
 
 export async function userEnrollmentsUpdate(
-  ctx: QueueContext<HistoryDocument>,
+  ctx: QueueContext<History | undefined>,
 ) {
   const history = ctx.job.data;
-
-  if (!history.disciplinas) {
+  if (!history || !history.disciplinas) {
     return;
   }
 
-  const isComponents = Array.isArray(history.disciplinas)
-    ? history.disciplinas
-    : [history.disciplinas];
-  const components = isComponents.filter(Boolean);
+  const { disciplinas: components, ra, curso, grade } = history;
+
   let graduation: GraduationDocument | null = null;
-  if (history.curso && history.grade) {
+  if (curso && grade) {
     graduation = await GraduationModel.findOne({
-      curso: history.curso,
-      grade: history.grade,
+      curso,
+      grade,
     });
   }
 
+  // @ts-ignore for now
   const coefficients = calculateCoefficients<HistoryComponent>(
     components,
     graduation,
   ) as HistoryCoefficients;
 
-  history.coefficients = coefficients;
-
   try {
     await HistoryModel.findOneAndUpdate(
-      { ra: history.ra, grade: history.grade, curso: history.curso },
+      { ra, grade, curso },
       {
         $set: {
-          coefficients: history.coefficients,
+          coefficients,
         },
       },
     );
     await GraduationHistoryModel.findOneAndUpdate(
       {
-        curso: history.curso,
-        grade: history.grade,
-        ra: history.ra,
+        curso,
+        grade,
+        ra,
       },
       {
         $set: {
-          curso: history.curso,
-          grade: history.grade,
-          ra: history.ra,
-          coefficients: history.coefficients,
-          disciplinas: history.disciplinas,
-          graduation: graduation ? graduation._id : null,
+          curso,
+          grade,
+          ra,
+          coefficients,
+          disciplinas: components,
+          graduation: graduation?._id ?? null,
         },
       },
       { upsert: true },
@@ -75,7 +70,10 @@ export async function userEnrollmentsUpdate(
     const enrollmentJobs = components.map(async (component) => {
       try {
         await ctx.app.job.dispatch('ProcessComponentsEnrollments', {
-          history,
+          history: {
+            ra,
+            coefficients,
+          },
           component,
         });
       } catch (error) {
@@ -85,6 +83,7 @@ export async function userEnrollmentsUpdate(
           ra: history.ra,
           msg: 'Failed to dispatch component processing job',
         });
+        throw error;
       }
     });
 
@@ -101,7 +100,10 @@ export async function userEnrollmentsUpdate(
 
 export async function processComponentEnrollment(
   ctx: QueueContext<{
-    history: HistoryDocument;
+    history: {
+      ra: number;
+      coefficients: HistoryCoefficients;
+    };
     component: HistoryComponent;
   }>,
 ) {
@@ -109,14 +111,11 @@ export async function processComponentEnrollment(
 
   const keys = ['ra', 'year', 'quad', 'disciplina'] as const;
 
-  // Normalize just for generating the identifier consistently
-  const normalizedDisciplina = component.disciplina.trim();
-
   const key = {
     ra: history.ra,
     year: component.ano,
     quad: Number(component.periodo),
-    disciplina: normalizedDisciplina,
+    disciplina: component.disciplina,
   };
 
   component.identifier = component.identifier || generateIdentifier(key, keys);
@@ -135,7 +134,8 @@ export async function processComponentEnrollment(
     ra: key.ra,
     year: key.year,
     quad: key.quad,
-    disciplina: component.disciplina, // Keep the original disciplina
+    turma: component.turma,
+    disciplina: component.disciplina,
     conceito: component.conceito,
     creditos: component.creditos,
     cr_acumulado: coef?.cr_acumulado ?? null,
@@ -147,47 +147,24 @@ export async function processComponentEnrollment(
   const enrollmentWithSubject = mapSubjects(rawEnrollment, subjects);
 
   try {
-    // First, find all existing enrollments that might be duplicates
-    const existingEnrollments = await EnrollmentModel.find({
-      ra: history.ra,
-      year: component.ano,
-      quad: Number(component.periodo),
-    }).lean();
-
-    // Check if any existing enrollment matches our component (case-insensitive)
-    const matchingEnrollment = existingEnrollments.find(
-      (enrollment) =>
-        enrollment?.disciplina?.toLowerCase().trim() ===
-        normalizedDisciplina.toLowerCase(),
-    );
-
-    // @ts-ignore
-    let enrollment;
-
-    if (matchingEnrollment) {
-      enrollment = await EnrollmentModel.findByIdAndUpdate(
-        matchingEnrollment._id,
+    const promises = enrollmentWithSubject.map(async (enrollment) => {
+      await EnrollmentModel.findOneAndUpdate(
         {
-          $set: {
-            ...enrollmentWithSubject[0],
-            identifier: component.identifier,
-          },
+          ra: key.ra,
+          disciplina: component.disciplina,
+          season: rawEnrollment.season,
         },
-        { new: true },
+        { $set: enrollment },
+        { upsert: true },
       );
-    } else {
-      // Create a new enrollment
-      enrollment = await EnrollmentModel.create({
-        ...enrollmentWithSubject[0],
-        identifier: component.identifier,
-      });
-    }
+    });
+
+    await Promise.all(promises);
 
     ctx.app.log.debug({
       msg: 'Enrollment processed successfully',
-      enrollmentId: enrollment?._id,
-      ra: enrollment?.ra,
-      disciplina: enrollment?.disciplina,
+      ra: rawEnrollment?.ra,
+      disciplina: rawEnrollment?.disciplina,
     });
   } catch (error) {
     ctx.app.log.error({
@@ -231,33 +208,33 @@ function getLastPeriod(
   return resp;
 }
 
+type PartialEnrollment = {
+  ra: number;
+  year: number;
+  quad: number;
+  disciplina: string;
+  conceito: '-' | 'A' | 'B' | 'C' | 'D' | 'O' | 'F';
+  creditos: number;
+  cr_acumulado: number | null;
+  ca_acumulado: number | null;
+  cp_acumulado: number | null;
+  season: string;
+};
+
 function mapSubjects(
-  enrollment: Partial<Enrollment>,
+  enrollment: PartialEnrollment,
   subjects: SubjectDocument[],
 ) {
-  // Create a mapping of lowercase subject names for case-insensitive lookup
-  const mapSubjects = subjects.map((subject) =>
-    subject.search?.toLowerCase().trim(),
+  const enrollments = (
+    Array.isArray(enrollment) ? enrollment : [enrollment]
+  ) as PartialEnrollment[];
+
+  const subjectMap = new Map(
+    subjects.map((subject) => [subject.name.toLowerCase().trim(), subject]),
   );
-  const enrollmentArray = Array.isArray(enrollment) ? enrollment : [enrollment];
 
-  return enrollmentArray
-    .reduce<Partial<Enrollment>[]>((acc, e: any) => {
-      const disciplinaLower = e.disciplina.toLowerCase().trim();
-
-      if (!mapSubjects.includes(disciplinaLower)) {
-        acc.push(e);
-      }
-
-      const subject = subjects.find(
-        (s) => s.name?.toLowerCase().trim() === disciplinaLower,
-      );
-      e.subject = subject?._id.toString() ?? null;
-
-      return acc;
-    }, [])
-    .filter(
-      (e): e is Partial<Enrollment> =>
-        e.disciplina !== '' && e.disciplina != null,
-    );
+  return enrollments.map((enrollment) => ({
+    ...enrollment,
+    subject: subjectMap.get(enrollment.disciplina),
+  }));
 }

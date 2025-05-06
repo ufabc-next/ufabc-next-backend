@@ -2,6 +2,7 @@ import type {
   ParsedSigStudent,
   SigStudent,
 } from '@/schemas/entities/students.js';
+import { sigHistory, type SigHistory } from '@/schemas/history.js';
 import { logger } from '@/utils/logger.js';
 import { ofetch } from 'ofetch';
 
@@ -177,4 +178,24 @@ export async function getFullStudent({
     },
   });
   return fullStudent;
+}
+
+export async function getHistory(sessionId: string, viewState: string) {
+  const rawHistory = await ufabcParserService<{
+    data: SigHistory | null;
+    error: string | null;
+  }>('/sig/history', {
+    method: 'POST',
+    headers: {
+      sessionId,
+      viewState,
+    },
+    query: {
+      action: 'history',
+    },
+  });
+
+  const parsedHistory = sigHistory.safeParse(rawHistory.data);
+
+  return parsedHistory;
 }
