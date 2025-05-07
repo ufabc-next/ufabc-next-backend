@@ -12,6 +12,8 @@ import {
   HistoryModel,
 } from '@/models/History.js';
 import type { QueueContext } from '../types.js';
+import { ComponentModel } from '@/models/Component.js';
+import { TeacherModel } from '@/models/Teacher.js';
 
 type HistoryComponent = History['disciplinas'][number];
 
@@ -130,6 +132,12 @@ export async function processComponentEnrollment(
     SubjectDocument[]
   >();
 
+  // NA5BCL0307-15SA
+  // turma: A5
+  // handle
+  const pattern =
+    /([DNM])([A-Za-z](?:[1-9]|1[0-9]|2[0-3])?)([A-Z0-9]+-\d{2})(SA|SB)/;
+  
   const rawEnrollment = {
     ra: key.ra,
     year: key.year,
@@ -141,10 +149,12 @@ export async function processComponentEnrollment(
     cr_acumulado: coef?.cr_acumulado ?? null,
     ca_acumulado: coef?.ca_acumulado ?? null,
     cp_acumulado: coef?.cp_acumulado ?? null,
+    teachers: component.teachers,
     season: `${key.year}:${key.quad}`,
   };
 
   const enrollmentWithSubject = mapSubjects(rawEnrollment, subjects);
+  const enrollmentsWithTeachers = mapTeachers(enrollmentWithSubject)
 
   try {
     const promises = enrollmentWithSubject.map(async (enrollment) => {
@@ -237,4 +247,46 @@ function mapSubjects(
     ...enrollment,
     subject: subjectMap.get(enrollment.disciplina),
   }));
+}
+
+
+async function mapTeachers(enrollments: ReturnType<typeof mapSubjects>) {
+  const pattern =
+    /([DNM])([A-Za-z](?:[1-9]|1[0-9]|2[0-3])?)([A-Z0-9]+-\d{2})(SA|SB)/;
+
+  return enrollments.map(async (enrollment) => {
+    const match = enrollment.turma.match(pattern);
+    if (!match || enrollment.teachers.length === 0) {
+      // No match or no teachers, return the enrollment as is
+      return enrollment;
+    }
+
+    const [_, shift, room, UFCode, campus] = match; 
+    const teachers = await TeacherModel.find({
+      name: {
+        $in: enrollment.teachers,
+      },
+    }).lean();
+    const component = await ComponentModel.findOne({
+      $or: [
+        { pratica: teachers.map((teacher) => teacher._id) },
+        { teorica: teachers.map((teacher) => teacher._id) },
+      ],
+      turma: room,
+      codigo: UFCode,
+      campus: campus.toLowerCase(),
+      
+    })
+  
+
+
+    const [, , turma, turmaCode, season] = match;
+    return {
+      ...enrollment,
+      turma,
+      turmaCode,
+      season,
+    };
+  });
+
 }
