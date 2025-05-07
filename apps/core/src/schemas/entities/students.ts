@@ -6,6 +6,7 @@ const tags = ['Students'];
 
 const listMatriculaStudentSchema = z.object({
   studentId: z.number().int().nullish(),
+  updatedAt: z.string().datetime(),
   graduations: z
     .object({
       courseId: z.number().int(),
@@ -84,9 +85,10 @@ export const createStudentSchema = {
 
 export const listMatriculaStudent = {
   tags,
-  querystring: z.object({
-    ra: z.coerce.number(),
-    login: z.string(),
+  headers: z.object({
+    uf_login: z.string().openapi({
+      example: 'john.doe',
+    }),
   }),
   response: {
     200: {

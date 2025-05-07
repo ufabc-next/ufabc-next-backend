@@ -21,10 +21,15 @@ async function isAdmin(this: FastifyRequest, reply: FastifyReply) {
 }
 
 async function isStudent(this: FastifyRequest, reply: FastifyReply) {
-  const sessionId = this.headers['session-id'] ?? this.cookies.sessionId;
+  const sessionId =
+    this.headers['session-id'] ??
+    this.cookies.sessionId ??
+    this.headers['Session-Id'];
+  const ufLogin = this.headers['uf-login'];
   if (!sessionId) {
+    this.log.info(sessionId, this.headers);
     return reply
-      .status(401)
+      .status(403)
       .send('You are not authorized to access this resource.');
   }
 }

@@ -64,8 +64,13 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     '/student',
     { schema: listMatriculaStudent },
     async (request, reply) => {
-      const { ra, login } = request.query;
-      const student = await getStudent({ ra, login });
+      const login = request.headers['uf-login'];
+
+      if (!login) {
+        return reply.badRequest('Login not provided');
+      }
+
+      const student = await getStudent({ login });
 
       if (!student) {
         return reply.badRequest('Student not found');
@@ -82,6 +87,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           cr: c.cr ?? 0,
           ca: c.ca ?? 0,
         })),
+        updatedAt: student.updatedAt.toISOString(),
       } satisfies MatriculaStudent;
 
       return matriculaStudent;
