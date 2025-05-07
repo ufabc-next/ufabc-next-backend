@@ -25,7 +25,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       }
 
       const parsedHistory = await getHistory(sessionId, viewState as string);
-
       if (parsedHistory.error) {
         app.log.error(
           {
@@ -139,19 +138,20 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
       if (!dbStudent) {
         await StudentModel.create(
-          { ra: student.ra, season: currentQuad() },
-          {
-            $set: {
-              cursos: [
-                {
-                  cp: coefficients.cp,
-                  cr: coefficients.cr,
-                  ca: coefficients.ca,
-                  nome_curso: student.course,
-                  ind_afinidade: coefficients.ik,
-                },
-              ],
-            },
+          { 
+            ra: student.ra,
+            login: 'joabe.silva',
+            season: currentQuad(),
+            cursos: [
+              {
+                cp: coefficients.cp,
+                cr: coefficients.cr,
+                ca: coefficients.ca,
+                nome_curso: student.course,
+                ind_afinidade: coefficients.ik,
+                turno: student.shift,
+              },
+            ]
           },
         );
       }
@@ -191,6 +191,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
                 ca: coefficients.ca,
                 nome_curso: student.course,
                 ind_afinidade: coefficients.ik,
+                turno: student.shift,
               },
             ],
           },

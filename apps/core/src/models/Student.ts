@@ -1,10 +1,10 @@
 import { type InferSchemaType, Schema, model } from 'mongoose';
 
-const COURSE_SHIFTS = ['Noturno', 'Matutino', 'noturno', 'matutino'] as const;
+const COURSE_SHIFTS = ['Noturno', 'Matutino', 'noturno', 'matutino', 'n', 'm'] as const;
 
 const coursesSchema = new Schema(
   {
-    id_curso: { type: Number, required: true },
+    id_curso: { type: Number, required: false },
     nome_curso: { type: String, required: true },
     cp: { type: Number, required: false },
     cr: { type: Number, required: false },
