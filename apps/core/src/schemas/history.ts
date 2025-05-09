@@ -49,7 +49,9 @@ const CAMPUS_ENUM = z.enum(['sa', 'sbc']);
 
 const sigStudent = z.object({
   campus: CAMPUS_ENUM,
-  shift: z.enum(['n', 'm']),
+  shift: z
+    .enum(['n', 'm'])
+    .transform((val) => (val === 'n' ? 'noturno' : 'matutino')),
   course: z
     .string()
     .toLowerCase()
@@ -111,6 +113,10 @@ export type SigHistory = z.infer<typeof sigHistory>;
 
 export const sigHistorySchema = {
   tags: ['Sigaa'],
+  body: z.object({
+    login: z.string(),
+    ra: z.coerce.number(),
+  }),
   response: {
     200: {
       content: {

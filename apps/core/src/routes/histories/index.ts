@@ -4,9 +4,10 @@ import {
   type Situations,
   type Categories,
   type History,
+  type HistoryDocument,
 } from '@/models/History.js';
 import { StudentModel } from '@/models/Student.js';
-import { getHistory } from '@/modules/ufabc-parser.js';
+import { getHistory } from '@/services/ufabc-parser.js';
 import { sigHistorySchema, type SigStatus } from '@/schemas/history.js';
 import { currentQuad } from '@next/common';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
@@ -17,11 +18,21 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.post(
     '/',
     { schema: sigHistorySchema },
-    async ({ sessionId, headers }, reply) => {
-      const viewState = headers['view-state'];
+    async ({ sessionId, headers, body }, reply) => {
+      const viewState = headers['view-state'] ?? headers['View-State'];
+      const { login, ra } = body;
 
       if (!sessionId || !viewState) {
         return reply.badRequest('Missing sessionId');
+      }
+
+      const cacheKey = `history:${ra}`;
+      const cached = historyCache.get(cacheKey);
+      if (cached) {
+        return {
+          msg: 'Cached history!',
+          data: cached,
+        };
       }
 
       const parsedHistory = await getHistory(sessionId, viewState as string);
@@ -44,19 +55,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       const { student, components, graduations, coefficients } =
         parsedHistory.data;
 
-      if (!student.ra) {
-        return reply.badRequest('Missing RA');
-      }
-
-      const cacheKey = `history:${student.ra}`;
-      const cached = historyCache.get(cacheKey);
-      if (cached) {
-        return {
-          msg: 'Cached history!',
-        };
-      }
-
-      let history = await HistoryModel.findOne({
+      let history: HistoryDocument | null = await HistoryModel.findOne({
         ra: student.ra,
       });
 
@@ -136,24 +135,22 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         season: currentQuad(),
       });
 
+      const graduationsToInsert = {
+        cp: coefficients.cp,
+        cr: coefficients.cr,
+        ca: coefficients.ca,
+        nome_curso: student.course,
+        ind_afinidade: coefficients.ik,
+        turno: student.shift,
+      };
+
       if (!dbStudent) {
-        await StudentModel.create(
-          { 
-            ra: student.ra,
-            login: 'joabe.silva',
-            season: currentQuad(),
-            cursos: [
-              {
-                cp: coefficients.cp,
-                cr: coefficients.cr,
-                ca: coefficients.ca,
-                nome_curso: student.course,
-                ind_afinidade: coefficients.ik,
-                turno: student.shift,
-              },
-            ]
-          },
-        );
+        await StudentModel.create({
+          ra: student.ra,
+          login,
+          season: currentQuad(),
+          cursos: [graduationsToInsert],
+        });
       }
 
       const hasGraduationChanged =
@@ -165,54 +162,19 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           { ra: student.ra, season: currentQuad() },
           {
             $set: {
-              cursos: [
-                {
-                  cp: coefficients.cp,
-                  cr: coefficients.cr,
-                  ca: coefficients.ca,
-                  nome_curso: student.course,
-                  ind_afinidade: coefficients.ik,
-                },
-              ],
+              cursos: [graduationsToInsert],
             },
           },
-          { upsert: true },
+          { new: true },
         );
       }
 
-      await StudentModel.findOneAndUpdate(
-        { ra: student.ra, season: currentQuad() },
-        {
-          $set: {
-            cursos: [
-              {
-                cp: coefficients.cp,
-                cr: coefficients.cr,
-                ca: coefficients.ca,
-                nome_curso: student.course,
-                ind_afinidade: coefficients.ik,
-                turno: student.shift,
-              },
-            ],
-          },
-        },
-        { upsert: true },
-      );
-
-      const flattenJsonHistory = history?.toJSON({
-        flattenObjectIds: true,
-      });
-
-      if (flattenJsonHistory) {
-        historyCache.set(cacheKey, flattenJsonHistory);
+      if (history) {
+        await app.job.dispatch('UserEnrollmentsUpdate', history);
       }
 
-      // dispatch coefficients job.
-      await app.job.dispatch('UserEnrollmentsUpdate', flattenJsonHistory);
       return {
-        msg: flattenJsonHistory
-          ? `Updated history for ${student.ra}`
-          : `Created history for ${student.ra}`,
+        msg: 'Sync sucessfully',
       };
     },
   );
