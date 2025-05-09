@@ -1,5 +1,5 @@
 import { UserModel, type User } from '@/models/User.js';
-import { getEmployeeData, getStudentData } from '@/modules/email-validator.js';
+import { getEmployeeData, getStudentData } from '@/services/email-validator.js';
 import { completeUserSchema, type Auth } from '@/schemas/auth.js';
 import {
   confirmUserSchema,

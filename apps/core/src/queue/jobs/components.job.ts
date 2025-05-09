@@ -1,6 +1,6 @@
 import { ComponentModel } from '@/models/Component.js';
 import { SubjectModel } from '@/models/Subject.js';
-import { getComponents } from '@/modules/ufabc-parser.js';
+import { getComponents } from '@/services/ufabc-parser.js';
 import { currentQuad, generateIdentifier } from '@next/common';
 import { camelCase, startCase } from 'lodash-es';
 import type { QueueContext } from '../types.js';

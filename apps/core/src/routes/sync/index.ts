@@ -6,7 +6,7 @@ import {
   getEnrolledStudents,
   getEnrollments,
   type StudentComponent,
-} from '@/modules/ufabc-parser.js';
+} from '@/services/ufabc-parser.js';
 import { syncEnrollmentsSchema } from '@/schemas/sync/enrollments.js';
 import { syncComponentsSchema } from '@/schemas/sync/components.js';
 import { TeacherModel } from '@/models/Teacher.js';

@@ -33,27 +33,33 @@ const isExtensionRoute = (url: string) => {
 
 export default async function (app: FastifyInstance) {
   app.decorateRequest('sessionId');
+
   app.addHook('onRequest', async (request, reply) => {
     const isPublic = isPublicRoute(request.url);
     const isExtension = isExtensionRoute(request.url);
 
+    // Early return for public routes
+    if (isPublic) {
+      return;
+    }
+
+    // Handle extension routes with session check
     if (isExtension) {
       try {
         await request.isStudent(reply);
         request.sessionId = request.headers['session-id'] as string | undefined;
         return;
       } catch (error) {
-        return reply.unauthorized('Missing sessionId');
+        return reply.unauthorized('Missing token');
       }
     }
 
-    if (isPublic) {
-      return;
-    }
-
+    // All other routes require JWT
     try {
       await request.jwtVerify();
+      return;
     } catch (error) {
+      request.log.error(error);
       return reply.unauthorized(
         'You must be authenticated to access this route',
       );

@@ -21,7 +21,7 @@ import {
 import { currentQuad, lastQuad } from '@next/common';
 import { type Student, StudentModel } from '@/models/Student.js';
 import type { HistoryDocument } from '@/models/History.js';
-import { getFullStudent, getSigUser } from '@/modules/ufabc-parser.js';
+import { getFullStudent, getSigUser } from '@/services/ufabc-parser.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get(
