@@ -71,6 +71,18 @@ export const listStudentSchema = {
           schema: z.object({
             studentId: z.number().int().nullish(),
             login: z.string(),
+            updatedAt: z.string(),
+            graduations: z
+              .object({
+                name: z.string(),
+                courseId: z.number().nullish(),
+                shift: z.string(),
+                cp: z.number().nullish(),
+                ca: z.number().nullish(),
+                cr: z.number().nullish(),
+                affinity: z.number(),
+              })
+              .array(),
           }),
         },
       },
@@ -111,16 +123,13 @@ export const updateStudentSchema = {
       example: 'john.doe',
     }),
     studentId: z.number().int().nullable(),
+    graduationId: z.number().int().nullable(),
   }),
   response: {
     200: {
       content: {
         'application/json': {
-          schema: z.object({
-            msg: z.string().openapi({
-              example: 'ok',
-            }),
-          }),
+          schema: z.any(),
         },
       },
     },
