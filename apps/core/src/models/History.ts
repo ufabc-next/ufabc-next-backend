@@ -1,7 +1,7 @@
 import { type InferSchemaType, type Model, Schema, model } from 'mongoose';
 
 const CONCEITOS = ['A', 'B', 'C', 'D', 'O', 'F', '-'] as const;
-const POSSIBLE_SITUATIONS = [
+export const POSSIBLE_SITUATIONS = [
   'Repr.Freq',
   'Aprovado',
   'Reprovado',
@@ -17,7 +17,7 @@ const POSSIBLE_SITUATIONS = [
   null,
 ] as const;
 // can be '-' if the component was dropped (trancamento)
-const CATEGORIES = [
+export const CATEGORIES = [
   'Livre Escolha',
   'Obrigatória',
   'Opção Limitada',

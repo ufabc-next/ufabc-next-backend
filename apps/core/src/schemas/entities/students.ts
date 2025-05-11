@@ -1,6 +1,8 @@
 import { currentQuad } from '@next/common';
 import { z } from 'zod';
 import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
+import { COURSE_SHIFTS } from '@/models/Student.js';
+import { CATEGORIES, POSSIBLE_SITUATIONS } from '@/models/History.js';
 
 const tags = ['Students'];
 
@@ -9,37 +11,18 @@ const listMatriculaStudentSchema = z.object({
   updatedAt: z.string().datetime(),
   graduations: z
     .object({
-      courseId: z.number().int(),
+      courseId: z.number().int().nullish(),
       name: z.string(),
       cp: z.number().optional(),
       cr: z.number().optional(),
       ca: z.number().optional(),
       affinity: z.number().optional(),
-      shift: z.enum(['noturno', 'matutino', 'Noturno', 'Matutino', 'Diurno']),
+      shift: z.enum(COURSE_SHIFTS),
     })
     .array(),
 });
 
 export type MatriculaStudent = z.infer<typeof listMatriculaStudentSchema>;
-
-const createStudentSchemaRequest = z.object({
-  studentId: z.number().int().optional(),
-  ra: z.coerce.number(),
-  login: z.string(),
-  graduations: z
-    .object({
-      courseId: z.number().int(),
-      turno: z.enum(['Noturno', 'Matutino', 'noturno', 'matutino']),
-      name: z.string(),
-      cp: z.number().optional(),
-      cr: z.number().optional(),
-      ind_afinidade: z.number().optional(),
-      quads: z.number().nullish(),
-    })
-    .array(),
-});
-
-export type CreateStudent = z.infer<typeof createStudentSchemaRequest>;
 
 export const listStudentsStatsComponents = {
   tags,
@@ -90,11 +73,6 @@ export const listStudentSchema = {
   },
 } satisfies FastifyZodOpenApiSchema;
 
-export const createStudentSchema = {
-  tags,
-  body: createStudentSchemaRequest,
-} satisfies FastifyZodOpenApiSchema;
-
 export const listMatriculaStudent = {
   tags,
   headers: z.object({
@@ -113,6 +91,38 @@ export const listMatriculaStudent = {
   },
 } satisfies FastifyZodOpenApiSchema;
 
+const updatedStudentSchema = z.object({
+  ra: z.number(),
+  studentId: z.number().nullish(),
+  graduations: z
+    .object({
+      nome_curso: z.string(),
+      cp: z.number(),
+      cr: z.number(),
+      ca: z.number(),
+      ind_afinidade: z.number(),
+      id_curso: z.number().int().optional(),
+      turno: z.enum(COURSE_SHIFTS),
+      components: z
+        .object({
+          periodo: z.string(),
+          codigo: z.string(),
+          disciplina: z.string(),
+          ano: z.number().int(),
+          situacao: z.string().nullable(),
+          creditos: z.number().int(),
+          categoria: z.enum(CATEGORIES),
+          conceito: z.string(),
+          turma: z.string(),
+          teachers: z.string().array(),
+        })
+        .array(),
+    })
+    .array(),
+});
+
+export type UpdatedStudent = z.infer<typeof updatedStudentSchema>;
+
 export const updateStudentSchema = {
   tags,
   body: z.object({
@@ -122,14 +132,14 @@ export const updateStudentSchema = {
     login: z.string().openapi({
       example: 'john.doe',
     }),
-    studentId: z.number().int().nullable(),
-    graduationId: z.number().int().nullable(),
+    studentId: z.number().int().optional(),
+    graduationId: z.number().int().optional(),
   }),
   response: {
     200: {
       content: {
         'application/json': {
-          schema: z.any(),
+          schema: updatedStudentSchema,
         },
       },
     },

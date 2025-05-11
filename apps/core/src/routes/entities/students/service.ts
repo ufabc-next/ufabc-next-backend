@@ -1,6 +1,7 @@
 import { ComponentModel } from '@/models/Component.js';
-import { History, HistoryModel } from '@/models/History.js';
+import { HistoryModel } from '@/models/History.js';
 import { StudentModel, type Student } from '@/models/Student.js';
+import type { UpdatedStudent } from '@/schemas/entities/students.js';
 import { logger } from '@/utils/logger.js';
 import { currentQuad } from '@next/common';
 import type { FilterQuery } from 'mongoose';
@@ -109,7 +110,7 @@ type UpdateStudent = {
   ra: number;
   login: string;
   studentId: number | null | undefined;
-  graduationId: number | null;
+  graduationId: number | null | undefined;
 };
 
 export async function createOrInsert({
@@ -132,14 +133,6 @@ export async function createOrInsert({
   return student;
 }
 
-type UpdatedStudent = {
-  ra: number;
-  studentId?: number | null;
-  graduations: Array<{
-    components: History['disciplinas'];
-  }>;
-};
-
 export async function update({
   ra,
   login,
@@ -147,47 +140,56 @@ export async function update({
   graduationId,
 }: UpdateStudent): Promise<UpdatedStudent | null> {
   const season = currentQuad();
-  logger.info(ra, login);
+  logger.info({ ra, login, studentId, graduationId });
   const student = await StudentModel.findOne({
     ra,
     login,
     season,
   });
-  const historyComponents = await HistoryModel.findOne({
-    ra,
-  })
+  const historyComponents = await HistoryModel.findOne(
+    {
+      ra,
+    },
+    { disciplinas: 1, _id: 0 },
+  )
     .sort({
       updatedAt: -1,
     })
-    .lean<History>();
+    .lean();
 
   if (!student || !historyComponents) {
     return null;
   }
 
   if (student.aluno_id) {
+    const studentObj = student.toJSON<Student>();
     return {
-      ra: student.ra,
-      studentId: student.aluno_id,
-      graduations: student.cursos.map((c) => ({
+      ra: studentObj.ra,
+      studentId: studentObj.aluno_id,
+      graduations: studentObj.cursos.map((c) => ({
         ...c,
         components: historyComponents.disciplinas,
       })),
-    };
+    } as unknown as UpdatedStudent;
   }
 
   student.aluno_id = studentId;
-  student.cursos[0].id_curso = graduationId;
-  student.cursos[1].id_curso = graduationId;
+
+  // THIS IS WRONG
+  for (const curso of student.cursos) {
+    curso.id_curso = graduationId;
+  }
 
   await student.save();
 
+  const studentObj = student.toJSON();
+
   return {
-    ra: student.ra,
-    studentId: student.aluno_id,
-    graduations: student.cursos.map((c) => ({
+    ra: studentObj.ra,
+    studentId: studentObj.aluno_id,
+    graduations: studentObj.cursos.map((c) => ({
       ...c,
       components: historyComponents.disciplinas,
     })),
-  };
+  } as unknown as UpdatedStudent;
 }

@@ -118,7 +118,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     if (!updatedStudent) {
       return reply.notFound('Could not find student');
     }
-    app.log.info(updatedStudent);
 
     return updatedStudent;
   });
