@@ -42,7 +42,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   });
 
   app.get('/', { schema: listStudentSchema }, async ({ headers }, reply) => {
-    const login = headers.uf_login;
+    const login = headers['uf-login'];
     const ra = headers.ra;
 
     if (!login || !ra) {

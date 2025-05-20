@@ -26,7 +26,7 @@ async function isStudent(this: FastifyRequest, reply: FastifyReply) {
     this.cookies.sessionId ??
     this.headers['Session-Id'] ??
     this.headers.sessionid;
-  const ufLogin = this.headers['uf-login'];
+  const ufLogin = this.headers['uf-login'] ?? this.headers['Uf-login'];
   if (!sessionId && !ufLogin) {
     return reply
       .status(403)
