@@ -228,6 +228,75 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       }));
     },
   );
+
+  
+app.get('/api/informacoes', async (request, reply) => {
+  // @ts-ignore
+  const { nome, turma, season } = request.query;
+
+  // 🔒 Verificação básica dos parâmetros obrigatórios
+  if (!nome || !turma || !season) {
+    return reply.status(400).send({
+      error: 'Parâmetros obrigatórios: nome, turma e season',
+    });
+  }
+
+  const cacheKey = `info:component:${nome}:${turma}:${season}`;
+  const cachedResponse = componentsListCache.get(cacheKey);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const component = await ComponentModel.findOne(
+      {
+        season,
+        turma,
+      },
+      {
+        _id: 0,
+        alunos_matriculados: 1,
+        campus: 1,
+        pratica: 1,
+        teoria: 1,
+        vagas: 1,
+        subject: 1,
+        identifier: 1,
+        ideal_quad: 1,
+        turma: 1,
+        turno: 1,
+        disciplina_id: 1,
+        season: 1,
+      }
+    )
+      .populate<{
+        pratica: TeacherDocument;
+        teoria: TeacherDocument;
+        subject: SubjectDocument;
+      }>(['pratica', 'teoria', 'subject'])
+      .lean();
+
+    if (!component || !component.subject?.name?.toLowerCase().includes(nome.toLowerCase())) {
+      return reply.status(404).send({
+        error: 'Componente não encontrado com os parâmetros fornecidos.',
+      });
+    }
+
+    // ✅ Cacheando o resultado por chave única
+    componentsListCache.set(cacheKey, component);
+
+    return reply.send(component);
+  } catch (error) {
+    console.error('Erro ao buscar componente:', error);
+    return reply.status(500).send({
+      error: 'Erro interno ao buscar informações.',
+    });
+  }
+});
+
+
+
+
 };
 
 function kickRule(idealQuad: boolean, season: string) {
