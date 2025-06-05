@@ -68,6 +68,34 @@ const componentSchema = new Schema(
   },
 );
 
+const disciplinasMetadataSchema = new Schema(
+  {
+    disciplina_id: { type: Number, required: true },
+    nome: { type: String, required: true },
+    planejamento: {
+      ementa: { type: String, required: true },
+      objetivos: { type: String, required: true },
+      metodologia: { type: String, required: true },
+      avaliacao: { type: String, required: true },
+    },
+    cronograma: [
+      {
+        aula: { type: String, required: true },
+        data: { type: String, required: true }, // pode ser Date se preferir
+      },
+    ],
+    metadata: {
+      source_file: { type: String, required: true },
+      processed_at: { type: String, required: true }, // pode ser Date se preferir
+    },
+    teste: { type: String }, // campo extra, pode ajustar o tipo conforme necessário
+  },
+  {
+    timestamps: true,
+  },
+);
+
+
 function setQuarter(component: UpdateQuery<Component> | null) {
   const { year, quad } = findQuarter();
   if (!component) {
@@ -90,3 +118,7 @@ export type Component = InferSchemaType<typeof componentSchema>;
 export type ComponentDocument = ReturnType<(typeof ComponentModel)['hydrate']>;
 
 export const ComponentModel = model('disciplinas', componentSchema);
+
+export const MetadataModel = model('disciplinas_metadatas', disciplinasMetadataSchema);
+
+

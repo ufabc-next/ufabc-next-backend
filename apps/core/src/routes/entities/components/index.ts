@@ -1,5 +1,5 @@
 import { orderBy as LodashOrderBy } from 'lodash-es';
-import { type Component, ComponentModel } from '@/models/Component.js';
+import { type Component, ComponentModel, MetadataModel } from '@/models/Component.js';
 import { StudentModel } from '@/models/Student.js';
 import {
   listKickedSchema,
@@ -232,57 +232,36 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   
 app.get('/api/informacoes', async (request, reply) => {
   // @ts-ignore
-  const { nome, turma, season } = request.query;
+  const {  disciplinaId } = request.query;
 
-  // 🔒 Verificação básica dos parâmetros obrigatórios
-  if (!nome || !turma || !season) {
+  if (!disciplinaId ) {
     return reply.status(400).send({
-      error: 'Parâmetros obrigatórios: nome, turma e season',
+      error: 'Parâmetros obrigatórios: disciplinaId',
     });
   }
 
-  const cacheKey = `info:component:${nome}:${turma}:${season}`;
+  const cacheKey = `info:component:${disciplinaId}`;
   const cachedResponse = componentsListCache.get(cacheKey);
   if (cachedResponse) {
     return cachedResponse;
   }
 
   try {
-    const component = await ComponentModel.findOne(
+    const component = await MetadataModel.findOne(
       {
-        season,
-        turma,
-      },
-      {
-        _id: 0,
-        alunos_matriculados: 1,
-        campus: 1,
-        pratica: 1,
-        teoria: 1,
-        vagas: 1,
-        subject: 1,
-        identifier: 1,
-        ideal_quad: 1,
-        turma: 1,
-        turno: 1,
-        disciplina_id: 1,
-        season: 1,
+        disciplina_id: disciplinaId,
       }
     )
-      .populate<{
-        pratica: TeacherDocument;
-        teoria: TeacherDocument;
-        subject: SubjectDocument;
-      }>(['pratica', 'teoria', 'subject'])
       .lean();
 
-    if (!component || !component.subject?.name?.toLowerCase().includes(nome.toLowerCase())) {
+    
+    if (!component) {
       return reply.status(404).send({
         error: 'Componente não encontrado com os parâmetros fornecidos.',
       });
     }
 
-    // ✅ Cacheando o resultado por chave única
+    //@ts-ignore
     componentsListCache.set(cacheKey, component);
 
     return reply.send(component);
