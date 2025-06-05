@@ -81,14 +81,13 @@ const disciplinasMetadataSchema = new Schema(
     cronograma: [
       {
         aula: { type: String, required: true },
-        data: { type: String, required: true }, // pode ser Date se preferir
+        data: { type: String, required: true }, 
       },
     ],
     metadata: {
       source_file: { type: String, required: true },
-      processed_at: { type: String, required: true }, // pode ser Date se preferir
+      processed_at: { type: String, required: true }, 
     },
-    teste: { type: String }, // campo extra, pode ajustar o tipo conforme necessário
   },
   {
     timestamps: true,
@@ -119,6 +118,6 @@ export type ComponentDocument = ReturnType<(typeof ComponentModel)['hydrate']>;
 
 export const ComponentModel = model('disciplinas', componentSchema);
 
-export const MetadataModel = model('disciplinas_metadatas', disciplinasMetadataSchema);
+export const MetadataModel = model('disciplinas_metadata', disciplinasMetadataSchema);
 
 
