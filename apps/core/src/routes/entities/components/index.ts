@@ -230,7 +230,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   );
 
   
-app.get('/api/informacoes', async (request, reply) => {
+app.get('/metadados', async (request, reply) => {
   // @ts-ignore
   const {  disciplinaId } = request.query;
 
