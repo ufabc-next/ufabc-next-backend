@@ -1,5 +1,5 @@
 import { orderBy as LodashOrderBy } from 'lodash-es';
-import { type Component, ComponentModel } from '@/models/Component.js';
+import { type Component, ComponentModel, MetadataModel } from '@/models/Component.js';
 import { StudentModel } from '@/models/Student.js';
 import {
   listKickedSchema,
@@ -229,6 +229,54 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       }));
     },
   );
+
+  
+app.get('/metadados', async (request, reply) => {
+  // @ts-ignore
+  const {  disciplinaId } = request.query;
+
+  if (!disciplinaId ) {
+    return reply.status(400).send({
+      error: 'Parâmetros obrigatórios: disciplinaId',
+    });
+  }
+
+  const cacheKey = `info:component:${disciplinaId}`;
+  const cachedResponse = componentsListCache.get(cacheKey);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const component = await MetadataModel.findOne(
+      {
+        disciplina_id: disciplinaId,
+      }
+    )
+      .lean();
+
+    
+    if (!component) {
+      return reply.status(404).send({
+        error: 'Componente não encontrado com os parâmetros fornecidos.',
+      });
+    }
+
+    //@ts-ignore
+    componentsListCache.set(cacheKey, component);
+
+    return reply.send(component);
+  } catch (error) {
+    console.error('Erro ao buscar componente:', error);
+    return reply.status(500).send({
+      error: 'Erro interno ao buscar informações.',
+    });
+  }
+});
+
+
+
+
 };
 
 function kickRule(idealQuad: boolean, season: string) {
