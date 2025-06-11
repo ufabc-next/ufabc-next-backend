@@ -1,19 +1,19 @@
 import { ComponentModel } from '@/models/Component.js';
 import type { QueueContext } from '../types.js';
 
-type ComponentTeacher = { 
-  disciplina_id: number; 
-  codigo: string; 
-  disciplina: string; 
-  campus: "sa" | "sbc"; 
-  turma: string; 
-  turno: string; 
-  vagas: number; 
-  teoria: any; 
-  pratica: any; 
+type ComponentTeacher = {
+  disciplina_id: number | '-';
+  codigo: string;
+  disciplina: string;
+  campus: 'sa' | 'sbc';
+  turma: string;
+  turno: string;
+  vagas: number;
+  teoria: any;
+  pratica: any;
   season: string;
   UFClassroomCode: string;
-}
+};
 
 export async function processComponentsTeachers(
   ctx: QueueContext<ComponentTeacher>,
@@ -21,21 +21,38 @@ export async function processComponentsTeachers(
   const { data: component } = ctx.job;
 
   try {
-    const result = await ComponentModel.findOneAndUpdate(
+    const searchCriteria = {
+      turma: component.turma,
+      campus: component.campus,
+      turno: component.turno,
+      codigo: component.codigo,
+    };
+
+    // Se disciplina_id existir, busca por disciplina_id, senão busca pelo searchCriteria
+    const query =
+      String(component.disciplina_id) !== '-'
+        ? { season: component.season, disciplina_id: component.disciplina_id }
+        : { season: component.season, ...searchCriteria };
+
+    ctx.app.log.info(
       {
-        season: component.season,
-        disciplina_id: component.disciplina_id,
+        query,
       },
+      'Searching for match with',
+    );
+
+    const result = await ComponentModel.findOneAndUpdate(
+      query,
       {
         $set: {
           teoria: component.teoria,
           pratica: component.pratica,
-          // we will be using UFCompositeKey for better lookup
-          uf_cod_turma: component.UFClassroomCode
+          uf_cod_turma: component.UFClassroomCode,
         },
       },
       { new: true, upsert: true },
     );
+
     ctx.app.log.info({
       msg: 'Component processed',
       disciplina: component.disciplina,

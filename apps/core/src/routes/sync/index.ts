@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
+  getComponentsFile,
   getComponentsV2,
   getEnrolledStudents,
   getEnrollments,
@@ -180,8 +181,10 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     },
     async (request, reply) => {
       const { season, hash, ignoreErrors } = request.body;
-      const componentsWithTeachers = await getComponentsV2(season);
-
+      const componentsWithTeachers = await getComponentsFile(
+        season,
+        'settlement',
+      );
       const teacherCache = new Map();
       const errors: string[] = [];
 
@@ -241,8 +244,8 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
             codigo: component.UFComponentCode,
             disciplina: component.name,
             campus: component.campus,
-            turma: component.class,
-            turno: component.shift === 'morning' ? 'diurno' : 'noturno',
+            turma: component.turma,
+            turno: component.turno,
             vagas: component.vacancies,
             teoria,
             pratica,
