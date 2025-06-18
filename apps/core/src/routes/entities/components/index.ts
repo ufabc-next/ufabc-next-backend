@@ -229,49 +229,61 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     },
   );
 
-  
-app.get('/metadados', async (request, reply) => {
-  // @ts-ignore
-  const {  disciplinaId } = request.query;
 
-  if (!disciplinaId ) {
-    return reply.status(400).send({
-      error: 'Parâmetros obrigatórios: disciplinaId',
-    });
-  }
+  app.get('/metadados', async (request, reply) => {
+    // @ts-ignore
+    const { disciplinaId, disciplinaCodigoTurma } = request.query;
 
-  const cacheKey = `info:component:${disciplinaId}`;
-  const cachedResponse = componentsListCache.get(cacheKey);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-
-  try {
-    const component = await MetadataModel.findOne(
-      {
-        disciplina_id: disciplinaId,
-      }
-    )
-      .lean();
-
-    
-    if (!component) {
-      return reply.status(404).send({
-        error: 'Componente não encontrado com os parâmetros fornecidos.',
+    if (!disciplinaId || !disciplinaCodigoTurma) {
+      return reply.status(400).send({
+        error: 'Parâmetros obrigatórios: disciplinaId ou disciplinaCodigoTurma',
       });
     }
 
-    //@ts-ignore
-    componentsListCache.set(cacheKey, component);
+    const cacheKey = `info:component:${disciplinaId}`;
+    const cachedResponse = componentsListCache.get(cacheKey);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
 
-    return reply.send(component);
-  } catch (error) {
-    console.error('Erro ao buscar componente:', error);
-    return reply.status(500).send({
-      error: 'Erro interno ao buscar informações.',
-    });
-  }
-});
+
+    let component = null;
+
+    try {
+
+      if (disciplinaId) {
+        component = await MetadataModel.findOne(
+          {
+            disciplina_id: disciplinaId,
+          }
+        )
+          .lean();
+      } else if (disciplinaCodigoTurma) {
+        component = await MetadataModel.findOne(
+          {
+            disciplina_codigo_turma: disciplinaCodigoTurma,
+          }
+        )
+          .lean();
+      }
+
+      if (!component) {
+        return reply.status(404).send({
+          error: 'Componente não encontrado com os parâmetros fornecidos.',
+        });
+      }
+
+      //@ts-ignore
+      componentsListCache.set(cacheKey, component);
+
+      return reply.send(component);
+    } catch (error) {
+      console.error('Erro ao buscar componente:', error);
+      return reply.status(500).send({
+        error: 'Erro interno ao buscar informações.',
+      });
+    }
+  });
 
 
 

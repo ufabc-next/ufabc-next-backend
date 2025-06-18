@@ -118,6 +118,6 @@ export type ComponentDocument = ReturnType<(typeof ComponentModel)['hydrate']>;
 
 export const ComponentModel = model('disciplinas', componentSchema);
 
-export const MetadataModel = model('disciplinas_metadata', disciplinasMetadataSchema);
+export const MetadataModel = model('disciplinas_metadata', disciplinasMetadataSchema, "disciplinas_metadata");
 
 
