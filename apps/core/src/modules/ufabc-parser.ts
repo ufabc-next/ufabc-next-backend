@@ -1,10 +1,17 @@
+import type {
+  ParsedSigStudent,
+  SigStudent,
+} from '@/schemas/entities/students.js';
 import { ofetch } from 'ofetch';
+import { logger } from '@/utils/logger.js';
+import { sigHistory, type SigHistory } from '@/schemas/history.js';
 
 export type UfabcParserComponent = {
   /** The id as we consume */
   UFComponentId: number;
   /** The code as we consume */
   UFComponentCode: string;
+  UFClassroomCode: string;
   campus: 'sbc' | 'sa';
   name: string;
   turma: string;
@@ -36,6 +43,7 @@ type ComponentHours = {
 
 export type UfabcParserComponentV2 = {
   UFComponentId: number;
+  UFClassroomCode: string;
   class: string;
   shift: 'morning' | 'night';
   vacancies: number;
@@ -67,7 +75,11 @@ type StudentRA = string;
 export type StudentComponent = {
   code: string;
   name: string | null;
-  errors: string[] | [];
+  shift: 'morning' | 'night';
+  class: string;
+  campus: 'sa' | 'sbc';
+  original: string;
+  errors: string[];
 };
 export type UFProcessorEnrollment = Record<StudentRA, StudentComponent[]>;
 
@@ -80,6 +92,7 @@ export type UFProcessorComponentFile = {
   UFComponentId: '-' | number;
   /** The code as we consume */
   UFComponentCode: string;
+  UFClassroomCode: string;
   campus: 'sbc' | 'sa';
   name: string;
   turma: string;
@@ -104,7 +117,103 @@ export type UFProcessorComponentFile = {
 export const ufabcParserService = ofetch.create({
   baseURL: process.env.UFABC_PARSER_URL,
   timeout: 45 * 1000, // 45 seconds,
+  onResponseError({ response, error }) {
+    logger.error(
+      {
+        error,
+        response,
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        data: response._data,
+      },
+      'ufabc-parser',
+      'ufabc-parser error',
+    );
+  },
+  onRequestError({ request, error, response }) {
+    logger.error(
+      {
+        error,
+        request,
+        response,
+        status: response?.status,
+        statusText: response?.statusText,
+        url: response?.url,
+        data: response?._data,
+      },
+      'ufabc-parser',
+      'ufabc-parser error',
+    );
+  },
 });
+
+export async function getSigUser(sigStudent: SigStudent, sessionId: string) {
+  const student = await ufabcParserService<{
+    data: ParsedSigStudent | null;
+    error: string | null;
+  }>('/sig/me', {
+    method: 'POST',
+    headers: {
+      sessionId,
+    },
+    query: {
+      action: 'default',
+    },
+    body: sigStudent,
+  });
+  return student;
+}
+
+type FullStudentRequest = {
+  student: ParsedSigStudent & { grade: string };
+  action: string;
+  viewState: string;
+  sessionId: string;
+};
+
+export async function getFullStudent({
+  student,
+  action,
+  viewState,
+  sessionId,
+}: FullStudentRequest) {
+  const fullStudent = await ufabcParserService<{
+    data: ParsedSigStudent | null;
+    error: string | null;
+  }>('/sig/grades', {
+    method: 'POST',
+    headers: {
+      sessionId,
+      viewState,
+    },
+    body: {
+      student,
+      action,
+    },
+  });
+  return fullStudent;
+}
+
+export async function getHistory(sessionId: string, viewState: string) {
+  const rawHistory = await ufabcParserService<{
+    data: SigHistory | null;
+    error: string | null;
+  }>('/sig/history', {
+    method: 'POST',
+    headers: {
+      sessionId,
+      viewState,
+    },
+    query: {
+      action: 'history',
+    },
+  });
+
+  const parsedHistory = sigHistory.safeParse(rawHistory.data);
+
+  return parsedHistory;
+}
 
 export async function getComponents() {
   const components =
@@ -116,12 +225,11 @@ export async function getEnrollments(kind: string, season: string) {
   const enrollments = await ufabcParserService<UFProcessorEnrollment>(
     '/enrollments',
     {
-     query: {
-        kind, 
-        season ,
-        granted: true,  
+      query: {
+        kind,
+        season,
+        granted: true,
       },
-
     },
   );
   return enrollments;
@@ -132,12 +240,14 @@ export async function getEnrolledStudents() {
   return enrolled;
 }
 
-export async function getComponentsFile(link: string) {
+export async function getComponentsFile(season: string, kind: string) {
   const componentsFile = await ufabcParserService<UFProcessorComponentFile[]>(
-    '/componentsFile',
+    '/v2/matriculas/components/file',
     {
       query: {
-        link,
+        season,
+        granted: false,
+        kind,
       },
     },
   );
