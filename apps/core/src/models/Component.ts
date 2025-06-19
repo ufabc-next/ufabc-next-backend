@@ -72,6 +72,7 @@ const componentSchema = new Schema(
 const disciplinasMetadataSchema = new Schema(
   {
     disciplina_id: { type: Number, required: true },
+    disciplina_codigo_turma: { type: String, required: true },
     nome: { type: String, required: true },
     planejamento: {
       ementa: { type: String, required: true },
