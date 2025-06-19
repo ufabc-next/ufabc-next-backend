@@ -234,7 +234,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     // @ts-ignore
     const { disciplinaId, disciplinaCodigoTurma } = request.query;
 
-    if (!disciplinaId || !disciplinaCodigoTurma) {
+    if (disciplinaId || disciplinaCodigoTurma) {
       return reply.status(400).send({
         error: 'Parâmetros obrigatórios: disciplinaId ou disciplinaCodigoTurma',
       });
