@@ -47,7 +47,7 @@ RUN  --mount=type=cache,target=/workspace/node_modules/.cache \
 FROM builder as deployer
 WORKDIR /workspace
 RUN export NODE_ENV=prod
-RUN pnpm --filter ${APP_NAME} deploy --prod --ignore-scripts ./out
+RUN pnpm --filter ${APP_NAME} deploy --prod  --legacy --ignore-scripts ./out
 
 FROM runtime as runner
 WORKDIR /workspace
