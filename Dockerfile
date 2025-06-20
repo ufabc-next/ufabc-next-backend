@@ -1,7 +1,7 @@
 # Run with `docker build --secret id=env,src=.env -f ./Dockerfile . -t teste-docker:0.0.2 --no-cache`
 # see a way to use this later --mount=type=secret,id=env,required=true,target=/workspace/.env
 
-ARG NODE_VERSION="22.0.0"
+ARG NODE_VERSION="22.16.0"
 
 FROM node:${NODE_VERSION}-alpine AS runtime
 
@@ -17,7 +17,7 @@ ENV GIT_SECRET_PASSWORD=$GIT_SECRET_PASSWORD
 RUN apk update && apk add --no-cache libc6-compat
 WORKDIR /workspace
 # enable corepack for pnpm
-RUN npm i -g pnpm@9.7.0
+RUN npm i -g pnpm@10.12.1
 
 FROM runtime as fetcher
 COPY pnpm*.yaml ./
