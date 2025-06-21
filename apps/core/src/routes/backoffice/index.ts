@@ -1,3 +1,5 @@
+import { CommentModel } from '@/models/Comment.js';
+import { EnrollmentModel } from '@/models/Enrollment.js';
 import { UserModel } from '@/models/User.js';
 import type { QueueNames } from '@/queue/types.js';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
@@ -81,6 +83,92 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         count: failedJobs.length,
         data: failedJobs,
       });
+    },
+  );
+
+  app.post(
+    '/enrollments/delete-duplicates',
+    {
+      schema: {
+        querystring: z.object({
+          ra: z.coerce.number().optional(),
+          dryRun: z.boolean().optional().default(true),
+        }),
+      },
+      // preHandler: (request, reply) => request.isAdmin(reply),
+    },
+    async (request, reply) => {
+      const { ra, dryRun } = request.query;
+
+      const duplicatesQuery = [
+        {
+          $group: {
+            _id: {
+              ra: '$ra',
+              season: '$season',
+              subject: '$subject',
+              year: '$year',
+              quad: '$quad',
+            },
+            count: { $sum: 1 },
+            docs: {
+              $push: {
+                _id: '$_id',
+                ra: '$ra',
+                disciplina: '$disciplina',
+                turma: '$turma',
+                season: '$season',
+                year: '$year',
+                quad: '$quad',
+                identifier: '$identifier',
+                createdAt: '$createdAt',
+                updatedAt: '$updatedAt',
+              },
+            },
+          },
+        },
+        {
+          $match: {
+            count: { $gt: 1 },
+            '_id.subject': { $ne: null },
+          },
+        },
+      ];
+
+      const duplicates = await EnrollmentModel.aggregate(duplicatesQuery);
+      const duplicatesToDelete = [];
+
+      for (const group of duplicates) {
+        const sortedDocs = group.docs.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+
+        const hasComments = await Promise.all(
+          sortedDocs.map((doc) => CommentModel.exists({ enrollment: doc._id })),
+        );
+
+        if (!hasComments.some((result) => result !== null)) {
+          duplicatesToDelete.push(
+            ...sortedDocs.slice(0, -1).map((doc) => doc._id),
+          );
+        }
+      }
+
+      const result = {
+        totalDuplicatesFound: duplicates.length,
+        duplicatesToDelete: duplicatesToDelete.length,
+        deletedCount: 0,
+      };
+
+      if (duplicatesToDelete.length > 0 && !dryRun) {
+        const deleteResult = await EnrollmentModel.deleteMany({
+          _id: { $in: duplicatesToDelete },
+        });
+        result.deletedCount = deleteResult.deletedCount ?? 0;
+      }
+
+      return reply.send(result);
     },
   );
 };
