@@ -92,24 +92,43 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       schema: {
         querystring: z.object({
           ra: z.coerce.number().optional(),
-          dryRun: z.boolean().optional().default(true),
+          type: z.enum(['season', 'quad', 'disciplina']).default('season'),
+        }),
+        body: z.object({
+          dryRun: z.boolean().default(true),
         }),
       },
       // preHandler: (request, reply) => request.isAdmin(reply),
     },
     async (request, reply) => {
-      const { ra, dryRun } = request.query;
+      const { ra, type } = request.query;
+      const { dryRun } = request.body;
+
+      const groupStrategies = {
+        season: {
+          ra: '$ra',
+          season: '$season',
+          subject: '$subject',
+          year: '$year',
+          quad: '$quad',
+        },
+        quad: {
+          ra: '$ra',
+          subject: '$subject',
+          year: '$year',
+          quad: '$quad',
+        },
+        disciplina: {
+          ra: '$ra',
+          year: '$year',
+          quad: '$quad',
+        },
+      };
 
       const duplicatesQuery = [
         {
           $group: {
-            _id: {
-              ra: '$ra',
-              season: '$season',
-              subject: '$subject',
-              year: '$year',
-              quad: '$quad',
-            },
+            _id: groupStrategies[type],
             count: { $sum: 1 },
             docs: {
               $push: {
@@ -131,27 +150,91 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           $match: {
             count: { $gt: 1 },
             '_id.subject': { $ne: null },
+            ...(ra ? { '_id.ra': ra } : {}),
           },
         },
       ];
 
-      const duplicates = await EnrollmentModel.aggregate(duplicatesQuery);
+      // For disciplina type, add additional processing
+      let duplicates = await EnrollmentModel.aggregate(duplicatesQuery);
+
+      if (type === 'disciplina') {
+        duplicates = duplicates.reduce((acc, group) => {
+          const regexGroups = new Map();
+
+          for (const doc of group.docs) {
+            const normalizedDisciplina = normalizeText(doc.disciplina);
+            let foundMatch = false;
+
+            for (const [key, existingDocs] of regexGroups.entries()) {
+              // Try all matching patterns
+              const isMatch = [
+                // Exact match after normalization
+                key === normalizedDisciplina,
+                // Partial match case insensitive
+                new RegExp(key, 'i').test(normalizedDisciplina),
+                // Word-by-word match
+                new RegExp(
+                  key
+                    .split(/\s+/)
+                    .map((word) => `(?=.*${word})`)
+                    .join(''),
+                  'i',
+                ).test(normalizedDisciplina),
+                // Original disciplina name match
+                new RegExp(doc.disciplina, 'i').test(key),
+              ].some(Boolean);
+
+              if (isMatch) {
+                existingDocs.push(doc);
+                foundMatch = true;
+                break;
+              }
+            }
+
+            if (!foundMatch) {
+              regexGroups.set(normalizedDisciplina, [doc]);
+            }
+          }
+
+          const newGroups = Array.from(regexGroups.values())
+            .filter((docs) => docs.length > 1)
+            .map((docs) => ({
+              _id: { ...group._id },
+              count: docs.length,
+              docs: docs,
+            }));
+
+          return [...acc, ...newGroups];
+        }, []);
+      }
+
       const duplicatesToDelete = [];
 
       for (const group of duplicates) {
         const sortedDocs = group.docs.sort(
           (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
 
-        const hasComments = await Promise.all(
-          sortedDocs.map((doc) => CommentModel.exists({ enrollment: doc._id })),
-        );
+        const commentsMap = new Map();
+        for (const doc of sortedDocs) {
+          const hasComments = await CommentModel.exists({
+            enrollment: doc._id,
+          });
+          commentsMap.set(doc._id.toString(), hasComments !== null);
+        }
 
-        if (!hasComments.some((result) => result !== null)) {
-          duplicatesToDelete.push(
-            ...sortedDocs.slice(0, -1).map((doc) => doc._id),
-          );
+        const hasAnyComments = Array.from(commentsMap.values()).some(Boolean);
+
+        if (!hasAnyComments) {
+          duplicatesToDelete.push(...sortedDocs.slice(1).map((doc) => doc._id));
+        } else {
+          sortedDocs.forEach((doc) => {
+            if (!commentsMap.get(doc._id.toString())) {
+              duplicatesToDelete.push(doc._id);
+            }
+          });
         }
       }
 
@@ -159,9 +242,13 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         totalDuplicatesFound: duplicates.length,
         duplicatesToDelete: duplicatesToDelete.length,
         deletedCount: 0,
+        type,
       };
 
       if (duplicatesToDelete.length > 0 && !dryRun) {
+        app.log.info(
+          `Deleting ${duplicatesToDelete.length} duplicate enrollments (type: ${type})`,
+        );
         const deleteResult = await EnrollmentModel.deleteMany({
           _id: { $in: duplicatesToDelete },
         });
@@ -174,3 +261,11 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 };
 
 export default plugin;
+
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
