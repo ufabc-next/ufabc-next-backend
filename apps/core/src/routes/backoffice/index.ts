@@ -250,16 +250,40 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
             }
           });
         }
-      } //aqui seria interessante adicionar, que se nao tem o comentario em nenhum doc, o criterio de desempate pode ser a que tiver conceito?
+      }
 
 //fazer backup de prod com as duplicatas antes de rodar tudo!
 
+      let diff = null
+      if (ra) {
+
+        const oldImage = duplicates.map((group) => group.docs)
+
+        const newImage: any[] = [];
+
+        duplicates.forEach((group) => {
+          const filteredGroup: any[] = group.docs.filter((doc: EnrollmentDuplicatedDoc) => {
+            return duplicatesToDelete.indexOf(doc._id) < 0
+          })
+
+          if (filteredGroup.length > 0){
+            newImage.push(filteredGroup);
+          }})
+
+        diff = {
+          ra,
+          oldImage,
+          newImage,
+          //allEnrollments
+        }
+      }
 
       const result = {
         totalDuplicatesFound: duplicates.length,
         duplicatesToDelete: duplicatesToDelete.length,
         deletedCount: 0,
         type,
+        diff
       };
 
       if (duplicatesToDelete.length > 0 && !dryRun) {
@@ -275,6 +299,80 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       return reply.send(result);
     },
   );
+
+  app.get("/strategy/contains", async (_, reply)=> { //checar se os casos do type "season" ja sao cobertos pelo caso "quad" R: true
+
+    const groupStrategies = {
+      season: {
+        ra: '$ra',
+        season: '$season',
+        subject: '$subject',
+        year: '$year',
+        quad: '$quad',
+      },
+      quad: {
+        ra: '$ra',
+        subject: '$subject',
+        year: '$year',
+        quad: '$quad',
+      },
+      disciplina: {
+        ra: '$ra',
+        year: '$year',
+        quad: '$quad',
+      },
+    };
+  
+    const duplicatesQuery = (type: keyof typeof groupStrategies) => [
+      {
+        $group: {
+          _id: groupStrategies[type],
+          count: { $sum: 1 },
+          docs: {
+            $push: {
+              _id: '$_id',
+              ra: '$ra',
+              disciplina: '$disciplina',
+              turma: '$turma',
+              season: '$season',
+              year: '$year',
+              quad: '$quad',
+              identifier: '$identifier',
+              createdAt: '$createdAt',
+              updatedAt: '$updatedAt',
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          count: { $gt: 1 },
+          '_id.subject': { $ne: null },
+        },
+      },
+    ]
+
+  const seasonGroups = await EnrollmentModel.aggregate(duplicatesQuery("season"));
+  
+  const quadGroups = await EnrollmentModel.aggregate(duplicatesQuery("quad"));
+  
+  const quadKeys = new Set(
+    quadGroups.map((g) => JSON.stringify(g._id))
+  );
+  
+  const allSeasonInsideQuad = seasonGroups.every((group) => {
+    const quadEquivalentKey = {
+      ra: group._id.ra,
+      subject: group._id.subject,
+      year: group._id.year,
+      quad: group._id.quad,
+    };
+    return quadKeys.has(JSON.stringify(quadEquivalentKey));
+  });
+  
+  reply.send(allSeasonInsideQuad); // true se todos season-groups têm correspondente em quad
+  
+  })
 };
 
 export default plugin;
