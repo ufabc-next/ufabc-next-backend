@@ -4,6 +4,20 @@ import { UserModel } from '@/models/User.js';
 import type { QueueNames } from '@/queue/types.js';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 import { z } from 'zod';
+import type { Types } from 'mongoose';
+
+type EnrollmentDuplicatedDoc = { //sao apenas os campos do $push retornados pelo aggregator
+  _id: Types.ObjectId;
+  ra: string;
+  disciplina: string;
+  turma: string;
+  season: string;
+  year: number;
+  quad: number;
+  identifier: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.post(
@@ -177,7 +191,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
                 new RegExp(
                   key
                     .split(/\s+/)
-                    .map((word) => `(?=.*${word})`)
+                    .map((word: string) => `(?=.*${word})`)
                     .join(''),
                   'i',
                 ).test(normalizedDisciplina),
@@ -209,11 +223,11 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         }, []);
       }
 
-      const duplicatesToDelete = [];
+      const duplicatesToDelete: Types.ObjectId[] = [];
 
       for (const group of duplicates) {
         const sortedDocs = group.docs.sort(
-          (a, b) =>
+          (a: EnrollmentDuplicatedDoc, b: EnrollmentDuplicatedDoc) =>
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
 
@@ -228,15 +242,18 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         const hasAnyComments = Array.from(commentsMap.values()).some(Boolean);
 
         if (!hasAnyComments) {
-          duplicatesToDelete.push(...sortedDocs.slice(1).map((doc) => doc._id));
+          duplicatesToDelete.push(...sortedDocs.slice(1).map((doc: EnrollmentDuplicatedDoc) => doc._id));
         } else {
-          sortedDocs.forEach((doc) => {
+          sortedDocs.forEach((doc: EnrollmentDuplicatedDoc) => {
             if (!commentsMap.get(doc._id.toString())) {
               duplicatesToDelete.push(doc._id);
             }
           });
         }
-      }
+      } //aqui seria interessante adicionar, que se nao tem o comentario em nenhum doc, o criterio de desempate pode ser a que tiver conceito?
+
+//fazer backup de prod com as duplicatas antes de rodar tudo!
+
 
       const result = {
         totalDuplicatesFound: duplicates.length,
