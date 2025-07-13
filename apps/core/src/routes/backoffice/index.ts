@@ -4,14 +4,16 @@ import { UserModel } from '@/models/User.js';
 import type { QueueNames } from '@/queue/types.js';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 import { z } from 'zod';
-import type { Types } from 'mongoose';
+import { Types } from 'mongoose';
+import { TeacherModel } from '@/models/Teacher.js';
+import { ComponentModel } from '@/models/Component.js';
 
-type EnrollmentDuplicatedDoc = { //sao apenas os campos do $push retornados pelo aggregator
+type EnrollmentDuplicatedDoc = {
+  //sao apenas os campos do $push retornados pelo aggregator
   _id: Types.ObjectId;
   ra: string;
   disciplina: string;
   turma: string;
-  season: string;
   year: number;
   quad: number;
   identifier: string;
@@ -106,7 +108,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       schema: {
         querystring: z.object({
           ra: z.coerce.number().optional(),
-          type: z.enum(['season', 'quad', 'disciplina']).default('season'),
+          type: z.enum(['quad', 'disciplina', 'all']).default('quad'),
         }),
         body: z.object({
           dryRun: z.boolean().default(true),
@@ -115,17 +117,12 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       // preHandler: (request, reply) => request.isAdmin(reply),
     },
     async (request, reply) => {
-      const { ra, type } = request.query;
+      const { ra } = request.query;
+      let { type } = request.query;
+
       const { dryRun } = request.body;
 
       const groupStrategies = {
-        season: {
-          ra: '$ra',
-          season: '$season',
-          subject: '$subject',
-          year: '$year',
-          quad: '$quad',
-        },
         quad: {
           ra: '$ra',
           subject: '$subject',
@@ -137,9 +134,10 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           year: '$year',
           quad: '$quad',
         },
+        all: {},
       };
 
-      const duplicatesQuery = [
+      const duplicatesQuery = (type: keyof typeof groupStrategies) => [
         {
           $group: {
             _id: groupStrategies[type],
@@ -150,7 +148,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
                 ra: '$ra',
                 disciplina: '$disciplina',
                 turma: '$turma',
-                season: '$season',
+                subject: '$subject',
                 year: '$year',
                 quad: '$quad',
                 identifier: '$identifier',
@@ -163,14 +161,21 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         {
           $match: {
             count: { $gt: 1 },
-            '_id.subject': { $ne: null },
+            ...(type === 'quad' ? { '_id.subject': { $ne: null } } : {}),
             ...(ra ? { '_id.ra': ra } : {}),
           },
         },
       ];
 
+      let duplicates1: any[] = [];
+
+      if (type === 'all') {
+        type = 'disciplina';
+        duplicates1 = await EnrollmentModel.aggregate(duplicatesQuery('quad'));
+      }
+
       // For disciplina type, add additional processing
-      let duplicates = await EnrollmentModel.aggregate(duplicatesQuery);
+      let duplicates = await EnrollmentModel.aggregate(duplicatesQuery(type));
 
       if (type === 'disciplina') {
         duplicates = duplicates.reduce((acc, group) => {
@@ -223,15 +228,39 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         }, []);
       }
 
+      if (duplicates1.length > 0) {
+        const seenIds = new Set<string>();
+        const mergedGroups = [];
+
+        for (const group of [...duplicates1, ...duplicates]) {
+          const uniqueDocs = group.docs.filter((doc: any) => {
+            const key = doc._id.toString();
+            if (seenIds.has(key)) return false;
+            seenIds.add(key);
+            return true;
+          });
+
+          if (uniqueDocs.length > 1) {
+            mergedGroups.push({
+              ...group,
+              docs: uniqueDocs,
+              count: uniqueDocs.length,
+            });
+          }
+        }
+
+        duplicates = mergedGroups;
+      }
+
       const duplicatesToDelete: Types.ObjectId[] = [];
 
       for (const group of duplicates) {
         const sortedDocs = group.docs.sort(
           (a: EnrollmentDuplicatedDoc, b: EnrollmentDuplicatedDoc) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
 
-        const commentsMap = new Map();
+        const commentsMap = new Map<string, boolean>();
         for (const doc of sortedDocs) {
           const hasComments = await CommentModel.exists({
             enrollment: doc._id,
@@ -241,41 +270,94 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
         const hasAnyComments = Array.from(commentsMap.values()).some(Boolean);
 
+        const hasMixedSubject =
+          sortedDocs.some((doc) => doc.subject) &&
+          sortedDocs.some((doc) => !doc.subject);
+
+        const subjectTarget = hasMixedSubject
+          ? sortedDocs.find((doc) => doc.subject)?._id.toString() ?? null
+          : null;
+
         if (!hasAnyComments) {
-          duplicatesToDelete.push(...sortedDocs.slice(1).map((doc: EnrollmentDuplicatedDoc) => doc._id));
+          if (hasMixedSubject && subjectTarget) {
+            const parsedSortedDocs = sortedDocs
+              .filter((doc) => doc._id.toString() !== subjectTarget)
+              .map((doc) => doc._id);
+            duplicatesToDelete.push(...parsedSortedDocs);
+          } else {
+            duplicatesToDelete.push(
+              ...sortedDocs.slice(1).map((doc) => doc._id),
+            );
+          }
         } else {
-          sortedDocs.forEach((doc: EnrollmentDuplicatedDoc) => {
+          for (const doc of sortedDocs) {
             if (!commentsMap.get(doc._id.toString())) {
               duplicatesToDelete.push(doc._id);
             }
-          });
+          }
         }
       }
 
-//fazer backup de prod com as duplicatas antes de rodar tudo!
-
-      let diff = null
+      let struct = null;
       if (ra) {
-
-        const oldImage = duplicates.map((group) => group.docs)
+        const oldImage = duplicates.map((group) => group.docs);
 
         const newImage: any[] = [];
 
         duplicates.forEach((group) => {
-          const filteredGroup: any[] = group.docs.filter((doc: EnrollmentDuplicatedDoc) => {
-            return duplicatesToDelete.indexOf(doc._id) < 0
-          })
+          const filteredGroup: any[] = group.docs.filter(
+            (doc: EnrollmentDuplicatedDoc) => {
+              return duplicatesToDelete.indexOf(doc._id) < 0;
+            },
+          );
 
-          if (filteredGroup.length > 0){
+          if (filteredGroup.length > 0) {
             newImage.push(filteredGroup);
-          }})
+          }
+        });
 
-        diff = {
-          ra,
-          oldImage,
-          newImage,
-          //allEnrollments
+        const diff: any[] = [];
+
+        for (const enrollmentId of duplicatesToDelete) {
+          const enrollment = await EnrollmentModel.findById(enrollmentId);
+          diff.push(enrollment);
         }
+
+        const parsedDiff = diff.map((enrollment) => {
+          return {
+            _id: enrollment._id,
+            disciplina: enrollment.disciplina,
+            subject: enrollment.subject,
+            // turma: enrollment.turma,
+            // year: enrollment.year,
+            // quad: enrollment.quad,
+            // identifier: enrollment.identifier,
+            // createdAt: enrollment.createdAt,
+            // updatedAt: enrollment.updatedAt
+          };
+        });
+
+        const oldImage1 = oldImage.flat();
+        const newImage1 = newImage.flat();
+
+        const parsedOldImage = oldImage1.map((enrollment) => ({
+          _id: enrollment._id,
+          disciplina: enrollment.disciplina,
+          subject: enrollment.subject,
+        }));
+        const parsedNewImage = newImage1.map((enrollment) => ({
+          _id: enrollment._id,
+          disciplina: enrollment.disciplina,
+          subject: enrollment.subject,
+        }));
+
+        struct = {
+          ra,
+          diff: parsedDiff,
+          oldImage: parsedOldImage,
+          newImage: parsedNewImage,
+          //allEnrollments
+        };
       }
 
       const result = {
@@ -283,7 +365,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         duplicatesToDelete: duplicatesToDelete.length,
         deletedCount: 0,
         type,
-        diff
+        struct,
       };
 
       if (duplicatesToDelete.length > 0 && !dryRun) {
@@ -300,79 +382,57 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     },
   );
 
-  app.get("/strategy/contains", async (_, reply)=> { //checar se os casos do type "season" ja sao cobertos pelo caso "quad" R: true
+  app.post(
+    '/removeTeacher',
+    {
+      schema: {
+        body: z.object({
+          teacherIdList: z.array(z.string()),
+        }),
+      },
+    },
+    async (request, reply) => {
+      const { teacherIdList } = request.body;
 
-    const groupStrategies = {
-      season: {
-        ra: '$ra',
-        season: '$season',
-        subject: '$subject',
-        year: '$year',
-        quad: '$quad',
-      },
-      quad: {
-        ra: '$ra',
-        subject: '$subject',
-        year: '$year',
-        quad: '$quad',
-      },
-      disciplina: {
-        ra: '$ra',
-        year: '$year',
-        quad: '$quad',
-      },
-    };
-  
-    const duplicatesQuery = (type: keyof typeof groupStrategies) => [
-      {
-        $group: {
-          _id: groupStrategies[type],
-          count: { $sum: 1 },
-          docs: {
-            $push: {
-              _id: '$_id',
-              ra: '$ra',
-              disciplina: '$disciplina',
-              turma: '$turma',
-              season: '$season',
-              year: '$year',
-              quad: '$quad',
-              identifier: '$identifier',
-              createdAt: '$createdAt',
-              updatedAt: '$updatedAt',
-            },
-          },
-        },
-      },
-      {
-        $match: {
-          count: { $gt: 1 },
-          '_id.subject': { $ne: null },
-        },
-      },
-    ]
+      for (const teacherId of teacherIdList) {
+        const parsedTeacherId = new Types.ObjectId(teacherId);
 
-  const seasonGroups = await EnrollmentModel.aggregate(duplicatesQuery("season"));
-  
-  const quadGroups = await EnrollmentModel.aggregate(duplicatesQuery("quad"));
-  
-  const quadKeys = new Set(
-    quadGroups.map((g) => JSON.stringify(g._id))
+        const r1 = await EnrollmentModel.updateMany(
+          { teoria: parsedTeacherId },
+          { $set: { teoria: null } },
+        );
+        const r2 = await EnrollmentModel.updateMany(
+          { pratica: parsedTeacherId },
+          { $set: { pratica: null } },
+        );
+
+        const r3 = await ComponentModel.updateMany(
+          { teoria: parsedTeacherId },
+          { $set: { teoria: null } },
+        );
+        const r4 = await ComponentModel.updateMany(
+          { pratica: parsedTeacherId },
+          { $set: { pratica: null } },
+        );
+
+        const r5 = await TeacherModel.findByIdAndDelete(teacherId);
+
+        const r6 = await CommentModel.deleteMany({ teacher: parsedTeacherId });
+
+        const logs = {
+          r1,
+          r2,
+          r3,
+          r4,
+          r5,
+          r6,
+        };
+
+        app.log.info(logs);
+      }
+      return reply.status(200);
+    },
   );
-  
-  const allSeasonInsideQuad = seasonGroups.every((group) => {
-    const quadEquivalentKey = {
-      ra: group._id.ra,
-      subject: group._id.subject,
-      year: group._id.year,
-      quad: group._id.quad,
-    };
-    return quadKeys.has(JSON.stringify(quadEquivalentKey));
-  });
-  
-  reply.send(allSeasonInsideQuad); // true se todos season-groups têm correspondente em quad
-  
-  })
 };
 
 export default plugin;
