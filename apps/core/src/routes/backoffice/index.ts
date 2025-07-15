@@ -109,275 +109,227 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         querystring: z.object({
           ra: z.coerce.number().optional(),
           type: z.enum(['quad', 'disciplina', 'all']).default('quad'),
+          batchSize: z.coerce.number().default(500),
         }),
         body: z.object({
           dryRun: z.boolean().default(true),
         }),
       },
-      // preHandler: (request, reply) => request.isAdmin(reply),
     },
     async (request, reply) => {
-      const { ra } = request.query;
-      let { type } = request.query;
-
+      const { ra, type, batchSize } = request.query;
       const { dryRun } = request.body;
+      const effectiveType = type === 'all' ? 'disciplina' : type;
 
       const groupStrategies = {
-        quad: {
-          ra: '$ra',
-          subject: '$subject',
-          year: '$year',
-          quad: '$quad',
-        },
-        disciplina: {
-          ra: '$ra',
-          year: '$year',
-          quad: '$quad',
-        },
-        all: {},
+        quad: { ra: '$ra', subject: '$subject', year: '$year', quad: '$quad' },
+        disciplina: { ra: '$ra', year: '$year', quad: '$quad' },
       };
 
-      const duplicatesQuery = (type: keyof typeof groupStrategies) => [
-        {
-          $group: {
-            _id: groupStrategies[type],
-            count: { $sum: 1 },
-            docs: {
-              $push: {
-                _id: '$_id',
-                ra: '$ra',
-                disciplina: '$disciplina',
-                turma: '$turma',
-                subject: '$subject',
-                year: '$year',
-                quad: '$quad',
-                identifier: '$identifier',
-                createdAt: '$createdAt',
-                updatedAt: '$updatedAt',
-              },
-            },
-          },
-        },
-        {
-          $match: {
-            count: { $gt: 1 },
-            ...(type === 'quad' ? { '_id.subject': { $ne: null } } : {}),
-            ...(ra ? { '_id.ra': ra } : {}),
-          },
-        },
-      ];
-
-      let duplicates1: any[] = [];
-
-      if (type === 'all') {
-        type = 'disciplina';
-        duplicates1 = await EnrollmentModel.aggregate(duplicatesQuery('quad'));
-      }
-
-      // For disciplina type, add additional processing
-      let duplicates = await EnrollmentModel.aggregate(duplicatesQuery(type));
-
-      if (type === 'disciplina') {
-        duplicates = duplicates.reduce((acc, group) => {
+      const normalizeGroups = (groups) => {
+        return groups.reduce((acc, group) => {
           const regexGroups = new Map();
 
           for (const doc of group.docs) {
-            const normalizedDisciplina = normalizeText(doc.disciplina);
-            let foundMatch = false;
+            const normalized = normalizeText(doc.disciplina);
+            let found = false;
 
-            for (const [key, existingDocs] of regexGroups.entries()) {
-              // Try all matching patterns
-              const isMatch = [
-                // Exact match after normalization
-                key === normalizedDisciplina,
-                // Partial match case insensitive
-                new RegExp(key, 'i').test(normalizedDisciplina),
-                // Word-by-word match
+            for (const [key, docs] of regexGroups.entries()) {
+              const match = [
+                key === normalized,
+                new RegExp(escapeRegExp(key), 'i').test(normalized),
                 new RegExp(
-                  key
+                  escapeRegExp(key)
                     .split(/\s+/)
-                    .map((word: string) => `(?=.*${word})`)
+                    .map((w) => `(?=.*${w})`)
                     .join(''),
                   'i',
-                ).test(normalizedDisciplina),
-                // Original disciplina name match
-                new RegExp(doc.disciplina, 'i').test(key),
+                ).test(normalized),
+                new RegExp(escapeRegExp(doc.disciplina), 'i').test(key),
               ].some(Boolean);
 
-              if (isMatch) {
-                existingDocs.push(doc);
-                foundMatch = true;
+              if (match) {
+                docs.push(doc);
+                found = true;
                 break;
               }
             }
 
-            if (!foundMatch) {
-              regexGroups.set(normalizedDisciplina, [doc]);
-            }
+            if (!found) regexGroups.set(normalized, [doc]);
           }
 
           const newGroups = Array.from(regexGroups.values())
-            .filter((docs) => docs.length > 1)
-            .map((docs) => ({
-              _id: { ...group._id },
-              count: docs.length,
-              docs: docs,
-            }));
+            .filter((g) => g.length > 1)
+            .map((g) => ({ _id: { ...group._id }, count: g.length, docs: g }));
 
-          return [...acc, ...newGroups];
+          return acc.concat(newGroups);
         }, []);
-      }
-
-      if (duplicates1.length > 0) {
-        const seenIds = new Set<string>();
-        const mergedGroups = [];
-
-        for (const group of [...duplicates1, ...duplicates]) {
-          const uniqueDocs = group.docs.filter((doc: any) => {
-            const key = doc._id.toString();
-            if (seenIds.has(key)) return false;
-            seenIds.add(key);
-            return true;
-          });
-
-          if (uniqueDocs.length > 1) {
-            mergedGroups.push({
-              ...group,
-              docs: uniqueDocs,
-              count: uniqueDocs.length,
-            });
-          }
-        }
-
-        duplicates = mergedGroups;
-      }
-
-      const duplicatesToDelete: Types.ObjectId[] = [];
-
-      for (const group of duplicates) {
-        const sortedDocs = group.docs.sort(
-          (a: EnrollmentDuplicatedDoc, b: EnrollmentDuplicatedDoc) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-
-        const commentsMap = new Map<string, boolean>();
-        for (const doc of sortedDocs) {
-          const hasComments = await CommentModel.exists({
-            enrollment: doc._id,
-          });
-          commentsMap.set(doc._id.toString(), hasComments !== null);
-        }
-
-        const hasAnyComments = Array.from(commentsMap.values()).some(Boolean);
-
-        const hasMixedSubject =
-          sortedDocs.some((doc) => doc.subject) &&
-          sortedDocs.some((doc) => !doc.subject);
-
-        const subjectTarget = hasMixedSubject
-          ? sortedDocs.find((doc) => doc.subject)?._id.toString() ?? null
-          : null;
-
-        if (!hasAnyComments) {
-          if (hasMixedSubject && subjectTarget) {
-            const parsedSortedDocs = sortedDocs
-              .filter((doc) => doc._id.toString() !== subjectTarget)
-              .map((doc) => doc._id);
-            duplicatesToDelete.push(...parsedSortedDocs);
-          } else {
-            duplicatesToDelete.push(
-              ...sortedDocs.slice(1).map((doc) => doc._id),
-            );
-          }
-        } else {
-          for (const doc of sortedDocs) {
-            if (!commentsMap.get(doc._id.toString())) {
-              duplicatesToDelete.push(doc._id);
-            }
-          }
-        }
-      }
-
-      let struct = null;
-      if (ra) {
-        const oldImage = duplicates.map((group) => group.docs);
-
-        const newImage: any[] = [];
-
-        duplicates.forEach((group) => {
-          const filteredGroup: any[] = group.docs.filter(
-            (doc: EnrollmentDuplicatedDoc) => {
-              return duplicatesToDelete.indexOf(doc._id) < 0;
-            },
-          );
-
-          if (filteredGroup.length > 0) {
-            newImage.push(filteredGroup);
-          }
-        });
-
-        const diff: any[] = [];
-
-        for (const enrollmentId of duplicatesToDelete) {
-          const enrollment = await EnrollmentModel.findById(enrollmentId);
-          diff.push(enrollment);
-        }
-
-        const parsedDiff = diff.map((enrollment) => {
-          return {
-            _id: enrollment._id,
-            disciplina: enrollment.disciplina,
-            subject: enrollment.subject,
-            // turma: enrollment.turma,
-            // year: enrollment.year,
-            // quad: enrollment.quad,
-            // identifier: enrollment.identifier,
-            // createdAt: enrollment.createdAt,
-            // updatedAt: enrollment.updatedAt
-          };
-        });
-
-        const oldImage1 = oldImage.flat();
-        const newImage1 = newImage.flat();
-
-        const parsedOldImage = oldImage1.map((enrollment) => ({
-          _id: enrollment._id,
-          disciplina: enrollment.disciplina,
-          subject: enrollment.subject,
-        }));
-        const parsedNewImage = newImage1.map((enrollment) => ({
-          _id: enrollment._id,
-          disciplina: enrollment.disciplina,
-          subject: enrollment.subject,
-        }));
-
-        struct = {
-          ra,
-          diff: parsedDiff,
-          oldImage: parsedOldImage,
-          newImage: parsedNewImage,
-          //allEnrollments
-        };
-      }
-
-      const result = {
-        totalDuplicatesFound: duplicates.length,
-        duplicatesToDelete: duplicatesToDelete.length,
-        deletedCount: 0,
-        type,
-        struct,
       };
 
-      if (duplicatesToDelete.length > 0 && !dryRun) {
-        app.log.info(
-          `Deleting ${duplicatesToDelete.length} duplicate enrollments (type: ${type})`,
-        );
-        const deleteResult = await EnrollmentModel.deleteMany({
+      const fetchDuplicates = async (type, raList) => {
+        const pipeline = [
+          {
+            $group: {
+              _id: groupStrategies[type],
+              count: { $sum: 1 },
+              docs: {
+                $push: {
+                  _id: '$_id',
+                  ra: '$ra',
+                  disciplina: '$disciplina',
+                  turma: '$turma',
+                  subject: '$subject',
+                  year: '$year',
+                  quad: '$quad',
+                  identifier: '$identifier',
+                  createdAt: '$createdAt',
+                  updatedAt: '$updatedAt',
+                },
+              },
+            },
+          },
+          {
+            $match: {
+              count: { $gt: 1 },
+              ...(type === 'quad' ? { '_id.subject': { $ne: null } } : {}),
+              ...(raList ? { '_id.ra': { $in: raList } } : {}),
+            },
+          },
+        ];
+        return await EnrollmentModel.aggregate(pipeline);
+      };
+
+      const processDuplicates = async (duplicates) => {
+        const duplicatesToDelete = [];
+
+        for (const group of duplicates) {
+          const sorted = group.docs.sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+          );
+          const commentDocs = await CommentModel.find({
+            enrollment: { $in: sorted.map((doc) => doc._id) },
+          }).select('enrollment');
+
+          const commentSet = new Set(
+            commentDocs.map((c) => c.enrollment.toString()),
+          );
+
+          const hasAny = sorted.some((doc) =>
+            commentSet.has(doc._id.toString()),
+          );
+          const hasMixedSubject =
+            sorted.some((d) => d.subject) && sorted.some((d) => !d.subject);
+          const subjectTarget = hasMixedSubject
+            ? sorted.find((d) => d.subject)?._id.toString()
+            : null;
+
+          if (!hasAny) {
+            if (hasMixedSubject && subjectTarget) {
+              duplicatesToDelete.push(
+                ...sorted
+                  .filter((d) => d._id.toString() !== subjectTarget)
+                  .map((d) => d._id),
+              );
+            } else {
+              duplicatesToDelete.push(...sorted.slice(1).map((d) => d._id));
+            }
+          } else {
+            duplicatesToDelete.push(
+              ...sorted
+                .filter((d) => !commentSet.has(d._id.toString()))
+                .map((d) => d._id),
+            );
+          }
+        }
+
+        return duplicatesToDelete;
+      };
+
+      const summarize = async (duplicatesToDelete, duplicates) => {
+        const diff = await EnrollmentModel.find({
           _id: { $in: duplicatesToDelete },
         });
-        result.deletedCount = deleteResult.deletedCount ?? 0;
-      }
+        const parsedDiff = diff.map((d) => ({
+          _id: d._id,
+          disciplina: d.disciplina,
+          subject: d.subject,
+        }));
 
+        const oldImage = duplicates
+          .flatMap((g) => g.docs)
+          .map((d) => ({
+            _id: d._id,
+            disciplina: d.disciplina,
+            subject: d.subject,
+          }));
+        const newImage = duplicates
+          .flatMap((g) =>
+            g.docs.filter((d) => !duplicatesToDelete.includes(d._id)),
+          )
+          .map((d) => ({
+            _id: d._id,
+            disciplina: d.disciplina,
+            subject: d.subject,
+          }));
+
+        return { diff: parsedDiff, oldImage, newImage };
+      };
+
+      const handleRaList = ra ? [ra] : await EnrollmentModel.distinct('ra');
+
+      let result = null;
+      for (let i = 0; i < handleRaList.length; i += batchSize) {
+        const batchRa = handleRaList.slice(i, i + batchSize);
+
+        let duplicates = await fetchDuplicates(effectiveType, batchRa);
+        if (effectiveType === 'disciplina')
+          duplicates = normalizeGroups(duplicates);
+
+        if (type === 'all') {
+          const altDuplicates = await fetchDuplicates('quad', batchRa);
+          const seen = new Set();
+          const merged = [];
+
+          for (const g of [...altDuplicates, ...duplicates]) {
+            const unique = g.docs.filter((d) => {
+              const id = d._id.toString();
+              if (seen.has(id)) return false;
+              seen.add(id);
+              return true;
+            });
+
+            if (unique.length > 1)
+              merged.push({ ...g, docs: unique, count: unique.length });
+          }
+
+          duplicates = merged;
+        }
+
+        const duplicatesToDelete = await processDuplicates(duplicates);
+
+        let struct = null;
+        if (ra) struct = await summarize(duplicatesToDelete, duplicates);
+
+        result = {
+          ra,
+          totalDuplicatesFound: duplicates.length,
+          duplicatesToDelete: duplicatesToDelete.length,
+          deletedCount: 0,
+          type,
+          struct,
+        };
+
+        if (duplicatesToDelete.length > 0 && !dryRun) {
+          app.log.info(
+            `Deleting ${duplicatesToDelete.length} duplicate enrollments (type: ${type})`,
+          );
+          const del = await EnrollmentModel.deleteMany({
+            _id: { $in: duplicatesToDelete },
+          });
+          result.deletedCount = del.deletedCount ?? 0;
+        }
+        app.log.info(result);
+      }
       return reply.send(result);
     },
   );
@@ -443,4 +395,8 @@ function normalizeText(text: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
+}
+
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
