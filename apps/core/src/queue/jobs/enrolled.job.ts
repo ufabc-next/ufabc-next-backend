@@ -25,6 +25,16 @@ export async function syncEnrolled({ app }: QueueContext<void>) {
 
   await Promise.all(enrolledPromises);
 
+  // if the tasks are empty, send a request to a new job to create components
+  if (enrollmentTasks.length === 0) {
+    app.log.info({
+      msg: 'No enrollments found, dispatching components sync',
+    });
+    app.job.dispatch('ComponentsSync', {
+      tenant,
+    });
+  }
+
   app.log.info({
     msg: 'Enrolledsync tasks dispatched',
     totalEnrollments: enrollmentTasks.length,
