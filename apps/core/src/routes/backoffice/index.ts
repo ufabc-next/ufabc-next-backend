@@ -333,58 +333,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       return reply.send(result);
     },
   );
-
-  app.post(
-    '/removeTeacher',
-    {
-      schema: {
-        body: z.object({
-          teacherIdList: z.array(z.string()),
-        }),
-      },
-    },
-    async (request, reply) => {
-      const { teacherIdList } = request.body;
-
-      for (const teacherId of teacherIdList) {
-        const parsedTeacherId = new Types.ObjectId(teacherId);
-
-        const r1 = await EnrollmentModel.updateMany(
-          { teoria: parsedTeacherId },
-          { $set: { teoria: null } },
-        );
-        const r2 = await EnrollmentModel.updateMany(
-          { pratica: parsedTeacherId },
-          { $set: { pratica: null } },
-        );
-
-        const r3 = await ComponentModel.updateMany(
-          { teoria: parsedTeacherId },
-          { $set: { teoria: null } },
-        );
-        const r4 = await ComponentModel.updateMany(
-          { pratica: parsedTeacherId },
-          { $set: { pratica: null } },
-        );
-
-        const r5 = await TeacherModel.findByIdAndDelete(teacherId);
-
-        const r6 = await CommentModel.deleteMany({ teacher: parsedTeacherId });
-
-        const logs = {
-          r1,
-          r2,
-          r3,
-          r4,
-          r5,
-          r6,
-        };
-
-        app.log.info(logs);
-      }
-      return reply.status(200);
-    },
-  );
 };
 
 export default plugin;
