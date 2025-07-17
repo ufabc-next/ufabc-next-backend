@@ -42,8 +42,8 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   });
   app.get('/validate/:ra', async (request, reply) => {
     const { ra } = request.params as { ra: string };
-    const raNumber = Number.parseInt(ra)
-    const user = await UserModel.findOne({ra:raNumber});
+    const raNumber = Number.parseInt(ra);
+    const user = await UserModel.findOne({ ra: raNumber });
     if (!user) {
       return reply.badRequest('User not found');
     }
@@ -55,7 +55,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     };
 
     return userInfo;
-  })
+  });
 
   app.post(
     '/facebook',
@@ -233,7 +233,22 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         );
       }
 
-      return { email: checkUser.email[0] };
+      let email = '';
+
+      if (checkUser.email.length === 0) {
+        request.log.warn({
+          ra,
+          username: checkUser.username,
+          msg: 'No email found, using username as email',
+        });
+        email = checkUser.username.concat('@aluno.ufabc.edu.br');
+      }
+
+      if (checkUser.email.length > 0) {
+        email = checkUser.email[0];
+      }
+
+      return { email };
     },
   );
 
