@@ -1,7 +1,9 @@
 import { sendConfirmationEmail } from './jobs/email.job.js';
-import { processSingleEnrollment } from './jobs/enrollments.job.js';
+import {
+  processEnrollmentsForRa,
+  scheduledEnrollmentsProcessing,
+} from './jobs/enrollments.job.js';
 import { processSingleEnrolled, syncEnrolled } from './jobs/enrolled.job.js';
-import { updateTeachers } from './jobs/teacher-update.job.js';
 import { processComponent, syncComponents } from './jobs/components.job.js';
 import {
   processComponentEnrollment,
@@ -14,7 +16,6 @@ import type { ConnectionOptions, WorkerOptions } from 'bullmq';
 type JobNames =
   | 'send_email'
   | 'enrollments_update'
-  | 'teacher_update_enrollments'
   | 'sync_enrolled'
   | 'sync_components'
   | 'user_enrollments_update'
@@ -46,12 +47,7 @@ export const QUEUE_JOBS: Record<JobNames, WorkerOptions> = {
   }),
   enrollments_update: withConnection({
     concurrency: 10,
-    removeOnComplete: { count: 1000, age: 24 * 60 * 60 },
-    removeOnFail: { count: 500, age: 24 * 60 * 60 },
     limiter: { max: 50, duration: 1_000 },
-  }),
-  teacher_update_enrollments: withConnection({
-    concurrency: 5,
   }),
   sync_enrolled: withConnection({
     concurrency: 5,
@@ -105,13 +101,10 @@ export const JOBS = {
     queue: 'user_enrollments_update',
     handler: processComponentEnrollment,
   },
-  TeacherUpdate: {
-    queue: 'teacher_update_enrollments',
-    handler: updateTeachers,
-  },
   EnrollmentSync: {
     queue: 'enrollments_update',
-    handler: processSingleEnrollment,
+    handler: scheduledEnrollmentsProcessing,
+    every: '5 days',
   },
   LogsUpload: {
     queue: 'logs_upload',
@@ -121,6 +114,10 @@ export const JOBS = {
   InsertNotionPage: {
     queue: 'notion_insert',
     handler: postInfoIntoNotionDB,
+  },
+  ProcessEnrollmentsForRa: {
+    queue: 'enrollments_update',
+    handler: processEnrollmentsForRa,
   },
 } as const;
 

@@ -2,6 +2,32 @@ import { ofetch } from 'ofetch';
 import { logger } from '@/utils/logger.js';
 import { sigHistory, type SigHistory } from '@/schemas/history.js';
 
+type BrDays = 'segunda' | 'terça' | 'quarta' | 'quinta' | 'sexta' | 'sábado';
+
+type ComponentSchedule = {
+  day: BrDays | 'bado'; // 'bado' is a mistake in the original code, should be 'sabado';
+  room: string;
+  endTime: string;
+  startTime: string;
+  unparsed: string;
+  frequency: 'semanal' | 'quinzenal I' | 'quinzenal II';
+};
+
+type Weekdays =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday';
+
+type ComponentHours = {
+  [key in Weekdays]?: {
+    periodicity: 'weekly' | 'biweekly';
+    classPeriod: string[];
+  };
+};
+
 export type UfabcParserComponent = {
   /** The id as we consume */
   name: string;
@@ -46,103 +72,36 @@ export type UfabcParserComponent = {
   };
 };
 
-type BrDays = 'segunda' | 'terça' | 'quarta' | 'quinta' | 'sexta' | 'sábado';
-
-type ComponentSchedule = {
-  day: BrDays | 'bado'; // 'bado' is a mistake in the original code, should be 'sabado';
-  room: string;
-  endTime: string;
-  startTime: string;
-  unparsed: string;
-  frequency: 'semanal' | 'quinzenal I' | 'quinzenal II';
-};
-
-type Weekdays =
-  | 'monday'
-  | 'tuesday'
-  | 'wednesday'
-  | 'thursday'
-  | 'friday'
-  | 'saturday';
-
-type ComponentHours = {
-  [key in Weekdays]?: {
-    periodicity: 'weekly' | 'biweekly';
-    classPeriod: string[];
-  };
-};
-
-export type UfabcParserComponentV2 = {
-  UFComponentId: number;
-  UFClassroomCode: string;
-  class: string;
-  shift: 'morning' | 'night';
-  vacancies: number;
-  campus: 'sa' | 'sbc';
-  hours: ComponentHours;
-  tpi: {
-    theory: number;
-    practice: number;
-    individual: number;
-  };
-  courses: Array<{
-    category: string;
-    UFCourseId: number;
-    name?: string;
-  }>;
-  UFComponentCode: string;
-  name: string;
-  credits: number;
-  teachers: {
-    professor?: string;
-    practice?: string;
-    secondaryPractice?: string;
-    secondaryProfessor?: string;
-  };
-  season: string;
-};
-
-type StudentRA = string;
-export type StudentComponent = {
-  code: string;
-  name: string | null;
-  shift: 'morning' | 'night';
-  class: string;
-  campus: 'sa' | 'sbc';
-  original: string;
-  errors: string[];
-};
-export type UFProcessorEnrollment = Record<StudentRA, StudentComponent[]>;
-
 type ComponentId = number;
 type StudentIds = number;
 export type UFProcessorEnrolled = Record<ComponentId, StudentIds[]>;
 
-export type UFProcessorComponentFile = {
-  /** The id as we consume */
-  UFComponentId: '-' | number;
-  /** The code as we consume */
-  UFComponentCode: string;
-  UFClassroomCode: string;
-  campus: 'sbc' | 'sa';
+type EnrollmentProfessor = {
   name: string;
-  turma: string;
-  turno: 'diurno' | 'noturno';
+  email: string | null;
+  role: 'professor' | 'practice' | 'secondaryProfessor' | 'secondaryPractice';
+  isSecondary: boolean;
+};
+
+type UfabcParserEnrollment = {
+  id: number;
+  name: string;
+  code: string;
+  campus: 'sbc' | 'sa';
+  class: string;
   credits: number;
-  tpi: [number, number, number];
-  enrolled: number[];
-  vacancies: number;
-  /** The courses that are available for this component */
-  courses: Array<{
-    name: string | '-';
-  }>;
-  teachers: {
-    practice: string | null;
-    secondaryPractice: string | null;
-    professor: string | null;
-    secondaryProfessor: string | null;
+  shift: 'morning' | 'night';
+  hours: [string, string];
+  season: string;
+  schedules: {
+    theory: ComponentSchedule[];
+    practice: ComponentSchedule[];
   };
-  hours: Record<string, { periodicity: string; classPeriod: string[] }>[];
+  professors: {
+    main: EnrollmentProfessor;
+    practice: EnrollmentProfessor | [];
+    secondaryPractice: EnrollmentProfessor | [];
+  };
 };
 
 export const ufabcParserService = ofetch.create({
@@ -211,21 +170,20 @@ export async function getComponents(season: string) {
   return components;
 }
 
-export async function getEnrollments(kind: string, season: string) {
-  const enrollments = await ufabcParserService<UFProcessorEnrollment>(
-    '/enrollments',
-    {
-      query: {
-        kind,
-        season,
-        granted: true,
-      },
-    },
-  );
-  return enrollments;
-}
-
 export async function getEnrolledStudents() {
   const enrolled = await ufabcParserService<UFProcessorEnrolled>('/enrolled');
   return enrolled;
+}
+
+export async function getStudentEnrollments(email: string, season: string) {
+  const studentEnrollments = await ufabcParserService<{
+    data: UfabcParserEnrollment[];
+    total: number;
+  }>(`/v2/matriculas/classes/${email}`, {
+    query: {
+      season,
+    },
+  });
+
+  return studentEnrollments;
 }

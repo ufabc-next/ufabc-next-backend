@@ -13,7 +13,10 @@ const enrollmentSchema = new Schema(
       required: true,
     },
     identifier: String,
-    ra: Number,
+    ra: {
+      type: Number,
+      required: true,
+    },
     disciplina: {
       type: String,
       required: true,
