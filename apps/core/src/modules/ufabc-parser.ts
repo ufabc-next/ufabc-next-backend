@@ -244,15 +244,3 @@ export async function getComponentsFile(season: string, kind: string) {
 
   return componentsFile;
 }
-
-export async function getComponentsV2(season: string) {
-  const components = await ufabcParserService<UfabcParserComponentV2[]>(
-    '/v2/components',
-    {
-      query: {
-        season,
-      },
-    },
-  );
-  return components;
-}

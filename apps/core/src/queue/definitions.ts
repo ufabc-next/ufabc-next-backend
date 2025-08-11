@@ -63,7 +63,6 @@ export const QUEUE_JOBS: Record<JobNames, WorkerOptions> = {
     removeOnComplete: { count: 400, age: 0 },
   }),
   sync_components: withConnection({
-    concurrency: 10,
     removeOnComplete: { count: 1000, age: 24 * 60 * 60 },
     limiter: { max: 50, duration: 1000 },
   }),
