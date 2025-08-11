@@ -7,10 +7,9 @@ import {
   processComponentEnrollment,
   userEnrollmentsUpdate,
 } from './jobs/user-enrollments.job.js';
-import type { ConnectionOptions, WorkerOptions } from 'bullmq';
-import { processComponentsTeachers } from './jobs/components-teacher.job.js';
 import { uploadLogsToS3 } from './jobs/logs.job.js';
 import { postInfoIntoNotionDB } from './jobs/notion-questions.job.js';
+import type { ConnectionOptions, WorkerOptions } from 'bullmq';
 
 type JobNames =
   | 'send_email'
@@ -19,7 +18,6 @@ type JobNames =
   | 'sync_enrolled'
   | 'sync_components'
   | 'user_enrollments_update'
-  | 'sync_components_teachers'
   | 'logs_upload'
   | 'notion_insert';
 
@@ -63,11 +61,6 @@ export const QUEUE_JOBS: Record<JobNames, WorkerOptions> = {
     removeOnComplete: { count: 400, age: 0 },
   }),
   sync_components: withConnection({
-    removeOnComplete: { count: 1000, age: 24 * 60 * 60 },
-    limiter: { max: 50, duration: 1000 },
-  }),
-  sync_components_teachers: withConnection({
-    concurrency: 10,
     removeOnComplete: { count: 1000, age: 24 * 60 * 60 },
     limiter: { max: 50, duration: 1000 },
   }),
@@ -119,10 +112,6 @@ export const JOBS = {
   EnrollmentSync: {
     queue: 'enrollments_update',
     handler: processSingleEnrollment,
-  },
-  ComponentsTeachersSync: {
-    queue: 'sync_components_teachers',
-    handler: processComponentsTeachers,
   },
   LogsUpload: {
     queue: 'logs_upload',

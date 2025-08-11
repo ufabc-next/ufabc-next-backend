@@ -229,18 +229,3 @@ export async function getEnrolledStudents() {
   const enrolled = await ufabcParserService<UFProcessorEnrolled>('/enrolled');
   return enrolled;
 }
-
-export async function getComponentsFile(season: string, kind: string) {
-  const componentsFile = await ufabcParserService<UFProcessorComponentFile[]>(
-    '/v2/matriculas/components/file',
-    {
-      query: {
-        season,
-        granted: false,
-        kind,
-      },
-    },
-  );
-
-  return componentsFile;
-}
