@@ -1,30 +1,60 @@
-import type {
-  ParsedSigStudent,
-  SigStudent,
-} from '@/schemas/entities/students.js';
 import { ofetch } from 'ofetch';
 import { logger } from '@/utils/logger.js';
 import { sigHistory, type SigHistory } from '@/schemas/history.js';
 
 export type UfabcParserComponent = {
   /** The id as we consume */
+  name: string;
   UFComponentId: number;
-  /** The code as we consume */
   UFComponentCode: string;
   UFClassroomCode: string;
-  rawTPI: [number, number, number];
   campus: 'sbc' | 'sa';
-  name: string;
-  turma: string;
-  turno: 'diurno' | 'noturno';
+  class: string;
+  classroom: string | null;
+  shift: 'morning' | 'night';
+  tenantId: number;
+  season: string;
+  year: number;
+  quad: '1' | '2' | '3';
+  vacancies: number;
+  subjectId: string;
   credits: number;
   courses: Array<{
-    name: string | '-';
     UFCourseId: number;
-    category: 'limitada' | 'obrigatoria';
+    category: 'mandatory' | 'limited';
   }>;
-  vacancies: number;
-  hours: Record<string, { periodicity: string; classPeriod: string[] }>[];
+  hours: ComponentHours;
+  schedules: {
+    theory: ComponentSchedule[];
+    practice: ComponentSchedule[];
+  };
+  tpi: {
+    theory: number;
+    practice: number;
+    individual: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  turma: string;
+  turno: 'morning' | 'night';
+  teachers: {
+    professor: string | null;
+    practice: string | null;
+    secondaryPractice: string | null;
+    secondaryProfessor: string | null;
+  };
+};
+
+type BrDays = 'segunda' | 'terça' | 'quarta' | 'quinta' | 'sexta' | 'sábado';
+
+type ComponentSchedule = {
+  day: BrDays | 'bado'; // 'bado' is a mistake in the original code, should be 'sabado';
+  room: string;
+  endTime: string;
+  startTime: string;
+  unparsed: string;
+  frequency: 'semanal' | 'quinzenal I' | 'quinzenal II';
 };
 
 type Weekdays =
@@ -149,53 +179,6 @@ export const ufabcParserService = ofetch.create({
   },
 });
 
-export async function getSigUser(sigStudent: SigStudent, sessionId: string) {
-  const student = await ufabcParserService<{
-    data: ParsedSigStudent | null;
-    error: string | null;
-  }>('/sig/me', {
-    method: 'POST',
-    headers: {
-      sessionId,
-    },
-    query: {
-      action: 'default',
-    },
-    body: sigStudent,
-  });
-  return student;
-}
-
-type FullStudentRequest = {
-  student: ParsedSigStudent & { grade: string };
-  action: string;
-  viewState: string;
-  sessionId: string;
-};
-
-export async function getFullStudent({
-  student,
-  action,
-  viewState,
-  sessionId,
-}: FullStudentRequest) {
-  const fullStudent = await ufabcParserService<{
-    data: ParsedSigStudent | null;
-    error: string | null;
-  }>('/sig/grades', {
-    method: 'POST',
-    headers: {
-      sessionId,
-      viewState,
-    },
-    body: {
-      student,
-      action,
-    },
-  });
-  return fullStudent;
-}
-
 export async function getHistory(sessionId: string, viewState: string) {
   const rawHistory = await ufabcParserService<{
     data: SigHistory | null;
@@ -216,9 +199,15 @@ export async function getHistory(sessionId: string, viewState: string) {
   return parsedHistory;
 }
 
-export async function getComponents() {
-  const components =
-    await ufabcParserService<UfabcParserComponent[]>('/components');
+export async function getComponents(season: string) {
+  const components = await ufabcParserService<{
+    data: UfabcParserComponent[];
+    total: number;
+  }>('/v2/matriculas/components/non-paginated', {
+    query: {
+      tenant: season,
+    },
+  });
   return components;
 }
 
