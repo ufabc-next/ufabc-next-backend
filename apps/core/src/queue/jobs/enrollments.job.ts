@@ -1,7 +1,6 @@
 import { EnrollmentModel } from '@/models/Enrollment.js';
 import { UserModel } from '@/models/User.js';
 import { currentQuad } from '@next/common';
-import { randomUUID } from 'node:crypto';
 import { getStudentEnrollments } from '@/modules/ufabc-parser.js';
 import { ComponentModel } from '@/models/Component.js';
 import type { QueueContext } from '../types.js';
@@ -58,11 +57,34 @@ export async function processEnrollmentsForRa({
     .lean<{ email: string }>();
 
   if (!res) {
-    app.log.error(`User with RA ${ra} not found`);
-    throw new Error(`User with RA ${ra} not found`);
-  }
+    app.log.warn(
+      `User with RA ${ra} not found, dispatching enrollment creation job`,
+    );
 
-  const jobId = randomUUID();
+    // Dispatch job to create enrollments using RA instead of throwing error
+    try {
+      await app.job.dispatch('HandleUserNotFound', {
+        ra,
+        season,
+        context: 'enrollment processing',
+      });
+    } catch (error) {
+      app.log.error({
+        msg: 'Failed to dispatch user not found job',
+        ra,
+        season,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    // Return early with appropriate return value
+    job.returnvalue = {
+      ra,
+      season,
+      status: 'user_not_found',
+    };
+    return;
+  }
 
   // Process enrollments for the found email
   const enrollments = await EnrollmentModel.find({
@@ -72,10 +94,12 @@ export async function processEnrollmentsForRa({
 
   if (enrollments.length === 0) {
     app.log.info(`No enrollments found for RA ${ra} in season ${season}`);
-    await job.moveToCompleted(
-      `Nothing to process for RA ${ra} in season ${season}`,
-      jobId,
-    );
+    job.returnvalue = {
+      ra,
+      season,
+    };
+
+    return;
   }
 
   app.log.info({
@@ -94,10 +118,10 @@ export async function processEnrollmentsForRa({
     app.log.info(
       `No enrollments found in parser for RA ${ra} in season ${season}`,
     );
-    await job.moveToCompleted(
-      `No enrollments found in parser for RA ${ra} in season ${season}`,
-      jobId,
-    );
+    job.returnvalue = {
+      ra,
+      season,
+    };
     return;
   }
 
@@ -116,15 +140,7 @@ export async function processEnrollmentsForRa({
           ra,
           season,
         });
-        // should not happen, so we will send to the queue for manual review
-        await job.moveToFailed(
-          {
-            message: `Component not found for enrollment ${enrollment.code} for RA ${ra}`,
-            name: 'ComponentNotFoundError',
-            cause: { enrollment, ra, season },
-          },
-          jobId,
-        );
+
         return null;
       }
 
@@ -166,9 +182,4 @@ export async function processEnrollmentsForRa({
     ra,
     season,
   };
-
-  await job.moveToCompleted(
-    `Processed enrollments for RA ${ra} in season ${season} successfully, total: ${filteredEnrollments.length}`,
-    jobId,
-  );
 }

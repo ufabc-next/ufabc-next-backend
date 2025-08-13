@@ -12,6 +12,7 @@ import {
 import { uploadLogsToS3 } from './jobs/logs.job.js';
 import { postInfoIntoNotionDB } from './jobs/notion-questions.job.js';
 import type { ConnectionOptions, WorkerOptions } from 'bullmq';
+import { handleUserNotFound } from './jobs/user-not-found.job.js';
 
 type JobNames =
   | 'send_email'
@@ -20,7 +21,8 @@ type JobNames =
   | 'sync_components'
   | 'user_enrollments_update'
   | 'logs_upload'
-  | 'notion_insert';
+  | 'notion_insert'
+  | 'user_notifications_update';
 
 const MONTH = 60 * 60 * 24 * 30;
 
@@ -67,6 +69,10 @@ export const QUEUE_JOBS: Record<JobNames, WorkerOptions> = {
   notion_insert: withConnection({
     concurrency: 5,
     removeOnComplete: { count: 100, age: 24 * 60 * 60 },
+  }),
+  user_notifications_update: withConnection({
+    concurrency: 3,
+    removeOnComplete: { count: 200, age: 24 * 60 * 60 },
   }),
 } as const;
 
@@ -118,6 +124,10 @@ export const JOBS = {
   ProcessEnrollmentsForRa: {
     queue: 'enrollments_update',
     handler: processEnrollmentsForRa,
+  },
+  HandleUserNotFound: {
+    queue: 'user_notifications_update',
+    handler: handleUserNotFound,
   },
 } as const;
 

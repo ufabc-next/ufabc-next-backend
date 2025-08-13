@@ -154,38 +154,119 @@ async function handleSubject(
   log: FastifyBaseLogger,
 ) {
   const UFCode = component.UFComponentCode.split('-')[0];
+  const searchValue = startCase(camelCase(component.name));
+
   log.debug({
     msg: 'Handling subject for component',
     UFCode,
+    searchValue,
   });
+
   try {
-    const subject = await SubjectModel.findOne({
+    // First try to find by UFCode
+    let subject = await SubjectModel.findOne({
       uf_subject_code: { $in: [UFCode] },
     });
-    if (!subject) {
-      log.info({
-        msg: 'Subject not found, creating new one',
-        UFCode,
-      });
-      const newSubject = {
-        uf_subject_code: UFCode,
-        name: component.name,
-        search: startCase(camelCase(component.name)),
-        creditos: component.credits,
-      };
-      const createdSubject = await SubjectModel.create(newSubject);
-      log.info({
-        msg: 'New subject created',
-        subjectId: createdSubject._id,
-      });
-      return createdSubject.toObject();
+
+    if (subject) {
+      return subject.toObject();
     }
-    return subject.toObject();
+
+    // If not found by UFCode, try to find by search value
+    subject = await SubjectModel.findOne({
+      search: searchValue,
+    });
+
+    if (subject) {
+      log.info({
+        msg: 'Subject found by search value, updating with UFCode',
+        UFCode,
+        searchValue,
+        existingSubjectId: subject._id,
+      });
+
+      // Update the existing subject to include the new UFCode
+      const updatedSubject = await SubjectModel.findByIdAndUpdate(
+        subject._id,
+        {
+          $addToSet: { uf_subject_code: UFCode },
+        },
+        { new: true },
+      );
+
+      if (!updatedSubject) {
+        throw new Error('Failed to update subject with UFCode');
+      }
+
+      return updatedSubject.toObject();
+    }
+
+    // If not found at all, create new subject
+    log.info({
+      msg: 'Subject not found, creating new one',
+      UFCode,
+      searchValue,
+    });
+
+    const newSubject = {
+      uf_subject_code: [UFCode],
+      name: component.name,
+      search: searchValue,
+      creditos: component.credits,
+    };
+
+    const createdSubject = await SubjectModel.create(newSubject);
+    log.info({
+      msg: 'New subject created',
+      subjectId: createdSubject._id,
+    });
+    return createdSubject.toObject();
   } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 11000
+    ) {
+      log.warn({
+        msg: 'Duplicate key detected, attempting to find and update existing subject',
+        UFCode,
+        searchValue,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      // Find the existing subject with this search value
+      const existingSubject = await SubjectModel.findOne({
+        search: searchValue,
+      });
+      if (existingSubject) {
+        const updatedSubject = await SubjectModel.findByIdAndUpdate(
+          existingSubject._id,
+          {
+            $addToSet: { uf_subject_code: UFCode },
+          },
+          { new: true },
+        );
+
+        if (!updatedSubject) {
+          throw new Error('Failed to update existing subject with UFCode');
+        }
+
+        log.info({
+          msg: 'Updated existing subject with new UFCode',
+          subjectId: updatedSubject._id,
+          UFCode,
+        });
+
+        return updatedSubject.toObject();
+      }
+    }
+
     log.error({
-      msg: 'Error finding subject',
+      msg: 'Error handling subject',
       error: error instanceof Error ? error.message : String(error),
       UFCode,
+      searchValue,
     });
     throw error;
   }
