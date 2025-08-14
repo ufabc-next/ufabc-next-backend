@@ -12,7 +12,7 @@ export async function swagger(app: FastifyInstance) {
       info: {
         title: 'next - Documentation',
         description: 'Endpoints registrados pelo sistema',
-        version: '0.1.0',
+        version: '1.0.0',
       },
       servers: [
         {

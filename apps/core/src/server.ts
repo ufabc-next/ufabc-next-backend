@@ -33,6 +33,10 @@ export async function start() {
     await app.close();
   });
 
+  app.get('/openapi.json', async () => {
+    return app.swagger();
+  });
+
   await app.ready();
 
   try {
