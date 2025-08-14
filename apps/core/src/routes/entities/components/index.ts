@@ -7,7 +7,7 @@ import {
   type NonPaginatedComponents,
 } from '@/schemas/entities/components.js';
 import type { preHandlerAsyncHookHandler } from 'fastify';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { SubjectDocument } from '@/models/Subject.js';
 import type { TeacherDocument } from '@/models/Teacher.js';
 import { currentQuad } from '@next/common';
@@ -30,7 +30,7 @@ const validateStudent: preHandlerAsyncHookHandler = async (request, reply) => {
   return;
 };
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   const componentsListCache = app.cache<NonPaginatedComponents[]>();
 
   app.get('/', async (request, reply) => {

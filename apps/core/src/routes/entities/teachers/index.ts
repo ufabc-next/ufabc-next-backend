@@ -5,7 +5,7 @@ import {
   searchTeacherSchema,
   updateTeacherSchema,
 } from '@/schemas/entities/teachers.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { Types } from 'mongoose';
 import {
   findAndUpdate,
@@ -16,7 +16,7 @@ import {
   searchMany,
 } from './service.js';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   const teachersCache = app.cache<{}>();
 
   app.get('/', { schema: listTeachersSchema }, async () => {
@@ -121,7 +121,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 function getMean(value: any[], key?: string): any {
   const count = value.reduce((sum, v) => sum + v.count, 0);
   const amount = value.reduce((sum, v) => sum + v.amount, 0);
-  const eadCount = value.reduce((sum, v) => sum + v.eadCount, 0)
+  const eadCount = value.reduce((sum, v) => sum + v.eadCount, 0);
   const simpleSum = value
     .filter((v) => v.cr_medio != null)
     .reduce((sum, v) => sum + v.amount * v.cr_medio, 0);

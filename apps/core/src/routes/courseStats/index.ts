@@ -1,5 +1,5 @@
 import { gradesStatsSchema, userGradesSchema } from '@/schemas/courseStats.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   findLatestHistory,
   findOneGraduation,
@@ -9,7 +9,7 @@ import {
 import { calculateCoefficients } from '@next/common';
 import type { GraduationHistory } from '@/models/GraduationHistory.js';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   app.get('/grades', { schema: gradesStatsSchema }, async (request, reply) => {
     // TODO: discover why points is a 40 constant
     const POINTS = 40;

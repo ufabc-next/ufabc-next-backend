@@ -10,9 +10,9 @@ import { StudentModel } from '@/models/Student.js';
 import { sigHistorySchema, type SigStatus } from '@/schemas/history.js';
 import { getHistory } from '@/modules/ufabc-parser.js';
 import { currentQuad } from '@next/common';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   const historyCache = app.cache<History>();
   app.post(
     '/',

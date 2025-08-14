@@ -5,7 +5,6 @@ import {
   deleteCommentSchema,
   commentsOnTeacherSchema,
 } from '@/schemas/comments.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 import {
   createReaction,
   deleteReaction,
@@ -18,8 +17,9 @@ import {
   insert,
 } from './service.js';
 import { Types } from 'mongoose';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/:userId/missing',
     { schema: missingCommentsSchema },

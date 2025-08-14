@@ -1,14 +1,14 @@
 import { getEnrolledStudents } from '@/modules/ufabc-parser.js';
 import { ComponentModel, type Component } from '@/models/Component.js';
 import { syncEnrolledSchema } from '@/schemas/sync/enrolled.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
 export type StudentEnrollment = Component & {
   ra: number;
   nome: string;
 };
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   app.put(
     '/enrolled',
     {

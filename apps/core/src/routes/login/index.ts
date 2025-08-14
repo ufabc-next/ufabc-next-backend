@@ -5,12 +5,12 @@ import {
   type LegacyGoogleUser,
 } from '@/schemas/login.js';
 import type { Token } from '@fastify/oauth2';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { Types } from 'mongoose';
 import { ofetch } from 'ofetch';
 
-export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
-  app.get('/google', async function(request, reply) {
+export const plugin: FastifyPluginAsyncZod = async (app) => {
+  app.get('/google', async function (request, reply) {
     const validatedURI = await this.google.generateAuthorizationUri(
       request,
       reply,
@@ -27,7 +27,7 @@ export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     return reply.redirect(validatedURI);
   });
 
-  app.get('/google/callback', async function(request, reply) {
+  app.get('/google/callback', async function (request, reply) {
     try {
       // @ts-ignore
       const userId = request.query.state;
@@ -75,7 +75,7 @@ export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     }
   });
 
-  app.get('/notion', async function(request, reply) {
+  app.get('/notion', async function (request, reply) {
     const validatedURI = await this.notion.generateAuthorizationUri(
       request,
       reply,
@@ -100,7 +100,7 @@ export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get(
     '/notion/callback',
     { schema: loginNotionSchema },
-    async function(request, reply) {
+    async function (request, reply) {
       const { token } =
         await this.notion.getAccessTokenFromAuthorizationCodeFlow(
           request,

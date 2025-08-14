@@ -10,7 +10,7 @@ export async function scheduledEnrollmentsProcessing(
 ) {
   const season = currentQuad();
   const distinctRas = await EnrollmentModel.distinct('ra', {
-    season: '2025:2',
+    season,
   });
 
   ctx.app.log.info({

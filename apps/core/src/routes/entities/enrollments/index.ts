@@ -1,4 +1,4 @@
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   findComment,
   findOne,
@@ -8,7 +8,7 @@ import {
 import { listUserEnrollments } from '@/schemas/entities/enrollments.js';
 import { currentQuad } from '@next/common';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   app.get('/', { schema: listUserEnrollments }, async ({ user }) => {
     const userEnrollments = await listByRa(user.ra);
     return userEnrollments;

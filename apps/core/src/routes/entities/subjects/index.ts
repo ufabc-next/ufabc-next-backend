@@ -3,12 +3,12 @@ import {
   listSubjectsSchema,
   searchSubjectSchema,
 } from '@/schemas/entities/subjects.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { rawSubjectsReviews, type Distribution } from './service.js';
 import { TeacherModel } from '@/models/Teacher.js';
 import { Types } from 'mongoose';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   const subjectsCache = app.cache<{}>();
   app.get('/', { schema: listSubjectsSchema }, async (request, reply) => {
     const { limit, page } = request.query;

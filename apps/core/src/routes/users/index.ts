@@ -9,9 +9,9 @@ import {
   sendRecoveryEmailSchema,
   validateUserEmailSchema,
 } from '@/schemas/user.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   const usersCache = app.cache<Auth>();
   app.get('/info', async (request, reply) => {
     const cachedResponse = usersCache.get(`user:info:${request.user._id}`);
@@ -42,8 +42,8 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   });
   app.get('/validate/:ra', async (request, reply) => {
     const { ra } = request.params as { ra: string };
-    const raNumber = Number.parseInt(ra)
-    const user = await UserModel.findOne({ra:raNumber});
+    const raNumber = Number.parseInt(ra);
+    const user = await UserModel.findOne({ ra: raNumber });
     if (!user) {
       return reply.badRequest('User not found');
     }
@@ -55,7 +55,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     };
 
     return userInfo;
-  })
+  });
 
   app.post(
     '/facebook',

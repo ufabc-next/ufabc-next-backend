@@ -11,7 +11,7 @@ import {
   type GraduationList,
 } from '@/schemas/public.js';
 import { currentQuad } from '@next/common';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FilterQuery, PipelineStage } from 'mongoose';
 import { getAllCourses } from './service.js';
 import { resolveStep } from '@/utils/resolve-stats-steps.js';
@@ -23,7 +23,7 @@ type ComponentsStats = {
   studentTotal: Array<{ total: number; _id: null }>;
 };
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   const publicCache = app.cache();
 
   app.get('/summary', { logLevel: 'silent' }, async () => {
@@ -308,7 +308,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
             disciplina: 1,
             obrigatorias: 1,
             requisicoes: 1,
-            turma: 1,    
+            turma: 1,
             deficit: { $subtract: ['$requisicoes', '$vagas'] },
             ratio: { $divide: ['$requisicoes', '$vagas'] },
           },
@@ -323,7 +323,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         pipeline.push(...resolveStep(action, turno, courseId));
       }
 
- 
       pipeline.push(
         {
           $facet: {

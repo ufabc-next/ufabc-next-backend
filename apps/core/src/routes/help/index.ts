@@ -1,6 +1,6 @@
 import { helpFormSchema } from '@/schemas/help.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+const plugin: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/form',
     {

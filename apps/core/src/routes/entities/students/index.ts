@@ -6,7 +6,7 @@ import {
   type MatriculaStudent,
   updateStudentSchema,
 } from '@/schemas/entities/students.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   getAllCourses,
   getComponentsStudentsStats,
@@ -14,7 +14,7 @@ import {
   update,
 } from './service.js';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/stats/components',
     { schema: listStudentsStatsComponents },

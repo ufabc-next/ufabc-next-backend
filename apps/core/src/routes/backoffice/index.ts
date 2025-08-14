@@ -1,15 +1,15 @@
 import { UserModel } from '@/models/User.js';
 import type { QueueNames } from '@/queue/types.js';
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 
-const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+const plugin: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/token',
     {
       schema: {
         body: z.object({
-          email: z.string().email(),
+          email: z.email(),
         }),
       },
     },
