@@ -3,13 +3,14 @@ import { buildApp } from './app.js';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import { fastify, type FastifyServerOptions } from 'fastify';
 import { logger } from './utils/logger.js';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 
 const appOptions = {
   loggerInstance: logger,
   pluginTimeout: 35_000,
 } satisfies FastifyServerOptions;
 
-const app = fastify(appOptions);
+const app = fastify(appOptions).withTypeProvider<ZodTypeProvider>();
 
 export async function start() {
   await app.register(fp(buildApp));
@@ -18,7 +19,7 @@ export async function start() {
   }
 
   // app.job.schedule('EnrolledSync');
-  app.job.schedule('ComponentsSync');
+  // app.job.schedule('ComponentsSync');
   // app.job.schedule('EnrollmentSync');
   // app.job.schedule('LogsUpload');
 

@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "context7": {
+      "type": "stdio",
+      "command": "~/.proto/shims/pnpx",
+      "args": [
+        "@upstash/context7-mcp@latest"
+      ]
+    }
+  }
+}

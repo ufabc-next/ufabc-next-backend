@@ -1,6 +1,5 @@
 import env, { type FastifyEnvOptions } from '@fastify/env';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -21,7 +20,10 @@ const configSchema = z.object({
   MONGODB_CONNECTION_URL: z.string().default('mongodb://127.0.0.1:27017/local'),
   REDIS_CONNECTION_URL: z.string().default('redis://localhost:6379'),
   WEB_URL: z.string().default(NEXT_WEB_LOCAL),
-  ALLOWED_ORIGINS: z.string().transform((origins) => origins.split(',')),
+  ALLOWED_ORIGINS: z
+    .string()
+    .transform((origins) => origins.split(','))
+    .pipe(z.string().array()),
   UFABC_PARSER_URL: z.string(),
   AWS_REGION: z.string(),
   AWS_ACCESS_KEY_ID: z.string(),
@@ -33,7 +35,8 @@ const configSchema = z.object({
   BACKOFFICE_EMAILS: z
     .string()
     .optional()
-    .transform((s) => s?.split(',')),
+    .transform((s) => s?.split(','))
+    .pipe(z.string().array()),
   EMAIL_API: z.string().optional(),
   AXIOM_TOKEN: z.string().optional(),
   AXIOM_DATASET: z.string().optional(),
@@ -43,10 +46,11 @@ const configSchema = z.object({
   NOTION_DATABASE_ID: z.string().default('teste'),
 });
 
-const schema = zodToJsonSchema(configSchema);
-
 export const autoConfig = {
-  schema,
+  schema: z.toJSONSchema(configSchema, {
+    target: 'draft-7',
+    io: 'input',
+  }),
   dotenv: {
     path: '.env.dev',
   },

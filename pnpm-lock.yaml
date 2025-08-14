@@ -60,17 +60,20 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       '@fastify/swagger':
-        specifier: ^9.2.0
-        version: 9.2.0
+        specifier: ^9.5.1
+        version: 9.5.1
       '@fastify/swagger-ui':
-        specifier: ^5.1.0
-        version: 5.1.0
+        specifier: ^5.2.3
+        version: 5.2.3
       '@next/common':
         specifier: workspace:*
         version: link:../../packages/common
       '@notionhq/client':
         specifier: ^2.3.0
         version: 2.3.0
+      '@scalar/fastify-api-reference':
+        specifier: ^1.34.2
+        version: 1.34.2
       bullmq:
         specifier: ^5.54.3
         version: 5.54.3
@@ -83,9 +86,12 @@ importers:
       fastify-plugin:
         specifier: ^4.5.1
         version: 4.5.1
+      fastify-type-provider-zod:
+        specifier: ^5.0.3
+        version: 5.0.3(@fastify/swagger@9.5.1)(fastify@5.1.0)(openapi-types@12.1.3)(zod@4.0.17)
       fastify-zod-openapi:
         specifier: ^3.0.3
-        version: 3.0.3(@fastify/swagger-ui@5.1.0)(@fastify/swagger@9.2.0)(fastify@5.1.0)(zod-openapi@3.3.0(zod@3.23.8))(zod@3.23.8)
+        version: 3.0.3(@fastify/swagger-ui@5.2.3)(@fastify/swagger@9.5.1)(fastify@5.1.0)(zod-openapi@3.3.0(zod@4.0.17))(zod@4.0.17)
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -111,14 +117,14 @@ importers:
         specifier: ^2.4.1
         version: 2.4.1
       zod:
-        specifier: ^3.23.6
-        version: 3.23.8
+        specifier: ^4.0.17
+        version: 4.0.17
       zod-openapi:
         specifier: ^3.3.0
-        version: 3.3.0(zod@3.23.8)
+        version: 3.3.0(zod@4.0.17)
       zod-to-json-schema:
         specifier: ^3.23.5
-        version: 3.23.5(zod@3.23.8)
+        version: 3.23.5(zod@4.0.17)
     devDependencies:
       '@next/tsconfig':
         specifier: workspace:*
@@ -182,7 +188,7 @@ importers:
         version: 4.17.21
       tsup:
         specifier: ^8.1.0
-        version: 8.2.4(jiti@1.21.0)(tsx@4.16.5)(typescript@5.5.4)(yaml@2.6.0)
+        version: 8.2.4(jiti@1.21.0)(tsx@4.16.5)(typescript@5.5.4)(yaml@2.8.0)
       tsx:
         specifier: ^4.15.7
         version: 4.16.5
@@ -846,6 +852,9 @@ packages:
   '@fastify/error@4.0.0':
     resolution: {integrity: sha512-OO/SA8As24JtT1usTUTKgGH7uLvhfwZPwlptRi2Dp5P4KKmJI3gvsZ8MIHnNwDs4sLf/aai5LzTyl66xr7qMxA==}
 
+  '@fastify/error@4.2.0':
+    resolution: {integrity: sha512-RSo3sVDXfHskiBZKBPRgnQTtIqpi/7zhJOEmAxCiBcM7d0uwdGdxLlsCaLzGs8v8NnxIRlfG0N51p5yFaOentQ==}
+
   '@fastify/fast-json-stringify-compiler@5.0.1':
     resolution: {integrity: sha512-f2d3JExJgFE3UbdFcpPwqNUEoHWmt8pAKf8f+9YuLESdefA0WgqxeT6DrGL4Yrf/9ihXNSKOqpjEmurV405meA==}
 
@@ -861,26 +870,20 @@ packages:
   '@fastify/rate-limit@10.1.1':
     resolution: {integrity: sha512-v6ZrDhWVjmDHWYdW2vbALyTCPz9W6Jqvf0QXbl9/atMXlZeFQw4XJkHUm5GGbJReCxaj5dHKbD+P32kkI3xzCA==}
 
-  '@fastify/send@3.1.1':
-    resolution: {integrity: sha512-LdiV2mle/2tH8vh6GwGl0ubfUAgvY+9yF9oGI1iiwVyNUVOQamvw5n+OFu6iCNNoyuCY80FFURBn4TZCbTe8LA==}
-
   '@fastify/send@4.1.0':
     resolution: {integrity: sha512-TMYeQLCBSy2TOFmV95hQWkiTYgC/SEx7vMdV+wnZVX4tt8VBLKzmH8vV9OzJehV0+XBfg+WxPMt5wp+JBUKsVw==}
 
   '@fastify/sensible@6.0.1':
     resolution: {integrity: sha512-D0rN0kMeZKP23f4w9MoCI9e4+n7vASFAsGoRNn9bondSbplLeIfR2HcjCbyElAM04jGrPRLi/edyThEPOyC9cQ==}
 
-  '@fastify/static@8.0.2':
-    resolution: {integrity: sha512-xJ+XaZVl4Y+lKztx8jGi+BE73aByhOmjMgaTx98E4XtVZxUpiaYQIMBlwACsJz+xohm0kvzV34BZoiZ+bsJtBQ==}
-
   '@fastify/static@8.2.0':
     resolution: {integrity: sha512-PejC/DtT7p1yo3p+W7LiUtLMsV8fEvxAK15sozHy9t8kwo5r0uLYmhV/inURmGz1SkHZFz/8CNtHLPyhKcx4SQ==}
 
-  '@fastify/swagger-ui@5.1.0':
-    resolution: {integrity: sha512-XWb+zWz0vlP4QIXbF2xo/n9XuOjNF5aRdQ+0AiBXY9nlIuoTYU1ZXCkXNStdnM/sOdnDy8Q1vsxZ2RsN7XivQA==}
+  '@fastify/swagger-ui@5.2.3':
+    resolution: {integrity: sha512-e7ivEJi9EpFcxTONqICx4llbpB2jmlI+LI1NQ/mR7QGQnyDOqZybPK572zJtcdHZW4YyYTBHcP3a03f1pOh0SA==}
 
-  '@fastify/swagger@9.2.0':
-    resolution: {integrity: sha512-tuy78fW3G4z8EhTdopAu6gXbllFrQBkcYduOmPiEVESZNaLnxR8N80YVu7F6WuMwk7sd9rYGnGo9bxDQChCFjg==}
+  '@fastify/swagger@9.5.1':
+    resolution: {integrity: sha512-EGjYLA7vDmCPK7XViAYMF6y4+K3XUy5soVTVxsyXolNe/Svb4nFQxvtuQvvoQb2Gzc9pxiF3+ZQN/iZDHhKtTg==}
 
   '@fastify/view@11.1.0':
     resolution: {integrity: sha512-ab8LG5V8srCdnknYlufaSusrjkYLYf5TUWm3DTdPFr5m1C9tI7KNl78UCcP0BJiaGaZj1udsyzAC67JCf5Ol/g==}
@@ -1068,6 +1071,26 @@ packages:
     resolution: {integrity: sha512-aJ1EJSuTdGnM6qbVC4B5DSmozPTqIag9fSzXRNNo+humQLG89XpPgdt16Ia56ORD7s+H8Pmyx44uczDQ0yDzpg==}
     cpu: [x64]
     os: [win32]
+
+  '@scalar/core@0.3.11':
+    resolution: {integrity: sha512-4O3mC29k2STz4quBHrpsl6czxi94F3dy8Ej/OPbELS2myKO4GoxromT0BiKSLPAThCnmJ0rqMZ7k9NsgzVjEgA==}
+    engines: {node: '>=20'}
+
+  '@scalar/fastify-api-reference@1.34.2':
+    resolution: {integrity: sha512-60gkrICnbAEfaRN/Yd/6ZUK9RsSJDVBNevDPhSPKaAZiSSub9q2QwD/88eIXQajHbMLZNt22QIFLKqdfmVdWCg==}
+    engines: {node: '>=20'}
+
+  '@scalar/openapi-parser@0.19.0':
+    resolution: {integrity: sha512-U1FDug4NFK+o1ib93L2MerW13s61sEDPDgrmO14mp5qAV5iYkC2l0KqKQLMIbt3sWw6fDy900eXNKIgUuge4BA==}
+    engines: {node: '>=20'}
+
+  '@scalar/openapi-types@0.3.7':
+    resolution: {integrity: sha512-QHSvHBVDze3+dUwAhIGq6l1iOev4jdoqdBK7QpfeN1Q4h+6qpVEw3EEqBiH0AXUSh/iWwObBv4uMgfIx0aNZ5g==}
+    engines: {node: '>=20'}
+
+  '@scalar/types@0.2.11':
+    resolution: {integrity: sha512-SUZzGmoisWsYv33LmmT/ajvSlcl9ZDj9d5RncJ+wB9ZQ2l018xlfpDIH9Kdfo+6KCKQOe3LYLXfH4Lzm891Mag==}
+    engines: {node: '>=20'}
 
   '@sideway/address@4.1.5':
     resolution: {integrity: sha512-IqO/DUQHUkPeixNQ8n0JA6102hT9CmaljNTPmQ1u8MEhBo/R4Q8eKLN/vGZxuebwOroDB4cbpjheD4+/sKFK4Q==}
@@ -1462,6 +1485,14 @@ packages:
 
   abstract-logging@2.0.1:
     resolution: {integrity: sha512-2BjRTZxTPvheOvGbBslFSYOUkr+SjPtOnrLP33f+VIWLzezQpZcqVg7ja3L4dBXmzzgwT+a029jRx5PCi3JuiA==}
+
+  ajv-draft-04@1.0.0:
+    resolution: {integrity: sha512-mv00Te6nmYbRp5DCwclxtt7yV/joXJPGS7nM+97GdxvuttCOfgI3K4U25zboyeX0O+myI8ERluxQe5wljMmVIw==}
+    peerDependencies:
+      ajv: ^8.5.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
 
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
@@ -1911,6 +1942,9 @@ packages:
   fast-uri@3.0.3:
     resolution: {integrity: sha512-aLrHthzCjH5He4Z2H9YZ+v6Ujb9ocRuW6ZzkJQOrTxleEijANq4v1TsaPaVG1PZcuurEzrLcWRyYBYXD5cEiaw==}
 
+  fast-uri@3.0.6:
+    resolution: {integrity: sha512-Atfo14OibSv5wAp4VWNsFYE1AchQRTv9cBGWET4pZWHzYshFSS9NQI6I57rdKn9croWVMbYFbLhJ+yJvmZIIHw==}
+
   fast-xml-parser@4.4.1:
     resolution: {integrity: sha512-xkjOecfnKGkSsOwtZ5Pz7Us/T6mrbPQrq0nh+aCO5V9nk5NLWmasAHumTKjiPJPWANe+kAZ84Jc8ooJkzZ88Sw==}
     hasBin: true
@@ -1928,6 +1962,14 @@ packages:
   fastify-tsconfig@2.0.0:
     resolution: {integrity: sha512-pvYwdtbZUJr/aTD7ZE0rGlvtYpx7IThHKVLBoqCKmT3FJpwm23XA2+PDmq8ZzfqqG4ajpyrHd5bkIixcIFjPhQ==}
     engines: {node: '>=18.0.0'}
+
+  fastify-type-provider-zod@5.0.3:
+    resolution: {integrity: sha512-h+/SL9qWD+J5OS4UZ86YnbQA/gaeTqKXqUDbYFm3NZYAhjVVqALCp/UBHFXnH/lv+TpBFyv8uKQ/U1692j0N1g==}
+    peerDependencies:
+      '@fastify/swagger': '>=9.5.1'
+      fastify: ^5.0.0
+      openapi-types: ^12.1.3
+      zod: '>=3.25.67'
 
   fastify-zod-openapi@3.0.3:
     resolution: {integrity: sha512-8AKUHKqsAj9w1gRzHFIbv29dCODz1omh0iLPqVi1wFgbawFFwLzbFTutLbyO6e2wApPAqLoRp45NeV4n5VWsTQ==}
@@ -2033,6 +2075,9 @@ packages:
 
   get-uv-event-loop-napi-h@1.0.6:
     resolution: {integrity: sha512-t5c9VNR84nRoF+eLiz6wFrEp1SE2Acg0wS+Ysa2zF0eROes+LzOfuTaVHxGy8AbS8rq7FHEJzjnCZo1BupwdJg==}
+
+  github-slugger@2.0.0:
+    resolution: {integrity: sha512-IaOQ9puYtjrkq7Y0Ygl9KDZnrf/aiUJYUpVf89y8kyaxbRG7Y1SrX/jaumrv81vc61+kiMempujsM3Yw7w5qcw==}
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -2185,12 +2230,16 @@ packages:
   json-schema-ref-resolver@1.0.1:
     resolution: {integrity: sha512-EJAj1pgHc1hxF6vo2Z3s69fMjO1INq6eGHXZ8Z6wCQeldCuwxGK9Sxf4/cScGn3FZubCVUehfWtcDM/PLteCQw==}
 
-  json-schema-resolver@2.0.0:
-    resolution: {integrity: sha512-pJ4XLQP4Q9HTxl6RVDLJ8Cyh1uitSs0CzDBAz1uoJ4sRD/Bk7cFSXL1FUXDW3zJ7YnfliJx6eu8Jn283bpZ4Yg==}
-    engines: {node: '>=10'}
+  json-schema-resolver@3.0.0:
+    resolution: {integrity: sha512-HqMnbz0tz2DaEJ3ntsqtx3ezzZyDE7G56A/pPY/NGmrPu76UzsWquOpHFRAf5beTNXoH2LU5cQePVvRli1nchA==}
+    engines: {node: '>=20'}
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
+
+  jsonpointer@5.0.1:
+    resolution: {integrity: sha512-p/nXbhSEcu3pZRdkW1OfJhpsVtW1gd4Wa1fnQc9YLiTfAjn0312eMKimbdIQzuZl9aa9xUGaRlP9T/CJE/ditQ==}
+    engines: {node: '>=0.10.0'}
 
   kareem@2.6.3:
     resolution: {integrity: sha512-C3iHfuGUXK2u8/ipq9LfjFfXFxAZMQJJq7vLS45r3D9Y2xQ/m4S8zaR4zMLFWh9AsNPXmcFfUDhTEO8UIC/V6Q==}
@@ -2206,6 +2255,10 @@ packages:
   lazystream@1.0.1:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
     engines: {node: '>= 0.6.3'}
+
+  leven@4.0.0:
+    resolution: {integrity: sha512-puehA3YKku3osqPlNuzGDUHq8WpwXupUg1V6NXdV38G+gr+gkBwFC8g1b/+YcIvp8gnqVIus+eJCH/eGsRmJNw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   light-my-request@6.3.0:
     resolution: {integrity: sha512-bWTAPJmeWQH5suJNYwG0f5cs0p6ho9e6f1Ppoxv5qMosY+s9Ir2+ZLvvHcgA7VTDop4zl/NCHhOVVqU+kd++Ow==}
@@ -2397,6 +2450,11 @@ packages:
 
   nan@2.20.0:
     resolution: {integrity: sha512-bk3gXBZDGILuuo/6sKtr0DQmSThYHLtNCdSdXk9YkxD/jK6X2vmCyyXBBxyqZ4XcnzTyYEAThfX3DCEnLf6igw==}
+
+  nanoid@5.1.5:
+    resolution: {integrity: sha512-Ir/+ZpE9fDsNH0hQ3C68uyThDXzYcim2EqcZ8zn8Chtt1iylPT9xXJB0kPCnqzgcEGikO9RxSrh63MsmVCU7Fw==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
@@ -2975,9 +3033,6 @@ packages:
     resolution: {integrity: sha512-72RFADWFqKmUb2hmmvNODKL3p9hcB6Gt2DOQMis1SEBaV6a4MH8soBvzg+95CYhCKPFedut2JY9bMfrDl9D23g==}
     engines: {node: '>=14.0'}
 
-  uri-js@4.4.1:
-    resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
-
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
@@ -3048,14 +3103,14 @@ packages:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
     engines: {node: '>=10'}
 
-  yaml@2.5.0:
-    resolution: {integrity: sha512-2wWLbGbYDiSqqIKoPjar3MPgB94ErzCtrNE1FdqGuaO0pi2JGjmE8aW8TDZwzU7vuxcGRdL/4gPQwQ7hD5AMSw==}
-    engines: {node: '>= 14'}
-    hasBin: true
-
   yaml@2.6.0:
     resolution: {integrity: sha512-a6ae//JvKDEra2kdi1qzCyrJW/WZCgFi8ydDV+eXExl95t+5R+ijnqHJbz9tmMh8FUjx3iv2fCQ4dclAQlO2UQ==}
     engines: {node: '>= 14'}
+    hasBin: true
+
+  yaml@2.8.0:
+    resolution: {integrity: sha512-4lLa/EcQCB0cJkyts+FpIRx5G/llPxfP6VQU5KByHEhLxY3IJCH0f0Hy1MHI8sClTvsIb8qwRJ6R/ZdlDJ/leQ==}
+    engines: {node: '>= 14.6'}
     hasBin: true
 
   yargs-parser@21.1.1:
@@ -3085,8 +3140,11 @@ packages:
     peerDependencies:
       zod: ^3.23.3
 
-  zod@3.23.8:
-    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+  zod@3.24.1:
+    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+
+  zod@4.0.17:
+    resolution: {integrity: sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==}
 
 snapshots:
 
@@ -4182,6 +4240,8 @@ snapshots:
 
   '@fastify/error@4.0.0': {}
 
+  '@fastify/error@4.2.0': {}
+
   '@fastify/fast-json-stringify-compiler@5.0.1':
     dependencies:
       fast-json-stringify: 6.0.0
@@ -4212,14 +4272,6 @@ snapshots:
       fastify-plugin: 5.0.1
       toad-cache: 3.7.0
 
-  '@fastify/send@3.1.1':
-    dependencies:
-      '@lukeed/ms': 2.0.2
-      escape-html: 1.0.3
-      fast-decode-uri-component: 1.0.1
-      http-errors: 2.0.0
-      mime: 3.0.0
-
   '@fastify/send@4.1.0':
     dependencies:
       '@lukeed/ms': 2.0.2
@@ -4238,15 +4290,6 @@ snapshots:
       type-is: 1.6.18
       vary: 1.1.2
 
-  '@fastify/static@8.0.2':
-    dependencies:
-      '@fastify/accept-negotiator': 2.0.0
-      '@fastify/send': 3.1.1
-      content-disposition: 0.5.4
-      fastify-plugin: 5.0.1
-      fastq: 1.17.1
-      glob: 11.0.0
-
   '@fastify/static@8.2.0':
     dependencies:
       '@fastify/accept-negotiator': 2.0.0
@@ -4256,21 +4299,21 @@ snapshots:
       fastq: 1.17.1
       glob: 11.0.0
 
-  '@fastify/swagger-ui@5.1.0':
+  '@fastify/swagger-ui@5.2.3':
     dependencies:
-      '@fastify/static': 8.0.2
+      '@fastify/static': 8.2.0
       fastify-plugin: 5.0.1
       openapi-types: 12.1.3
       rfdc: 1.4.1
-      yaml: 2.6.0
+      yaml: 2.8.0
 
-  '@fastify/swagger@9.2.0':
+  '@fastify/swagger@9.5.1':
     dependencies:
       fastify-plugin: 5.0.1
-      json-schema-resolver: 2.0.0
+      json-schema-resolver: 3.0.0
       openapi-types: 12.1.3
       rfdc: 1.4.1
-      yaml: 2.6.0
+      yaml: 2.8.0
     transitivePeerDependencies:
       - supports-color
 
@@ -4422,6 +4465,38 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.20.0':
     optional: true
+
+  '@scalar/core@0.3.11':
+    dependencies:
+      '@scalar/types': 0.2.11
+
+  '@scalar/fastify-api-reference@1.34.2':
+    dependencies:
+      '@scalar/core': 0.3.11
+      '@scalar/openapi-parser': 0.19.0
+      '@scalar/openapi-types': 0.3.7
+      fastify-plugin: 4.5.1
+      github-slugger: 2.0.0
+
+  '@scalar/openapi-parser@0.19.0':
+    dependencies:
+      '@scalar/openapi-types': 0.3.7
+      ajv: 8.17.1
+      ajv-draft-04: 1.0.0(ajv@8.17.1)
+      ajv-formats: 3.0.1(ajv@8.17.1)
+      jsonpointer: 5.0.1
+      leven: 4.0.0
+      yaml: 2.8.0
+
+  '@scalar/openapi-types@0.3.7':
+    dependencies:
+      zod: 3.24.1
+
+  '@scalar/types@0.2.11':
+    dependencies:
+      '@scalar/openapi-types': 0.3.7
+      nanoid: 5.1.5
+      zod: 3.24.1
 
   '@sideway/address@4.1.5':
     dependencies:
@@ -5048,6 +5123,10 @@ snapshots:
 
   abstract-logging@2.0.1: {}
 
+  ajv-draft-04@1.0.0(ajv@8.17.1):
+    optionalDependencies:
+      ajv: 8.17.1
+
   ajv-formats@3.0.1(ajv@8.17.1):
     optionalDependencies:
       ajv: 8.17.1
@@ -5367,7 +5446,7 @@ snapshots:
 
   docker-compose@0.24.8:
     dependencies:
-      yaml: 2.5.0
+      yaml: 2.6.0
 
   docker-modem@3.0.8:
     dependencies:
@@ -5553,6 +5632,8 @@ snapshots:
 
   fast-uri@3.0.3: {}
 
+  fast-uri@3.0.6: {}
+
   fast-xml-parser@4.4.1:
     dependencies:
       strnum: 1.0.5
@@ -5567,17 +5648,25 @@ snapshots:
 
   fastify-tsconfig@2.0.0: {}
 
-  fastify-zod-openapi@3.0.3(@fastify/swagger-ui@5.1.0)(@fastify/swagger@9.2.0)(fastify@5.1.0)(zod-openapi@3.3.0(zod@3.23.8))(zod@3.23.8):
+  fastify-type-provider-zod@5.0.3(@fastify/swagger@9.5.1)(fastify@5.1.0)(openapi-types@12.1.3)(zod@4.0.17):
+    dependencies:
+      '@fastify/error': 4.2.0
+      '@fastify/swagger': 9.5.1
+      fastify: 5.1.0
+      openapi-types: 12.1.3
+      zod: 4.0.17
+
+  fastify-zod-openapi@3.0.3(@fastify/swagger-ui@5.2.3)(@fastify/swagger@9.5.1)(fastify@5.1.0)(zod-openapi@3.3.0(zod@4.0.17))(zod@4.0.17):
     dependencies:
       '@fastify/error': 4.0.0
       fast-json-stringify: 6.0.0
       fastify: 5.1.0
       fastify-plugin: 5.0.1
-      zod: 3.23.8
-      zod-openapi: 3.3.0(zod@3.23.8)
+      zod: 4.0.17
+      zod-openapi: 3.3.0(zod@4.0.17)
     optionalDependencies:
-      '@fastify/swagger': 9.2.0
-      '@fastify/swagger-ui': 5.1.0
+      '@fastify/swagger': 9.5.1
+      '@fastify/swagger-ui': 5.2.3
 
   fastify@5.1.0:
     dependencies:
@@ -5695,6 +5784,8 @@ snapshots:
   get-uv-event-loop-napi-h@1.0.6:
     dependencies:
       get-symbol-from-current-process-h: 1.0.2
+
+  github-slugger@2.0.0: {}
 
   glob-parent@5.1.2:
     dependencies:
@@ -5858,15 +5949,17 @@ snapshots:
     dependencies:
       fast-deep-equal: 3.1.3
 
-  json-schema-resolver@2.0.0:
+  json-schema-resolver@3.0.0:
     dependencies:
-      debug: 4.3.7
+      debug: 4.4.0
+      fast-uri: 3.0.6
       rfdc: 1.4.1
-      uri-js: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
   json-schema-traverse@1.0.0: {}
+
+  jsonpointer@5.0.1: {}
 
   kareem@2.6.3: {}
 
@@ -5877,6 +5970,8 @@ snapshots:
   lazystream@1.0.1:
     dependencies:
       readable-stream: 2.3.8
+
+  leven@4.0.0: {}
 
   light-my-request@6.3.0:
     dependencies:
@@ -6044,6 +6139,8 @@ snapshots:
   nan@2.20.0:
     optional: true
 
+  nanoid@5.1.5: {}
+
   node-abort-controller@3.1.1: {}
 
   node-addon-api@3.2.1: {}
@@ -6177,13 +6274,13 @@ snapshots:
 
   pirates@4.0.6: {}
 
-  postcss-load-config@6.0.1(jiti@1.21.0)(tsx@4.16.5)(yaml@2.6.0):
+  postcss-load-config@6.0.1(jiti@1.21.0)(tsx@4.16.5)(yaml@2.8.0):
     dependencies:
       lilconfig: 3.1.2
     optionalDependencies:
       jiti: 1.21.0
       tsx: 4.16.5
-      yaml: 2.6.0
+      yaml: 2.8.0
 
   process-nextick-args@2.0.1: {}
 
@@ -6577,7 +6674,7 @@ snapshots:
 
   tslib@2.6.3: {}
 
-  tsup@8.2.4(jiti@1.21.0)(tsx@4.16.5)(typescript@5.5.4)(yaml@2.6.0):
+  tsup@8.2.4(jiti@1.21.0)(tsx@4.16.5)(typescript@5.5.4)(yaml@2.8.0):
     dependencies:
       bundle-require: 5.0.0(esbuild@0.23.0)
       cac: 6.7.14
@@ -6589,7 +6686,7 @@ snapshots:
       globby: 11.1.0
       joycon: 3.1.1
       picocolors: 1.0.1
-      postcss-load-config: 6.0.1(jiti@1.21.0)(tsx@4.16.5)(yaml@2.6.0)
+      postcss-load-config: 6.0.1(jiti@1.21.0)(tsx@4.16.5)(yaml@2.8.0)
       resolve-from: 5.0.0
       rollup: 4.20.0
       source-map: 0.8.0-beta.0
@@ -6665,10 +6762,6 @@ snapshots:
     dependencies:
       '@fastify/busboy': 2.1.1
 
-  uri-js@4.4.1:
-    dependencies:
-      punycode: 2.3.1
-
   util-deprecate@1.0.2: {}
 
   uuid@11.1.0: {}
@@ -6737,9 +6830,9 @@ snapshots:
 
   y18n@5.0.8: {}
 
-  yaml@2.5.0: {}
-
   yaml@2.6.0: {}
+
+  yaml@2.8.0: {}
 
   yargs-parser@21.1.1: {}
 
@@ -6761,12 +6854,14 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.5.2
 
-  zod-openapi@3.3.0(zod@3.23.8):
+  zod-openapi@3.3.0(zod@4.0.17):
     dependencies:
-      zod: 3.23.8
+      zod: 4.0.17
 
-  zod-to-json-schema@3.23.5(zod@3.23.8):
+  zod-to-json-schema@3.23.5(zod@4.0.17):
     dependencies:
-      zod: 3.23.8
+      zod: 4.0.17
 
-  zod@3.23.8: {}
+  zod@3.24.1: {}
+
+  zod@4.0.17: {}

@@ -98,7 +98,7 @@ export class Jobs implements JobImpl {
     }
 
     for (const [name, jobDefinition] of Object.entries(JOBS)) {
-      this.app.log.info(
+      this.app.log.debug(
         { jobName: name, queue: jobDefinition.queue },
         '[QUEUE] Setting up job',
       );
