@@ -1,8 +1,9 @@
 import { currentQuad } from '@next/common';
-
 import { Types } from 'mongoose';
 import { z } from 'zod';
-import 'zod-openapi/extend';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+
+extendZodWithOpenApi(z);
 
 const NonPaginatedComponentsSchema = z.object({
   identifier: z.string().optional().nullable(),

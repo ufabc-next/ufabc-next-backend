@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { Types } from 'mongoose';
-import 'zod-openapi/extend';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+
+extendZodWithOpenApi(z);
 
 const OauthSchema = z.object({
   google: z.string().optional(),

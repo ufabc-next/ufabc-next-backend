@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import 'zod-openapi/extend';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+
+extendZodWithOpenApi(z);
 
 const SIG_RESULTS = ['A', 'B', 'C', 'D', 'E', 'F', 'O', '-', '', '0'] as const;
 const SIG_CATEGORIES = ['mandatory', 'limited', 'free'] as const;

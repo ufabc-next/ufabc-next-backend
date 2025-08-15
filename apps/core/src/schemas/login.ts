@@ -1,7 +1,8 @@
 import type { FastifySchema } from 'fastify';
-
 import { z } from 'zod';
-import 'zod-openapi/extend';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+
+extendZodWithOpenApi(z);
 
 const SOURCE_TYPE = {
   SOURCE_TYPE_UNSPECIFIED: 'SOURCE_TYPE_UNSPECIFIED',

@@ -1,5 +1,8 @@
 import { camelCase, startCase } from 'lodash-es';
 import { z } from 'zod';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+
+extendZodWithOpenApi(z);
 
 export const listTeachersSchema = {
   tags: ['Teachers'],
