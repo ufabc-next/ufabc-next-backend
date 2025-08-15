@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { z } from 'zod';
 
 export const syncEnrollmentsSchema = {
@@ -7,4 +6,4 @@ export const syncEnrollmentsSchema = {
     kind: z.enum(['settlement', 'resettlement']),
     hash: z.string().optional(),
   }),
-} satisfies FastifyZodOpenApiSchema;
+};

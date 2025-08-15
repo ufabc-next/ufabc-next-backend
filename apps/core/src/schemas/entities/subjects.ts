@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { camelCase, startCase } from 'lodash-es';
 import { Types } from 'mongoose';
 import { z } from 'zod';
@@ -30,7 +29,7 @@ export const listSubjectsSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const searchSubjectSchema = {
   querystring: z.object({
@@ -58,11 +57,11 @@ export const searchSubjectSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const subjectReviewsSchema = {
   tags: ['subjects'],
   params: z.object({
     subjectId: z.string().transform((str) => new Types.ObjectId(str)),
   }),
-} satisfies FastifyZodOpenApiSchema;
+};

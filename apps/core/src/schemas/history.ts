@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { z } from 'zod';
 import 'zod-openapi/extend';
 
@@ -119,4 +118,4 @@ export const sigHistorySchema = {
     login: z.string(),
     ra: z.coerce.number(),
   }),
-} satisfies FastifyZodOpenApiSchema;
+};

@@ -48,8 +48,7 @@
     "pino": "9.3.2",
     "string-similarity": "^4.0.4",
     "ulidx": "^2.4.1",
-    "zod": "^4.0.17",
-    "zod-openapi": "^5.3.1"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@next/tsconfig": "workspace:*",

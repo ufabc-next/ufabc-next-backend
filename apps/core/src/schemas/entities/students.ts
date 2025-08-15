@@ -2,7 +2,6 @@ import { currentQuad } from '@next/common';
 import { z } from 'zod';
 import { COURSE_SHIFTS } from '@/models/Student.js';
 import { CATEGORIES } from '@/models/History.js';
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 
 const tags = ['Students'];
 
@@ -75,7 +74,7 @@ export const listStudentsStatsComponents = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const listStudentSchema = {
   tags,
@@ -103,7 +102,7 @@ export const listStudentSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const listMatriculaStudent = {
   tags,
@@ -125,7 +124,7 @@ export const listMatriculaStudent = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const updateStudentSchema = {
   tags,
@@ -148,4 +147,4 @@ export const updateStudentSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};

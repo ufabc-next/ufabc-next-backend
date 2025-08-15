@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { z } from 'zod';
 
 const tags = ['User'];
@@ -28,7 +27,7 @@ export const deactivateUserSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const resendEmailSchema = {
   tags,
@@ -43,7 +42,7 @@ export const resendEmailSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const loginFacebookSchema = {
   body: z.object({
@@ -63,7 +62,7 @@ export const loginFacebookSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const confirmUserSchema = {
   body: z.object({
@@ -80,7 +79,7 @@ export const confirmUserSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const validateUserEmailSchema = {
   tags,
@@ -111,7 +110,7 @@ export const validateUserEmailSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const getFacebookUserEmailSchema = {
   tags,
@@ -147,11 +146,11 @@ export const getFacebookUserEmailSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const sendRecoveryEmailSchema = {
   tags,
   body: z.object({
     email: z.string().email(),
   }),
-} satisfies FastifyZodOpenApiSchema;
+};

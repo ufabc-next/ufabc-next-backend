@@ -1,5 +1,5 @@
 import { currentQuad } from '@next/common';
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
+
 import { z } from 'zod';
 
 const graduationsListSchema = z.object({
@@ -23,7 +23,7 @@ export const listGraduationsSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const listStudentStats = {
   querystring: z.object({ season: z.string().default(currentQuad()) }),
@@ -41,7 +41,7 @@ export const listStudentStats = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const listComponentsResume = {
   params: z.object({
@@ -70,4 +70,4 @@ export const listComponentsResume = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};

@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { Types } from 'mongoose';
 import { z } from 'zod';
 
@@ -18,7 +17,7 @@ export const missingCommentsSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const createCommentSchema = {
   tags,
@@ -36,7 +35,7 @@ export const createCommentSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const updateCommentSchema = {
   tags,
@@ -55,7 +54,7 @@ export const updateCommentSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const deleteCommentSchema = {
   tags,
@@ -71,7 +70,7 @@ export const deleteCommentSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const commentsOnTeacherSchema = {
   tags,
@@ -86,7 +85,7 @@ export const commentsOnTeacherSchema = {
     limit: z.coerce.number().int().default(10),
     page: z.coerce.number().int().default(0),
   }),
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const createReactionSchema = {
   tags,
@@ -105,7 +104,7 @@ export const createReactionSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const deleteReactionSchema = {
   tags,
@@ -125,4 +124,4 @@ export const deleteReactionSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};

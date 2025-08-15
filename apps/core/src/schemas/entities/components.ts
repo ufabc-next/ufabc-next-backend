@@ -1,5 +1,5 @@
 import { currentQuad } from '@next/common';
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
+
 import { Types } from 'mongoose';
 import { z } from 'zod';
 import 'zod-openapi/extend';
@@ -68,7 +68,7 @@ export const listComponentsSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const listKickedSchema = {
   params: z.object({
@@ -99,7 +99,7 @@ export const listKickedSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const listTeacherComponents = {
   querystring: z.object({
@@ -115,4 +115,4 @@ export const listTeacherComponents = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};

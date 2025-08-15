@@ -1,23 +1,10 @@
 import { z } from 'zod';
 import { Types } from 'mongoose';
 import 'zod-openapi/extend';
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 
 const OauthSchema = z.object({
-  google: z
-    .string()
-    .optional()
-    .openapi({
-      description: 'Id do usuário recebido após login Oauth2',
-    })
-    .optional(),
-  emailGoogle: z
-    .string()
-    .email()
-    .openapi({
-      description: 'E-mail escolhido pelo usuário na tela de oauth',
-    })
-    .optional(),
+  google: z.string().optional(),
+  emailGoogle: z.string().email().optional(),
   email: z
     .string()
     .email()
@@ -60,7 +47,7 @@ export const userAuthSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const completeUserSchema = {
   body: z.object({
@@ -79,6 +66,6 @@ export const completeUserSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export type Auth = z.infer<typeof SessionUserSchema>;

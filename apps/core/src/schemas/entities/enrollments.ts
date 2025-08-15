@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { z } from 'zod';
 
 const enrollmentsListSchema = z.object({
@@ -52,4 +51,4 @@ export const listUserEnrollments = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};

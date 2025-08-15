@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { z } from 'zod';
 
 const helpFormBodySchema = z.object({
@@ -17,6 +16,6 @@ const helpFormBodySchema = z.object({
 export const helpFormSchema = {
   tags: ['help'],
   body: helpFormBodySchema,
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export type HelpForm = z.infer<typeof helpFormBodySchema>;

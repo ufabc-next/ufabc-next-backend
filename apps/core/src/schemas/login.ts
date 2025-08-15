@@ -1,5 +1,5 @@
 import type { FastifySchema } from 'fastify';
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
+
 import { z } from 'zod';
 import 'zod-openapi/extend';
 
@@ -102,4 +102,4 @@ export const createCardSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};

@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { camelCase, startCase } from 'lodash-es';
 import { z } from 'zod';
 
@@ -30,13 +29,13 @@ export const listTeachersSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const createTeachersSchema = {
   body: z.object({
     names: z.string().array(),
   }),
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const updateTeacherSchema = {
   tags: ['Teachers'],
@@ -56,7 +55,7 @@ export const updateTeacherSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const searchTeacherSchema = {
   querystring: z.object({
@@ -83,4 +82,4 @@ export const searchTeacherSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};

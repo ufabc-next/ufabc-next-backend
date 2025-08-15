@@ -1,4 +1,3 @@
-import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { z } from 'zod';
 
 const tags = ['CourseStats'];
@@ -36,7 +35,7 @@ export const gradesStatsSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
 
 export const userGradesSchema = {
   tags,
@@ -49,4 +48,4 @@ export const userGradesSchema = {
       },
     },
   },
-} satisfies FastifyZodOpenApiSchema;
+};
