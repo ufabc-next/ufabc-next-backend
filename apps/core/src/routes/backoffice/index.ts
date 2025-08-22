@@ -95,7 +95,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           ra: z.coerce.number().optional(),
           type: z.enum(['quad']).default('quad'),
           batchSize: z.coerce.number().default(500),
-          dryRun: z.boolean().default(true),
+          dryRun: z.coerce.boolean().default(true),
         }),
       },
     },
