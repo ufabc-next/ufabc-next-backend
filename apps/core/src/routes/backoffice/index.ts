@@ -1,25 +1,10 @@
+//@ts-nocheck
 import { CommentModel } from '@/models/Comment.js';
 import { EnrollmentModel } from '@/models/Enrollment.js';
 import { UserModel } from '@/models/User.js';
 import type { QueueNames } from '@/queue/types.js';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 import { z } from 'zod';
-import { Types } from 'mongoose';
-import { TeacherModel } from '@/models/Teacher.js';
-import { ComponentModel } from '@/models/Component.js';
-
-type EnrollmentDuplicatedDoc = {
-  //sao apenas os campos do $push retornados pelo aggregator
-  _id: Types.ObjectId;
-  ra: string;
-  disciplina: string;
-  turma: string;
-  year: number;
-  quad: number;
-  identifier: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.post(
@@ -108,64 +93,20 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       schema: {
         querystring: z.object({
           ra: z.coerce.number().optional(),
-          type: z.enum(['quad', 'disciplina', 'all']).default('quad'),
+          type: z.enum(['quad']).default('quad'),
           batchSize: z.coerce.number().default(500),
-        }),
-        body: z.object({
           dryRun: z.boolean().default(true),
         }),
       },
     },
     async (request, reply) => {
-      const { ra, type, batchSize } = request.query;
-      const { dryRun } = request.body;
-      const effectiveType = type === 'all' ? 'disciplina' : type;
+      const { ra, type, batchSize, dryRun } = request.query;
 
       const groupStrategies = {
         quad: { ra: '$ra', subject: '$subject', year: '$year', quad: '$quad' },
-        disciplina: { ra: '$ra', year: '$year', quad: '$quad' },
       };
 
-      const normalizeGroups = (groups) => {
-        return groups.reduce((acc, group) => {
-          const regexGroups = new Map();
-
-          for (const doc of group.docs) {
-            const normalized = normalizeText(doc.disciplina);
-            let found = false;
-
-            for (const [key, docs] of regexGroups.entries()) {
-              const match = [
-                key === normalized,
-                new RegExp(escapeRegExp(key), 'i').test(normalized),
-                new RegExp(
-                  escapeRegExp(key)
-                    .split(/\s+/)
-                    .map((w) => `(?=.*${w})`)
-                    .join(''),
-                  'i',
-                ).test(normalized),
-                new RegExp(escapeRegExp(doc.disciplina), 'i').test(key),
-              ].some(Boolean);
-
-              if (match) {
-                docs.push(doc);
-                found = true;
-                break;
-              }
-            }
-
-            if (!found) regexGroups.set(normalized, [doc]);
-          }
-
-          const newGroups = Array.from(regexGroups.values())
-            .filter((g) => g.length > 1)
-            .map((g) => ({ _id: { ...group._id }, count: g.length, docs: g }));
-
-          return acc.concat(newGroups);
-        }, []);
-      };
-
+      //pega os enrollments do banco de dados
       const fetchDuplicates = async (type, raList) => {
         const pipeline = [
           {
@@ -191,7 +132,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           {
             $match: {
               count: { $gt: 1 },
-              ...(type === 'quad' ? { '_id.subject': { $ne: null } } : {}),
+              '_id.subject': { $ne: null },
               ...(raList ? { '_id.ra': { $in: raList } } : {}),
             },
           },
@@ -199,62 +140,53 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         return await EnrollmentModel.aggregate(pipeline);
       };
 
+      //processa os enrollments obtidos e verifica se há duplicatas
       const processDuplicates = async (duplicates) => {
         const duplicatesToDelete = [];
 
+        //retorna uma lista com todos os objectId dos enrollments
+        const allEnrollmentIds = duplicates.flatMap((g) =>
+          g.docs.map((doc) => doc._id),
+        );
+
+        //busca todos os enrollments com comentarios atrelados em apenas uma query
+        const commentDocs = await CommentModel.find({
+          enrollment: { $in: allEnrollmentIds.map((doc) => doc._id) },
+        }).select('enrollment');
+
+        const commentSet = new Set(
+          commentDocs.map((c) => c.enrollment.toString()),
+        );
+
         for (const group of duplicates) {
-          const sorted = group.docs.sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-          );
-          const commentDocs = await CommentModel.find({
-            enrollment: { $in: sorted.map((doc) => doc._id) },
-          }).select('enrollment');
-
-          const commentSet = new Set(
-            commentDocs.map((c) => c.enrollment.toString()),
+          //retorna os enrollments em ordem crescente
+          const sorted = group.docs.toSorted(
+            (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
           );
 
-          const hasAny = sorted.some((doc) =>
+          //verifica se algum enrollment tem comentario associado
+          const hasAnyComment = sorted.some((doc) =>
             commentSet.has(doc._id.toString()),
           );
-          const hasMixedSubject =
-            sorted.some((d) => d.subject) && sorted.some((d) => !d.subject);
-          const subjectTarget = hasMixedSubject
-            ? sorted.find((d) => d.subject)?._id.toString()
-            : null;
 
-          if (!hasAny) {
-            if (hasMixedSubject && subjectTarget) {
-              duplicatesToDelete.push(
-                ...sorted
-                  .filter((d) => d._id.toString() !== subjectTarget)
-                  .map((d) => d._id),
-              );
-            } else {
-              duplicatesToDelete.push(...sorted.slice(1).map((d) => d._id));
-            }
-          } else {
+          if (hasAnyComment) {
+            //!!!essa delecao mantem as duplicatas caso ambos enrollments tem comentarios associados
             duplicatesToDelete.push(
               ...sorted
                 .filter((d) => !commentSet.has(d._id.toString()))
                 .map((d) => d._id),
             );
+          } else {
+            //deleta os enrollments mais recentes
+            duplicatesToDelete.push(...sorted.slice(1).map((d) => d._id));
           }
         }
 
         return duplicatesToDelete;
       };
 
+      //cria o padrao old/new image das operacoes realizadas
       const summarize = async (duplicatesToDelete, duplicates) => {
-        const diff = await EnrollmentModel.find({
-          _id: { $in: duplicatesToDelete },
-        });
-        const parsedDiff = diff.map((d) => ({
-          _id: d._id,
-          disciplina: d.disciplina,
-          subject: d.subject,
-        }));
-
         const oldImage = duplicates
           .flatMap((g) => g.docs)
           .map((d) => ({
@@ -262,6 +194,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
             disciplina: d.disciplina,
             subject: d.subject,
           }));
+
         const newImage = duplicates
           .flatMap((g) =>
             g.docs.filter((d) => !duplicatesToDelete.includes(d._id)),
@@ -272,49 +205,39 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
             subject: d.subject,
           }));
 
-        return { diff: parsedDiff, oldImage, newImage };
+        const parsedNewImage = new Set(newImage.map((d) => d._id.toString()));
+        const diff = oldImage.filter(
+          (d) => !parsedNewImage.has(d._id.toString()),
+        );
+
+        return { diff, oldImage, newImage };
       };
 
       const handleRaList = ra ? [ra] : await EnrollmentModel.distinct('ra');
 
+      //delecao em batch
       let result = null;
+      let totalDuplicatesFound = 0;
+      let totalDuplicatesToDelete = 0;
+      let deletedCount = 0;
+
       for (let i = 0; i < handleRaList.length; i += batchSize) {
         const batchRa = handleRaList.slice(i, i + batchSize);
 
-        let duplicates = await fetchDuplicates(effectiveType, batchRa);
-        if (effectiveType === 'disciplina')
-          duplicates = normalizeGroups(duplicates);
-
-        if (type === 'all') {
-          const altDuplicates = await fetchDuplicates('quad', batchRa);
-          const seen = new Set();
-          const merged = [];
-
-          for (const g of [...altDuplicates, ...duplicates]) {
-            const unique = g.docs.filter((d) => {
-              const id = d._id.toString();
-              if (seen.has(id)) return false;
-              seen.add(id);
-              return true;
-            });
-
-            if (unique.length > 1)
-              merged.push({ ...g, docs: unique, count: unique.length });
-          }
-
-          duplicates = merged;
-        }
+        const duplicates = await fetchDuplicates('quad', batchRa);
 
         const duplicatesToDelete = await processDuplicates(duplicates);
 
-        let struct = null;
-        if (ra) struct = await summarize(duplicatesToDelete, duplicates);
+        const struct = await summarize(duplicatesToDelete, duplicates);
+
+        totalDuplicatesFound += duplicates.length;
+        totalDuplicatesToDelete += duplicatesToDelete.length;
 
         result = {
-          ra,
-          totalDuplicatesFound: duplicates.length,
-          duplicatesToDelete: duplicatesToDelete.length,
-          deletedCount: 0,
+          ra: ra ?? null,
+          totalDuplicatesFound,
+          totalDuplicatesToDelete,
+          deletedCount,
           type,
           struct,
         };
@@ -326,7 +249,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           const del = await EnrollmentModel.deleteMany({
             _id: { $in: duplicatesToDelete },
           });
-          result.deletedCount = del.deletedCount ?? 0;
+          deletedCount += del.deletedCount;
         }
         app.log.info(result);
       }
@@ -336,15 +259,3 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 };
 
 export default plugin;
-
-function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-}
-
-function escapeRegExp(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
