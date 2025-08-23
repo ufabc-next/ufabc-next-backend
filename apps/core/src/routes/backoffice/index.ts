@@ -96,12 +96,15 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           ra: z.coerce.number().optional(),
           type: z.enum(['quad']).default('quad'),
           batchSize: z.coerce.number().default(500),
-          dryRun: z.coerce.boolean().default(true),
+        }),
+        body: z.object({
+          dryRun: z.boolean().default(true),
         }),
       },
     },
     async (request, reply) => {
-      const { ra, type, batchSize, dryRun } = request.query;
+      const { ra, type, batchSize } = request.query;
+      const { dryRun } = request.body;
 
       const groupStrategies = {
         quad: { ra: '$ra', subject: '$subject', year: '$year', quad: '$quad' },
@@ -248,16 +251,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         totalDuplicatesFound += duplicates.length;
         totalDuplicatesToDelete += duplicatesToDelete.length;
 
-        partialResult = {
-          ra: ra ?? null,
-          totalDuplicatesFound,
-          totalDuplicatesToDelete,
-          deletedCount,
-          type,
-          currentBatch: i,
-        };
-
-        if (duplicatesToDelete.length > 0 && !dryRun) {
+        if (!dryRun) {
           app.log.info(
             `Deleting ${duplicatesToDelete.length} duplicate enrollments (type: ${type})`,
           );
@@ -267,6 +261,15 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
           deletedCount += del.deletedCount;
         }
+
+        partialResult = {
+          ra: ra ?? null,
+          totalDuplicatesFound,
+          totalDuplicatesToDelete,
+          deletedCount,
+          type,
+          currentBatch: i,
+        };
 
         const completeLogData = { partialResult, struct, batchRa };
         const logEntry = `${JSON.stringify(completeLogData, null, 2)}${i + batchSize < handleRaList.length ? ',' : ''}`;
