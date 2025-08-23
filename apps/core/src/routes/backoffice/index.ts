@@ -5,6 +5,7 @@ import { UserModel } from '@/models/User.js';
 import type { QueueNames } from '@/queue/types.js';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 import { z } from 'zod';
+import fs from 'node:fs';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.post(
@@ -176,6 +177,10 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
                 .filter((d) => !commentSet.has(d._id.toString()))
                 .map((d) => d._id),
             );
+
+            if (duplicatesToDelete.length === 0) {
+              app.log.warn({ group }, 'Duplicates with comments not deleted');
+            }
           } else {
             //deleta os enrollments mais recentes
             duplicatesToDelete.push(...sorted.slice(1).map((d) => d._id));
@@ -191,8 +196,11 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           .flatMap((g) => g.docs)
           .map((d) => ({
             _id: d._id,
+            ra: d.ra,
             disciplina: d.disciplina,
             subject: d.subject,
+            year: d.year,
+            quad: d.quad,
           }));
 
         const newImage = duplicates
@@ -201,8 +209,11 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           )
           .map((d) => ({
             _id: d._id,
+            ra: d.ra,
             disciplina: d.disciplina,
             subject: d.subject,
+            year: d.year,
+            quad: d.quad,
           }));
 
         const parsedNewImage = new Set(newImage.map((d) => d._id.toString()));
@@ -216,10 +227,14 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       const handleRaList = ra ? [ra] : await EnrollmentModel.distinct('ra');
 
       //delecao em batch
-      let result = null;
+      let partialResult = null;
       let totalDuplicatesFound = 0;
       let totalDuplicatesToDelete = 0;
       let deletedCount = 0;
+      let struct = null;
+
+      const date = `${new Date().toISOString()}`;
+      fs.appendFileSync(`logs/enrollment-duplicates-log-${date}.json`, '[');
 
       for (let i = 0; i < handleRaList.length; i += batchSize) {
         const batchRa = handleRaList.slice(i, i + batchSize);
@@ -228,18 +243,18 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
         const duplicatesToDelete = await processDuplicates(duplicates);
 
-        const struct = await summarize(duplicatesToDelete, duplicates);
+        struct = await summarize(duplicatesToDelete, duplicates);
 
         totalDuplicatesFound += duplicates.length;
         totalDuplicatesToDelete += duplicatesToDelete.length;
 
-        result = {
+        partialResult = {
           ra: ra ?? null,
           totalDuplicatesFound,
           totalDuplicatesToDelete,
           deletedCount,
           type,
-          struct,
+          currentBatch: i,
         };
 
         if (duplicatesToDelete.length > 0 && !dryRun) {
@@ -249,11 +264,25 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           const del = await EnrollmentModel.deleteMany({
             _id: { $in: duplicatesToDelete },
           });
+
           deletedCount += del.deletedCount;
         }
-        app.log.info(result);
+
+        const completeLogData = { partialResult, struct, batchRa };
+        const logEntry = `${JSON.stringify(completeLogData, null, 2)}${i + batchSize < handleRaList.length ? ',' : ''}`;
+
+        fs.appendFileSync(
+          `logs/enrollment-duplicates-log-${date}.json`,
+          logEntry,
+        );
+
+        app.log.info(partialResult);
       }
-      return reply.send(result);
+      fs.appendFileSync(`logs/enrollment-duplicates-log-${date}.json`, ']');
+
+      const finalResult = partialResult;
+
+      return reply.send(finalResult);
     },
   );
 };
