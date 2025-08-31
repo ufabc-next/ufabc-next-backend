@@ -60,4 +60,61 @@ Utilitários que o monorepo possui ja configurado
 - [Biome](https://biomejs.dev/) Lint & format
 - [Node.js](https://nodejs.org/api/test.html) para realização de testes unitários
 - [Renovate](https://docs.renovatebot.com/) para manter a saúde das dependências do projeto
+
+
+🔐 Gerenciamento Seguro de .env.prod com git-secret via Docker
+
+Este projeto utiliza o [git-secret](https://sobolevn.me/git-secret/?utm_source=chatgpt.com)
+ para proteger o arquivo .env.prod e garantir que apenas membros autorizados da equipe tenham acesso a informações sensíveis.
+
+📦 Atualização Segura do .env.prod
+
+Para atualizar ou criptografar o arquivo .env.prod, utilizamos um container Docker com git-secret configurado. Isso evita a necessidade de instalar GPG ou git-secret na sua máquina local.
+
+1. Build da imagem Docker
+docker compose up -d
+
+2. Entrar no container
+docker run -it --rm -v $(pwd):/home/devuser/app git-secret-env
+
+
+🔓 Como acessar o .env.prod
+
+O arquivo .env.prod.secret pode ser descriptografado por qualquer pessoa que:
+
+Tenha uma chave GPG adicionada via git secret tell.
+
+Tenha a senha da chave privada correspondente.
+
+❗ Solicitação de acesso
+
+Se você é um novo contribuidor:
+
+Gere uma chave GPG (ou use uma existente).
+
+Envie sua chave pública GPG para um membro autorizado do projeto.
+
+Um membro irá adicioná-lo com:
+
+git secret tell email@seu-dominio.com
+
+
+Após isso, você poderá rodar:
+
+git secret reveal
+
+
+e será solicitado a digitar sua senha da chave GPG privada.
+
+✉️ Solicite acesso entrando em contato com um dos mantenedores do projeto.
+
+🛠 Recomendações
+
+Nunca commit o arquivo .env.prod diretamente.
+
+Sempre use git secret hide após modificações no .env.prod.
+
+Só compartilhe sua chave GPG pública, nunca a privada.
+
+Garanta que sua chave GPG tenha uma senha forte e segura.
 ```
