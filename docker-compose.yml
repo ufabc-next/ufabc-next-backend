@@ -1,4 +1,33 @@
+version: "3.8"
+
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: next-app
+    depends_on:
+      - next-db
+      - next-redis
+      - localstack
+    ports:
+      - "3000:3000" # Altere se sua app escutar em outra porta
+    environment:
+      NODE_ENV: development
+      MONGO_URI: mongodb://next-db:27017/your-db-name
+      REDIS_HOST: next-redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: qj6wGxXINcQyWXdN
+      AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID_LOCALSTACK
+      AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY_LOCALSTACK
+      AWS_REGION: us-east-1
+      # Adicione aqui outras variáveis necessárias
+
+    volumes:
+      - .:/usr/src/app
+    working_dir: /usr/src/app
+    command: npm run dev # ou 'yarn dev' ou outro start script
+
   next-db:
     image: mongo:latest
     container_name: next-db
