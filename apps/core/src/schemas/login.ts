@@ -1,9 +1,3 @@
-import type { FastifySchema } from 'fastify';
-import { z } from 'zod';
-import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-
-extendZodWithOpenApi(z);
-
 const SOURCE_TYPE = {
   SOURCE_TYPE_UNSPECIFIED: 'SOURCE_TYPE_UNSPECIFIED',
   ACCOUNT: 'ACCOUNT',
@@ -54,53 +48,4 @@ export type LegacyGoogleUser = {
   language: string;
   kind: string;
   etag: string;
-};
-
-export const loginSchema = {
-  querystring: z.object({
-    inApp: z.coerce.boolean().default(false).openapi({
-      description:
-        'Váriavel legada que informava, se o acesso estava acontecendo pelo aplicativo',
-      example: false,
-    }),
-    state: z.string(),
-    code: z.string(),
-    authuser: z.string(),
-    prompt: z.string(),
-  }),
-  tags: ['Login'],
-} satisfies FastifySchema;
-
-export const loginNotionSchema = {
-  querystring: z.object({
-    code: z.string(),
-  }),
-  tags: ['Login'],
-} satisfies FastifySchema;
-
-export const createCardSchema = {
-  body: z.object({
-    accessToken: z.string(),
-    ra: z.coerce.number(),
-    email: z
-      .string()
-      .email()
-      .refine((val) => val.includes('ufabc.edu.br'), {
-        message: 'Invalid UFABC email',
-      }),
-    admissionYear: z.string(),
-    proofOfError: z.string(),
-  }),
-  response: {
-    200: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            message: z.string(),
-            data: z.any(),
-          }),
-        },
-      },
-    },
-  },
 };

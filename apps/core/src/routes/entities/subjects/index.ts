@@ -47,7 +47,7 @@ const plugin: FastifyPluginAsyncZod = async (app) => {
       }>;
     }>([
       {
-        $match: { name: new RegExp(q, 'gi') },
+        $match: { search: new RegExp(q, 'gi') },
       },
       {
         $facet: {

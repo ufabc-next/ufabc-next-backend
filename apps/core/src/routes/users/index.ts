@@ -220,7 +220,8 @@ const plugin: FastifyPluginAsyncZod = async (app) => {
         );
       }
 
-      const employeePromises = checkUser.email.map(
+      const emailList = Array.isArray(checkUser?.email) ? checkUser.email : [];
+      const employeePromises = emailList.map(
         async (email) => await getEmployeeData(email),
       );
       const employees = await Promise.all(employeePromises);
@@ -233,7 +234,22 @@ const plugin: FastifyPluginAsyncZod = async (app) => {
         );
       }
 
-      return { email: checkUser.email[0] };
+      let email = '';
+
+      if (emailList.length === 0) {
+        request.log.warn({
+          ra,
+          username: checkUser.username,
+          msg: 'No email found, using username as email',
+        });
+        email = checkUser.username.concat('@aluno.ufabc.edu.br');
+      }
+
+      if (emailList.length > 0) {
+        email = emailList[0];
+      }
+
+      return reply.send({ email });
     },
   );
 

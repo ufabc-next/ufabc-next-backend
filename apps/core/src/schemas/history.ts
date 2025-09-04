@@ -91,7 +91,7 @@ const sigCoefficients = z.object({
 });
 
 const sigGraduations = z.object({
-  campus: CAMPUS_ENUM,
+  campus: CAMPUS_ENUM.optional(),
   course: z.string().toLowerCase().openapi({
     description: 'Curso do aluno',
     example: 'bacharelado em ciencia e tecnologia',
