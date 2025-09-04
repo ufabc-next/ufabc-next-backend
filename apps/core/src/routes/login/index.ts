@@ -1,8 +1,8 @@
-import { type UserDocument, UserModel, type User } from '@/models/User.js';
-import { type LegacyGoogleUser } from '@/schemas/login.js';
+import { UserModel, type User } from '@/models/User.js';
+import type { LegacyGoogleUser } from '@/schemas/login.js';
 import type { Token } from '@fastify/oauth2';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
-import { Types, type FilterQuery } from 'mongoose';
+import { Types } from 'mongoose';
 import { ofetch } from 'ofetch';
 
 export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
@@ -12,9 +12,7 @@ export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       reply,
     );
     const redirectURL = new URL(validatedURI);
-    redirectURL.searchParams.append('prompt', 'select_account');
-
-    app.log.debug(
+    app.log.warn(
       {
         url: redirectURL.hostname,
         query: redirectURL.search.split('&'),
@@ -22,7 +20,7 @@ export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       },
       '[OAUTH] start',
     );
-    return reply.redirect(redirectURL.href);
+    return reply.redirect(validatedURI);
   });
 
   app.get('/google/callback', async function (request, reply) {
@@ -72,7 +70,7 @@ export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       );
     }
   });
-  
+
   async function getUserDetails(token: Token, logger: any) {
     const headers = new Headers();
     headers.append('Authorization', `Bearer ${token.access_token}`);
@@ -83,6 +81,7 @@ export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         headers,
       },
     );
+
     logger.info(user, {
       msg: 'Google User',
     });
@@ -103,21 +102,13 @@ export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     };
   }
 
-async function createOrLogin(
-  oauthUser: User['oauth'],
-  userId: string,
-  logger: any,
-) {
-  try {
-    const findUserQuery: FilterQuery<UserDocument>[] = [];
-
-    if (oauthUser?.email) {
-      findUserQuery.push({ email: oauthUser.email });
-    }
-
-    if (oauthUser?.google) {
-      findUserQuery.push({ 'oauth.google': oauthUser.google });
-    }
+  async function createOrLogin(
+    oauthUser: User['oauth'],
+    userId: string,
+    logger: any,
+  ) {
+    try {
+      const findUserQuery: Record<string, unknown>[] = [];
 
       if (oauthUser?.google) {
         findUserQuery.push({ 'oauth.google': oauthUser.google });
@@ -172,10 +163,11 @@ async function createOrLogin(
       // Save the user
       await user.save();
 
-    // Return user data
-    return user.toJSON();
-  } catch (error) {
-    logger.error({ error, oauthUser }, 'Error in createOrLogin');
-    throw error;
+      // Return user data
+      return user.toJSON();
+    } catch (error) {
+      logger.error('Error in createOrLogin', { error, oauthUser });
+      throw error;
+    }
   }
 };
