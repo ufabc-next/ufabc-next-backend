@@ -49,3 +49,5 @@ debug.js
 logs
 scripts/docker/localstack
 .cursor/
+.github/copilot-instructions.md
+.vscode/*

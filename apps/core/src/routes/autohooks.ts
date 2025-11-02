@@ -16,6 +16,8 @@ const PUBLIC_ROUTES = [
   '/users/recover',
   '/users/validate',
   '/entities/enrollments/wpp',
+  '/sync/enrollments',
+  '/backoffice/jobs/failed',
 ];
 
 const EXTENSION_ROUTES = [
