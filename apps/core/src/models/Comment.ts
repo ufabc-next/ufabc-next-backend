@@ -99,34 +99,36 @@ const commentSchema = new Schema(
             createdAt: 'desc',
           });
 
-        const commentsReaction = comments.map(async (comment) => {
-          const likes = await ReactionModel.countDocuments({
-            comment: comment._id,
-            user: userId,
-            kind: 'like',
-          });
-          const recommendations = await ReactionModel.countDocuments({
-            comment: comment._id,
-            user: userId,
-            kind: 'recommendation',
-          });
-          const stars = await ReactionModel.countDocuments({
-            comment: comment._id,
-            user: userId,
-            kind: 'star',
-          });
+        // Fetch all user reactions for these comments in a single query
+        const commentIds = comments.map((comment) => comment._id);
+        const userReactions = await ReactionModel.find({
+          comment: { $in: commentIds },
+          user: userId,
+        }).lean();
 
+        // Create a map of comment ID to reaction kinds
+        const reactionMap = new Map<string, Set<string>>();
+        for (const reaction of userReactions) {
+          const commentId = reaction.comment.toString();
+          if (!reactionMap.has(commentId)) {
+            reactionMap.set(commentId, new Set());
+          }
+          reactionMap.get(commentId)?.add(reaction.kind);
+        }
+
+        // Attach reactions to comments
+        for (const comment of comments) {
+          const commentId = comment._id.toString();
+          const kinds = reactionMap.get(commentId) || new Set();
+          
           // @ts-ignore dynmaic obj property
           comment.myReactions = {
-            like: !!likes,
-            recommendation: !!recommendations,
-            star: !!stars,
+            like: kinds.has('like'),
+            recommendation: kinds.has('recommendation'),
+            star: kinds.has('star'),
           };
+        }
 
-          return comment;
-        });
-
-        await Promise.all(commentsReaction);
         return { data: comments, total: await this.countDocuments(query) };
       },
     },
@@ -158,9 +160,8 @@ commentSchema.post('save', async function () {
   );
 });
 
-commentSchema.post('find', async function () {
-  await this.model.updateMany(this.getQuery(), { $inc: { viewers: 1 } });
-});
+// Removed automatic viewer increment on find to improve performance
+// If viewer tracking is needed, it should be done explicitly in the route handler
 
 commentSchema.index({ comment: 'asc', user: 'asc' });
 commentSchema.index({ reactionsCount: 'desc' });

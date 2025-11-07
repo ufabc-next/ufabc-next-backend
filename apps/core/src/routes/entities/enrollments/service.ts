@@ -55,10 +55,12 @@ export async function listWithComponents(
     .lean();
 
   // Gather all unique uf_cod_turma and disciplina_id from enrollments
-  const ufCodTurmas = enrollments.map((enrollment) => enrollment.uf_cod_turma);
-  const disciplinaIds = enrollments.map(
-    (enrollment) => enrollment.disciplina_id,
-  );
+  const ufCodTurmas = enrollments
+    .map((enrollment) => enrollment.uf_cod_turma)
+    .filter((val) => val != null);
+  const disciplinaIds = enrollments
+    .map((enrollment) => enrollment.disciplina_id)
+    .filter((val) => val != null);
 
   // Fetch components that match the season and either uf_cod_turma or disciplina_id
   const matchingComponents = await ComponentModel.find({
@@ -69,15 +71,25 @@ export async function listWithComponents(
     ],
   }).lean();
 
+  // Create maps for O(1) lookup instead of O(n) find on each iteration
+  const componentsByUfCodTurma = new Map();
+  const componentsByDisciplinaId = new Map();
+  
+  for (const component of matchingComponents) {
+    if (component.uf_cod_turma) {
+      componentsByUfCodTurma.set(component.uf_cod_turma, component);
+    }
+    if (component.disciplina_id) {
+      componentsByDisciplinaId.set(component.disciplina_id, component);
+    }
+  }
+
   // Build the payload by matching each enrollment to its component(s)
   const payload = enrollments.map((enrollment) => {
-    // Find a component that matches by uf_cod_turma or disciplina_id and season
-    const component = matchingComponents.find(
-      (component) =>
-        component.season === season &&
-        (component.uf_cod_turma === enrollment.uf_cod_turma ||
-          component.disciplina_id === enrollment.disciplina_id),
-    );
+    // Try to find component by uf_cod_turma first, then by disciplina_id
+    const component = 
+      (enrollment.uf_cod_turma && componentsByUfCodTurma.get(enrollment.uf_cod_turma)) ||
+      (enrollment.disciplina_id && componentsByDisciplinaId.get(enrollment.disciplina_id));
 
     return {
       season,

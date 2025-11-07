@@ -1,4 +1,4 @@
-import { type HelpForm } from "@/schemas/help.js";
+import type { HelpForm } from "@/schemas/help.js";
 import type { FastifyPluginAsyncZodOpenApi } from "fastify-zod-openapi";
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
