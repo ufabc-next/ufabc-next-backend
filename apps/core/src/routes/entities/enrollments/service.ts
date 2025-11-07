@@ -1,5 +1,5 @@
 import { CommentModel } from '@/models/Comment.js';
-import { ComponentModel } from '@/models/Component.js';
+import { ComponentModel, type Component } from '@/models/Component.js';
 import { EnrollmentModel } from '@/models/Enrollment.js';
 import type { SubjectDocument } from '@/models/Subject.js';
 import type { TeacherDocument } from '@/models/Teacher.js';
@@ -72,8 +72,8 @@ export async function listWithComponents(
   }).lean();
 
   // Create maps for O(1) lookup instead of O(n) find on each iteration
-  const componentsByUfCodTurma = new Map();
-  const componentsByDisciplinaId = new Map();
+  const componentsByUfCodTurma = new Map<string, Component>();
+  const componentsByDisciplinaId = new Map<number, Component>();
   
   for (const component of matchingComponents) {
     if (component.uf_cod_turma) {
@@ -88,8 +88,8 @@ export async function listWithComponents(
   const payload = enrollments.map((enrollment) => {
     // Try to find component by uf_cod_turma first, then by disciplina_id
     const component = 
-      (enrollment.uf_cod_turma && componentsByUfCodTurma.get(enrollment.uf_cod_turma)) ||
-      (enrollment.disciplina_id && componentsByDisciplinaId.get(enrollment.disciplina_id));
+      (enrollment.uf_cod_turma ? componentsByUfCodTurma.get(enrollment.uf_cod_turma) : undefined) ||
+      (enrollment.disciplina_id ? componentsByDisciplinaId.get(enrollment.disciplina_id) : undefined);
 
     return {
       season,

@@ -121,7 +121,7 @@ const commentSchema = new Schema(
           const commentId = comment._id.toString();
           const kinds = reactionMap.get(commentId) || new Set();
           
-          // @ts-ignore dynmaic obj property
+          // @ts-ignore dynamic obj property
           comment.myReactions = {
             like: kinds.has('like'),
             recommendation: kinds.has('recommendation'),
