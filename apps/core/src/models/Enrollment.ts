@@ -117,6 +117,12 @@ enrollmentSchema.index({
   cr_acumulado: 'asc',
   conceito: 'asc',
 });
+// Optimize queries by ra and season
+enrollmentSchema.index({ ra: 'asc', season: 'asc' });
+// Optimize enrollment upsert queries
+enrollmentSchema.index({ uf_cod_turma: 'asc', season: 'asc' });
+enrollmentSchema.index({ disciplina_id: 'asc', season: 'asc' });
+enrollmentSchema.index({ subject: 'asc', season: 'asc' });
 
 enrollmentSchema.pre('findOneAndUpdate', function (next) {
   const update = this.getUpdate();

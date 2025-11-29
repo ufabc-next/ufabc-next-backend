@@ -116,6 +116,8 @@ reactionSchema.post<ReactionDocument>(
 );
 
 reactionSchema.index({ comment: 'asc', kind: 'asc' });
+reactionSchema.index({ comment: 'asc', user: 'asc' }); // Optimize user reaction lookups
+reactionSchema.index({ slug: 'asc' }, { unique: true }); // Optimize duplicate check
 
 export type Reaction = InferSchemaType<typeof reactionSchema>;
 export type ReactionDocument = ReturnType<(typeof ReactionModel)['hydrate']>;

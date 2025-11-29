@@ -44,6 +44,9 @@ const studentSchema = new Schema(
   { timestamps: true },
 );
 
+studentSchema.index({ ra: 'asc', season: 'asc' });
+studentSchema.index({ season: 'asc' }); // For aggregation queries
+
 export type Student = InferSchemaType<typeof studentSchema>;
 export type StudentDocument = ReturnType<(typeof StudentModel)['hydrate']>;
 export const StudentModel = model('alunos', studentSchema);
