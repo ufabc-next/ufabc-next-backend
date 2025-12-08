@@ -57,13 +57,16 @@ export async function getGraduationHistory(ra: number) {
 
 function createDistributionGroup(totalPoints: number, inc: number) {
   // i still dont know what this code serves for
-  const branches = [...Array.from({ length: totalPoints }).keys()].map((k) => ({
-    case: {
-      // select where the cr_acumulado is less than inc * k
-      $lt: ['$value.cr_acumulado', inc * k],
-    },
-    then: inc * k,
-  }));
+  const branches = [];
+  for (let k = 0; k < totalPoints; k++) {
+    branches.push({
+      case: {
+        // select where the cr_acumulado is less than inc * k
+        $lt: ['$value.cr_acumulado', inc * k],
+      },
+      then: inc * k,
+    });
+  }
 
   return {
     $switch: {
