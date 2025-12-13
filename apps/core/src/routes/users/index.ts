@@ -60,6 +60,10 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       ra: user.ra,
       active: user.active,
       confirmed: user.confirmed,
+      email: user.email,
+      permissions: user.permissions,
+      oauth2: user.oauth,
+      createdAt: user._id.getTimestamp(),
     };
 
     return userInfo;
