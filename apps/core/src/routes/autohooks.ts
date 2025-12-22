@@ -18,6 +18,8 @@ const PUBLIC_ROUTES = [
   '/entities/enrollments/wpp',
 ];
 
+
+
 const EXTENSION_ROUTES = [
   '/entities/students/sig',
   '/histories',
