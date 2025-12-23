@@ -213,11 +213,11 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     const season = currentQuad();
     const coursesAggregate = await StudentModel.aggregate<{
       _id: string;
-      ids: string[];
+      curso_id?: number;
     }>([
       { $match: { season } },
       { $unwind: '$cursos' },
-      { $match: { 'cursos.id_curso': { $ne: null } } },
+      { $match: { 'cursos.id_curso': { $ne: '' } } },
       {
         $project: {
           'cursos.id_curso': 1,
@@ -226,25 +226,32 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       },
       {
         $group: {
-          _id: '$cursos.nome_curso',
-          ids: { $push: '$cursos.id_curso' },
+          _id: {
+            name: '$cursos.nome_curso',
+            id: '$cursos.id_curso'
+          },
+          count: { $sum: 1 }
         },
       },
+      {
+        $sort: { count: -1 }
+      },
+      {
+        $group: {
+          _id: '$_id.name',
+          curso_id: { $first: '$_id.id' }
+        }
+      },
+      {
+        $project: {
+          name: '$_id',
+          curso_id: 1,
+          _id: 0
+        }
+      }
     ]);
 
-    const courses = coursesAggregate.map((course) => {
-      const validIds = course.ids.filter((id) => id != null && id !== '');
-
-      // Find the most frequent ID
-      const courseModeId = validIds.length > 0 ? findMode(validIds) : undefined;
-
-      return {
-        name: course._id,
-        curso_id: courseModeId,
-      };
-    });
-
-    return courses;
+    return coursesAggregate;
   });
 };
 
@@ -263,27 +270,6 @@ const transformCategory = (
 
   return 'Obrigatória';
 };
-
-function findMode(arr: any[]) {
-  const frequencyMap = arr.reduce((acc, val) => {
-    acc[val] = (acc[val] || 0) + 1;
-    return acc;
-  }, {});
-
-  let maxFrequency = 0;
-  let modes: number[] = [];
-
-  for (const [value, frequency] of Object.entries(frequencyMap)) {
-    if (Number(frequency) > maxFrequency) {
-      modes = [Number(value)];
-      maxFrequency = frequency as number;
-    } else if (frequency === maxFrequency) {
-      modes.push(Number(value));
-    }
-  }
-
-  return modes[0]; // Return first mode if multiple exist
-}
 
 const transformStatus = (status: SigStatus): Situations => {
   const statusMap: Record<SigStatus, Situations> = {

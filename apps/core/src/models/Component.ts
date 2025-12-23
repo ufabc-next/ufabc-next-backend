@@ -79,6 +79,10 @@ const componentSchema = new Schema(
 );
 
 componentSchema.index({ identifier: 'asc' });
+// Optimize queries by season and matching criteria
+componentSchema.index({ season: 'asc', uf_cod_turma: 'asc' });
+componentSchema.index({ season: 'asc', disciplina_id: 'asc' });
+
 
 export type Component = InferSchemaType<typeof componentSchema>;
 export type ComponentDocument = ReturnType<(typeof ComponentModel)['hydrate']>;
