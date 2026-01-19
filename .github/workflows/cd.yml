@@ -56,7 +56,7 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
       - name: 🚀 Deploy and start container
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.4
 
         with:
           host: ${{ secrets.HOSTNAME }}
