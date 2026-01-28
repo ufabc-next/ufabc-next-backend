@@ -85,7 +85,7 @@ export class BaseRequester {
           logger.info(logData, TRACING_MESSAGES.INCOMING_RESPONSE);
         }
       },
-      onResponseError: ({ response }) => {
+      onResponseError: ({ response, error }) => {
         const logger =
           this.getLogger() ?? defaultLogger.child({ connector: true });
 
@@ -95,6 +95,7 @@ export class BaseRequester {
             status: response.status,
             url: response.url,
             data: response._data,
+            error,
           },
           TRACING_MESSAGES.INCOMING_REQUEST_FAILED
         );
