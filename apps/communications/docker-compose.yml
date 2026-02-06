@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Redis service for BullMQ queue
+  redis:
+    image: redis:7-alpine
+    container_name: whatsapp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - whatsapp-network
+
+  # WhatsApp API Application
+  whatsapp-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsapp-api
+    ports:
+      - "3000:3000"
+    environment:
+      # Environment
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-3000}
+      HOST: 0.0.0.0
+
+      # Redis Configuration - Use local Redis service
+      REDIS_CONNECTION_URL: redis://redis:6379
+
+      # WhatsApp Configuration
+      WHATSAPP_SESSION_NAME: ${WHATSAPP_SESSION_NAME:-whatsapp-session}
+      WHATSAPP_HEADLESS: ${WHATSAPP_HEADLESS:-true}
+      WHATSAPP_DEBUG_LOGS: ${WHATSAPP_DEBUG_LOGS:-false}
+      WHATSAPP_AUTO_RESPONSE: ${WHATSAPP_AUTO_RESPONSE:-true}
+      WHATSAPP_AUTHORIZED_USERS: ${WHATSAPP_AUTHORIZED_USERS:-}
+      WHATSAPP_RESPONSE_COOLDOWN: ${WHATSAPP_RESPONSE_COOLDOWN:-60}
+      WHATSAPP_OWNER_ONLY: ${WHATSAPP_OWNER_ONLY:-false}
+      WHATSAPP_CONTACT: ${WHATSAPP_CONTACT:-}
+      WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-true}
+
+      # Bull Board (Queue Dashboard) Configuration
+      BULL_BOARD_ENABLED: ${BULL_BOARD_ENABLED:-true}
+      BULL_BOARD_PATH: ${BULL_BOARD_PATH:-/admin/queues}
+      BULL_BOARD_USERNAME: ${BULL_BOARD_USERNAME:-admin}
+      BULL_BOARD_PASSWORD: ${BULL_BOARD_PASSWORD:-admin123}
+
+      # API Configuration
+      API_PREFIX: ${API_PREFIX:-/api/v1}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+
+      # AWS Configuration
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+
+      # External URLs
+      LAMBDA_URL: ${LAMBDA_URL:-}
+      NEXT_URL: ${NEXT_URL:-}
+      PARSER_URL: ${PARSER_URL:-}
+
+    volumes:
+      # Persist WhatsApp session tokens
+      - ./tokens:/app/tokens
+      # Mount source code for development (optional - comment out for production)
+      # - ./src:/app/src
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+    # For QR code scanning in development
+    stdin_open: true
+    tty: true
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  whatsapp-network:
+    driver: bridge

@@ -1,0 +1,17 @@
+{
+  "extends": ["@next/tsconfig/apps.json"],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "strict": true,
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "types": ["node"],
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": false,
+    "noEmit": false
+  },
+  "exclude": ["node_modules", "dist", "sst.config.ts", ".sst"]
+}

@@ -1,0 +1,31 @@
+{
+  "extends": [
+    "//"
+  ],
+  "tasks": {
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "cache": true
+    },
+    "tsc": {
+      "dependsOn": ["^build"],
+      "cache": true,
+      "outputLogs": "errors-only"
+    },
+    "start": {
+      "cache": true
+    },
+    "test": {
+      "cache": true
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

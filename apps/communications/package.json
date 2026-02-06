@@ -1,0 +1,57 @@
+{
+  "name": "@next/communications",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "WhatsApp Group Management API with MVC Architecture",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "docker compose up --build",
+    "build": "rimraf dist && tsc",
+    "tsc": "tsc",
+    "start": "node --env-file=.env dist/server.js",
+    "start:local": "pnpm build && node --env-file=.env dist/server.js",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "deploy": "sst deploy --stage production"
+  },
+  "keywords": [
+    "whatsapp",
+    "api",
+    "groups",
+    "communities",
+    "fastify",
+    "bullmq"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
+    "@aws-sdk/lib-storage": "catalog:",
+    "@aws-sdk/s3-request-presigner": "catalog:",
+    "@bull-board/api": "catalog:",
+    "@bull-board/fastify": "catalog:",
+    "@fastify/cors": "catalog:",
+    "@fastify/swagger": "catalog:",
+    "@scalar/fastify-api-reference": "catalog:",
+    "@wppconnect-team/wppconnect": "catalog:",
+    "bullmq": "catalog:",
+    "fastify": "catalog:",
+    "fastify-type-provider-zod": "catalog:",
+    "ioredis": "catalog:",
+    "ofetch": "catalog:",
+    "pino": "catalog:",
+    "sst": "latest",
+    "tsx": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@aws-sdk/types": "catalog:",
+    "@next/tsconfig": "workspace:*",
+    "@types/aws-lambda": "catalog:",
+    "@types/node": "catalog:",
+    "pino-pretty": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
