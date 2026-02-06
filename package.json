@@ -15,12 +15,12 @@
     "deps-check": "pnpm dlx taze -r"
   },
   "devDependencies": {
-    "oxfmt": "^0.22.0",
-    "oxlint": "^1.37.0",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "tsx": "catalog:",
     "turbo": "catalog:",
-    "ultracite": "^7.0.4"
+    "ultracite": "catalog:"
   },
   "engines": {
     "node": "^24",
