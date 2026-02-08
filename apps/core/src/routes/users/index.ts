@@ -345,7 +345,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         email = emailList[0];
       }
 
-      return reply.send({ email: 'carlos.alencar@aluno.ufabc.edu.br' });
+      return reply.send({ email });
     }
   );
 
@@ -370,7 +370,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
       if (user.ra !== raNumber) {
         try {
-          await validateUserData(email, ra);
+          // await validateUserData(email, ra);
           
           const raInUse = await UserModel.exists({ 
             ra: raNumber, 
