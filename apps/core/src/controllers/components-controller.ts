@@ -112,6 +112,22 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
         }
       },
       {
+        $lookup: {
+          from: 'teachers',
+          localField: 'teoria',
+          foreignField: '_id',
+          as: 'teoriaTeacher'
+        }
+      },
+      {
+        $lookup: {
+          from: 'teachers',
+          localField: 'pratica',
+          foreignField: '_id',
+          as: 'praticaTeacher'
+        }
+      },
+      {
         $unwind: "$alunos_matriculados"
       },
       {
@@ -134,7 +150,19 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
         $project: {
           _id: 0,
           studentsTotalUnique: 1,
-          component: "$data"
+          component: {
+            $mergeObjects: [
+              "$data",
+              {
+                teoria: { 
+                  $arrayElemAt: ["$data.teoriaTeacher.name", 0] 
+                },
+                pratica: { 
+                  $arrayElemAt: ["$data.praticaTeacher.name", 0] 
+                }
+              }
+            ]
+          }
         }
       },
       {
