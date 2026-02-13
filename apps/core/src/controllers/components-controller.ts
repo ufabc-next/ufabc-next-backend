@@ -104,13 +104,33 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
     },
   });
   
-  app.get('/components/top-requests', async (request, reply) => {
-    const requested = await ComponentModel.aggregate([
-      {
-        $match: {
-          season: '2026:1'
-        }
+  app.route({
+    method: 'GET',
+    url: '/components/pending-group-url',
+    schema: {
+      querystring: z.object({
+        season: z.string(),
+      }),
+      response: {
+        200: z.object({
+          status: z.string(),
+          data: z.any().array(),
+        }),
       },
+    },
+    handler: async (request, reply) => {
+      const { season } = request.query;
+      
+      const requested = await ComponentModel.aggregate([
+        {
+          $match: {
+            season,$or: [
+      { groupURL: null },
+      { groupURL: { $exists: false } }
+    ]
+
+          }
+        },
       {
         $lookup: {
           from: 'teachers',
@@ -168,12 +188,13 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
       {
         $sort: { studentsTotalUnique: -1 }
       }
-    ]);
-    return reply.status(200).send({
-      status: 'success',
-      data: requested,
-    });
-  })
+      ]);
+      return reply.status(200).send({
+        status: 'success',
+        data: requested,
+      });
+    },
+  });
 };
 
 export default componentsController;
