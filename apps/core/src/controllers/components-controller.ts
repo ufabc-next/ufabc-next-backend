@@ -170,19 +170,13 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
         $project: {
           _id: 0,
           studentsTotalUnique: 1,
-          component: {
-            $mergeObjects: [
-              "$data",
-              {
-                teoria: { 
-                  $arrayElemAt: ["$data.teoriaTeacher.name", 0] 
-                },
-                pratica: { 
-                  $arrayElemAt: ["$data.praticaTeacher.name", 0] 
-                }
-              }
-            ]
-          }
+          campus: "$data.campus",
+          disciplina: "$data.disciplina",
+          groupURL: "$data.groupURL",
+          uf_cod_turma: "$data.uf_cod_turma",
+          vagas: "$data.vagas",
+          teoriaTeacher: "$data.teoriaTeacher.name",
+          praticaTeacher: "$data.praticaTeacher.name"
         }
       },
       {
