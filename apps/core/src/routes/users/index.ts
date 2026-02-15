@@ -18,7 +18,7 @@ import {
   sendRecoveryEmailSchema,
   validateUserEmailSchema,
 } from '@/schemas/user.js';
-
+import { handleValidateUserDataError } from '@/utils/validadeUserData.js';
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const usersCache = app.cache<Auth>();
   app.get('/info', async (request, reply) => {
@@ -139,22 +139,9 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       const { email, ra } = request.body;
 
       try {
-        await validateUserData(email, ra);
+        await validateUserData(email, ra.toString());
       } catch (err: unknown) {
-        if (err instanceof Error)
-          switch (err.message) {
-            case 'RA_NOT_FOUND':
-              return reply.badRequest('O RA digitado não existe.');
-            case 'HAS_UFABC_CONTRACT':
-              return reply.forbidden(
-                'O aluno não pode ter contrato com a UFABC.'
-              );
-            case 'INVALID_EMAIL':
-              return reply.forbidden('O email fornecido não é válido.');
-            default:
-              request.log.error({ err }, 'unexpected validation error');
-              return reply.internalServerError('Erro de validação inesperado');
-          }
+        return handleValidateUserDataError(err, request, reply);
       }
 
       try {
@@ -314,22 +301,70 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     '/recover',
     { schema: sendRecoveryEmailSchema },
     async (request, reply) => {
-      const { email } = request.body;
-      const user = await UserModel.findOne({ email }).lean<
-        User & { _id: string }
-      >();
+      const { email, ra } = request.body as { email: string; ra: string };
+      const normalizedEmail = email.toLowerCase();
+      const raNumber = Number.parseInt(ra, 10);
+      
+      if (!Number.isInteger(raNumber) || raNumber <= 0) {
+        return reply.badRequest('RA inválido');
+      }
+      
+      const user = await UserModel.findOne({ email: normalizedEmail });
 
       if (!user) {
         return reply.badRequest(`E-mail inválido: ${email}`);
       }
 
+      if (!user.email || user.email.toLowerCase() !== normalizedEmail) {
+        return reply.forbidden('E-mail não corresponde ao RA atual.');
+      }
+
+      let raAdjusted = false;
+
+      if (user.ra !== raNumber) {
+        try {
+          // await validateUserData(email, ra);
+          
+          const raInUse = await UserModel.exists({ 
+            ra: raNumber, 
+            _id: { $ne: user._id } 
+          });
+          
+          if (raInUse) {
+            return reply.badRequest('Este RA já está em uso.');
+          }
+
+          user.ra = raNumber;
+          await user.save();
+          raAdjusted = true;
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            switch (err.message) {
+              case 'RA_NOT_FOUND':
+                return reply.badRequest('O RA digitado não existe.');
+              case 'HAS_UFABC_CONTRACT':
+                return reply.forbidden(
+                  'O aluno não pode ter contrato com a UFABC.'
+                );
+              case 'INVALID_EMAIL':
+                return reply.forbidden('O email fornecido não é válido.');
+              default:
+                request.log.error({ err }, 'unexpected validation error');
+                return reply.internalServerError('Erro de validação inesperado');
+            }
+          }
+        }
+      }
+
       await app.job.dispatch('SendEmail', {
         kind: 'Recover',
-        user,
+        user: user.toJSON() as unknown as User & { _id: string },
       });
 
       return reply.send({
         msg: 'success',
+        ra: raNumber,
+        raAdjusted,
       });
     }
   );
