@@ -193,58 +193,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     }
   );
 
-  app.patch('/change-ra', async (request, reply) => {
-    const { ra: newRa } = request.body as { ra: number };
-
-    if (!Number.isInteger(newRa) || newRa <= 0) {
-      return reply.badRequest('RA inválido');
-    }
-
-    const user = await UserModel.findById(request.user._id);
-    if (!user || !user.active) return reply.notFound('User not found');
-    if (!user.confirmed) return reply.forbidden('User not confirmed');
-    if (!user.email) return reply.badRequest('User email missing');
-
-    if (user.ra === newRa) {
-      return reply.send({ ra: user.ra });
-    }
-
-    try {
-      await validateUserData(user.email, newRa.toString());
-    } catch (err: unknown) {
-      return handleValidateUserDataError(err, request, reply);
-    }
-
-    const raInUse = await UserModel.exists({ ra: newRa, _id: { $ne: user._id } });
-    if (raInUse) {
-      return reply.badRequest('Este RA já está em uso.');
-    }
-
-    try {
-      user.ra = newRa;
-      await user.save();
-
-      const jwtToken = app.jwt.sign({
-        _id: user._id,
-        ra: user.ra,
-        confirmed: user.confirmed,
-        email: user.email,
-        permissions: user.permissions,
-        active: user.active,
-      });
-
-      return reply.send({ token: jwtToken });
-    } catch (e: any) {
-      // corrida: alguém gravou o mesmo RA entre o exists e o save (Duplicate Key Error)
-      if (e?.code === 11000) {
-        return reply.badRequest('Este RA já está em uso.');
-      }
-      request.log.error({ e }, 'error changing ra');
-      return reply.internalServerError('Could not change RA');
-    }
-  });
-
-
   app.post(
     '/confirm',
     { schema: confirmUserSchema },
