@@ -302,16 +302,21 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     { schema: sendRecoveryEmailSchema },
     async (request, reply) => {
       const { email, ra } = request.body as { email: string; ra: string };
+      const normalizedEmail = email.toLowerCase();
       const raNumber = Number.parseInt(ra, 10);
       
       if (!Number.isInteger(raNumber) || raNumber <= 0) {
         return reply.badRequest('RA inválido');
       }
       
-      const user = await UserModel.findOne({ email });
+      const user = await UserModel.findOne({ email: normalizedEmail });
 
       if (!user) {
         return reply.badRequest(`E-mail inválido: ${email}`);
+      }
+
+      if (!user.email || user.email.toLowerCase() !== normalizedEmail) {
+        return reply.forbidden('E-mail não corresponde ao RA atual.');
       }
 
       let raAdjusted = false;
