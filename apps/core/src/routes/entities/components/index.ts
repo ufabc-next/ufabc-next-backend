@@ -238,8 +238,8 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     }
   );
 
-  app.post('/update-group-urls/:disciplinaId', async (request, reply) => {
-    const { disciplinaId } = request.params as { disciplinaId: string };
+  app.post('/update-group-urls/:ufCodTurma', async (request, reply) => {
+    const { ufCodTurma } = request.params as { ufCodTurma: string };
     const { season } = request.query as { season?: string };
     const { groupURL } = request.body as { groupURL: string };
 
@@ -248,42 +248,42 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     }
 
     try {
-      app.log.info({ disciplinaId, season, groupURL }, 'Updating groupURL');
+      app.log.info({ ufCodTurma, season, groupURL }, 'Updating groupURL');
 
       const seasonToUse = season ?? currentQuad();
 
       const result = await ComponentModel.updateOne(
-        { disciplina_id: Number(disciplinaId), season: season },
+        { uf_cod_turma: ufCodTurma, season: season },
         { $set: { groupURL } }
       );
 
       if (result.matchedCount === 0) {
-        app.log.info({ disciplinaId, season: seasonToUse }, 'No matching component found');
+        app.log.info({ ufCodTurma, season: seasonToUse }, 'No matching component found');
         return reply.status(404).send({
           error: 'No matching component found',
-          disciplinaId,
+          ufCodTurma,
           season: seasonToUse,
         });
       }
 
       if (result.modifiedCount === 0) {
-        app.log.info({ disciplinaId, season: seasonToUse }, 'Component found but not modified (same groupURL)');
+        app.log.info({ ufCodTurma, season: seasonToUse }, 'Component found but not modified (same groupURL)');
         return reply.send({
           message: 'Component found but groupURL was already set to this value',
-          disciplinaId,
+          ufCodTurma,
           season: seasonToUse,
           groupURL,
         });
       }
 
       app.log.info(
-        { disciplinaId, season: seasonToUse, modifiedCount: result.modifiedCount },
+        { ufCodTurma, season: seasonToUse, modifiedCount: result.modifiedCount },
         'GroupURL updated successfully'
       );
 
       return reply.send({
         message: 'GroupURL updated successfully',
-        disciplinaId,
+        ufCodTurma,
         season: seasonToUse,
         groupURL,
         modifiedCount: result.modifiedCount,
@@ -292,7 +292,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       app.log.error(
         {
           error: error instanceof Error ? error.message : String(error),
-          disciplinaId,
+          ufCodTurma,
           season: season,
         },
         'Error updating groupURL'
