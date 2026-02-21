@@ -338,25 +338,11 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           await user.save();
           raAdjusted = true;
         } catch (err: unknown) {
-          if (err instanceof Error) {
-            switch (err.message) {
-              case 'RA_NOT_FOUND':
-                return reply.badRequest('O RA digitado não existe.');
-              case 'HAS_UFABC_CONTRACT':
-                return reply.forbidden(
-                  'O aluno não pode ter contrato com a UFABC.'
-                );
-              case 'INVALID_EMAIL':
-                return reply.forbidden('O email fornecido não é válido.');
-              default:
-                request.log.error({ err }, 'unexpected validation error');
-                return reply.internalServerError('Erro de validação inesperado');
-            }
-          }
+          return handleValidateUserDataError(err, request, reply);
         }
       }
 
-      await app.job.dispatch('SendEmail', {
+      app.job.dispatch('SendEmail', {
         kind: 'Recover',
         user: user.toJSON() as unknown as User & { _id: string },
       });
