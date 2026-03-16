@@ -4,6 +4,7 @@ import { currentQuad } from '@next/common';
 
 import { StudentModel } from '@/models/Student.js';
 import { UserModel, type User } from '@/models/User.js';
+import { UserRaHistoryModel } from '@/models/UserRaHistory.js';
 import {
   getEmployeeData,
   getStudentData,
@@ -334,8 +335,26 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
             return reply.badRequest('Este RA já está em uso.');
           }
 
+          const previousRa = user.ra;
           user.ra = raNumber;
           await user.save();
+
+          try {
+            await UserRaHistoryModel.create({
+              userId: user._id,
+              oldRa: previousRa,
+              newRa: raNumber,
+            });
+          } catch (historyErr: unknown) {
+            request.log.error({
+              msg: 'Failed to record RA change history',
+              userId: user._id,
+              oldRa: previousRa,
+              newRa: raNumber,
+              error: historyErr,
+            });
+          }
+
           raAdjusted = true;
         } catch (err: unknown) {
           return handleValidateUserDataError(err, request, reply);
