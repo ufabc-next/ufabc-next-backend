@@ -154,6 +154,6 @@ export const sendRecoveryEmailSchema = {
   tags,
   body: z.object({
     email: z.string().email(),
-    ra: z.string(),
+    ra: z.number().positive(),
   }),
 } satisfies FastifyZodOpenApiSchema;

@@ -301,11 +301,11 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     '/recover',
     { schema: sendRecoveryEmailSchema },
     async (request, reply) => {
-      const { email, ra } = request.body as { email: string; ra: string };
+      const { email, ra } = request.body as { email: string; ra: number };
       const normalizedEmail = email.toLowerCase();
-      const raNumber = Number.parseInt(ra, 10);
+      const currentRaNumber = ra;
       
-      if (!Number.isInteger(raNumber) || raNumber <= 0) {
+      if (currentRaNumber <= 0) {
         return reply.badRequest('RA inválido');
       }
       
@@ -319,14 +319,15 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         return reply.forbidden('E-mail não corresponde ao RA atual.');
       }
 
+      const old_ras: number[] = [];
       let raAdjusted = false;
 
-      if (user.ra !== raNumber) {
+      if (user.ra !== currentRaNumber) {
         try {
           // await validateUserData(email, ra);
           
           const raInUse = await UserModel.exists({ 
-            ra: raNumber, 
+            ra: currentRaNumber, 
             _id: { $ne: user._id } 
           });
           
@@ -334,7 +335,12 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
             return reply.badRequest('Este RA já está em uso.');
           }
 
-          user.ra = raNumber;
+          const previousRa = user.ra;
+          if (previousRa !== null && previousRa !== undefined) {
+            old_ras.push(Number(previousRa));
+          }
+
+          user.ra = currentRaNumber;
           await user.save();
           raAdjusted = true;
         } catch (err: unknown) {
@@ -349,7 +355,8 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
       return reply.send({
         msg: 'success',
-        ra: raNumber,
+        ra: currentRaNumber,
+        old_ras,
         raAdjusted,
       });
     }
