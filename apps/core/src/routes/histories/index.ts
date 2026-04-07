@@ -21,6 +21,7 @@ import { handleValidateUserDataError } from '@/utils/handle-validate-user-data-e
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const historyCache = app.cache<History>();
   const connector = new UfabcParserConnector();
+  const studentEmailDomain = '@aluno.ufabc.edu.br';
   app.post(
     '/',
     { schema: sigHistorySchema },
@@ -29,6 +30,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       const viewState = headers['view-state'] ?? headers['View-State'];
       const { login, ra } = body;
       const currentRaNumber = ra;
+      const studentEmail = `${login}${studentEmailDomain}`;
 
       if (!sessionId || !viewState) {
         return reply.badRequest('Missing sessionId');
@@ -38,15 +40,15 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         return reply.badRequest('RA inválido');
       }
 
-      const user = await UserModel.findOne({ email: login });
+      const user = await UserModel.findOne({ email: studentEmail });
 
       if (!user) {
-        return reply.badRequest(`E-mail inválido: ${login}`);
+        return reply.badRequest(`E-mail inválido: ${studentEmail}`);
       }
 
       if (user.ra !== currentRaNumber) {
         try {
-          await validateUserData(login, currentRaNumber.toString());
+          // await validateUserData(studentEmail, currentRaNumber.toString());
 
           const raInUse = await UserModel.exists({
             ra: currentRaNumber,
