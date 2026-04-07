@@ -12,20 +12,67 @@ import {
   type Situations,
 } from '@/models/History.js';
 import { StudentModel } from '@/models/Student.js';
+import { UserModel } from '@/models/User.js';
+import { UserRaHistoryModel } from '@/models/UserRaHistory.js';
+import { validateUserData } from '@/modules/email-validator.js';
 import { sigHistorySchema, type SigStatus } from '@/schemas/history.js';
+import { handleValidateUserDataError } from '@/utils/handle-validate-user-data-error.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const historyCache = app.cache<History>();
   const connector = new UfabcParserConnector();
+  const studentEmailDomain = '@aluno.ufabc.edu.br';
   app.post(
     '/',
     { schema: sigHistorySchema },
-    async ({ sessionId, headers, body }, reply) => {
+    async (request, reply) => {
+      const { sessionId, headers, body } = request;
       const viewState = headers['view-state'] ?? headers['View-State'];
       const { login, ra } = body;
+      const currentRaNumber = ra;
+      const studentEmail = `${login}${studentEmailDomain}`;
 
       if (!sessionId || !viewState) {
         return reply.badRequest('Missing sessionId');
+      }
+
+      if (currentRaNumber <= 0) {
+        return reply.badRequest('RA inválido');
+      }
+
+      const user = await UserModel.findOne({ email: studentEmail });
+
+      if (!user) {
+        return reply.badRequest(`E-mail inválido: ${studentEmail}`);
+      }
+
+      if (user.ra !== currentRaNumber) {
+        try {
+          await validateUserData(studentEmail, currentRaNumber.toString());
+
+          const raInUse = await UserModel.exists({
+            ra: currentRaNumber,
+            _id: { $ne: user._id },
+          });
+
+          if (raInUse) {
+            return reply.badRequest('Este RA já está em uso.');
+          }
+
+          const previousRa = user.ra;
+          if (previousRa !== null && previousRa !== undefined) {
+            await UserRaHistoryModel.create({
+              userId: user._id,
+              oldRa: Number(previousRa),
+              newRa: currentRaNumber,
+            });
+          }
+
+          user.ra = currentRaNumber;
+          await user.save();
+        } catch (err: unknown) {
+          return handleValidateUserDataError(err, request, reply);
+        }
       }
 
       const cacheKey = `history:${ra}`;
