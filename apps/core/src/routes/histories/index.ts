@@ -48,7 +48,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
       if (user.ra !== currentRaNumber) {
         try {
-          // await validateUserData(studentEmail, currentRaNumber.toString());
+          await validateUserData(studentEmail, currentRaNumber.toString());
 
           const raInUse = await UserModel.exists({
             ra: currentRaNumber,
