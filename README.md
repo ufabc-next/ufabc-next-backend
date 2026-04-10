@@ -39,6 +39,11 @@ Certifique-se de que o AWS CLI original esteja instalado em seu sistema.
 # De `start` no projeto
 pnpm dev
 
+## Nota de runtime em produção
+
+O processo principal do backend sobe com `--max-old-space-size=1536` no script `apps/core:start`.
+Isso cria um teto de heap para o Node em produção e ajuda a evitar que um único processo consuma toda a memória disponível da instância.
+
 
 ## O que temos no repo?
 

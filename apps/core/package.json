@@ -11,8 +11,8 @@
     "dev": "tsx watch --env-file=.env.dev src/server.ts",
     "build": "rimraf dist && tspc",
     "tsc": "tsc",
-    "start": "node --env-file=.env.prod dist/server.js",
-    "start:local": "pnpm build && node --env-file=.env.prod dist/server.js",
+    "start": "node --max-old-space-size=1536 --env-file=.env.prod dist/server.js",
+    "start:local": "pnpm build && node --max-old-space-size=1536 --env-file=.env.prod dist/server.js",
     "test": "vitest",
     "test:watch": "vitest watch"
   },
