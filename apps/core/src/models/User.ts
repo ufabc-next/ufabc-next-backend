@@ -5,6 +5,12 @@ import {
   model,
 } from 'mongoose';
 
+// mongoose automatically passes the email field to the function on validator 
+const isValidEmail = (email: string): boolean => {
+  if (!email) return true;
+  return email.includes('ufabc.edu.br') || email === 'nexusterceiros@gmail.com';
+};
+
 const userSchema = new Schema(
   {
     ra: {
@@ -15,8 +21,7 @@ const userSchema = new Schema(
     email: {
       type: String,
       validate: {
-        validator: (email: string) =>
-          email ? email.includes('ufabc.edu.br') : true,
+        validator: isValidEmail, 
         message: (props: ValidatorProps) =>
           `${props.value} não é um e-mail válido.`,
       },
