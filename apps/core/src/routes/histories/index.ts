@@ -1,30 +1,33 @@
-import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import type {
+  FastifyPluginAsyncZodOpenApi,
+} from 'fastify-zod-openapi';
 
 import { currentQuad } from '@next/common';
 
-import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
 import { GraduationModel } from '@/models/Graduation.js';
 import {
   HistoryModel,
   type Categories,
-  type HistoryDocument,
   type History,
+  type HistoryDocument,
   type Situations,
 } from '@/models/History.js';
 import { StudentModel } from '@/models/Student.js';
 import { UserModel } from '@/models/User.js';
 import { UserRaHistoryModel } from '@/models/UserRaHistory.js';
-import { validateUserData } from '@/modules/email-validator.js';
-import { sigHistorySchema, type SigStatus } from '@/schemas/history.js';
+import {
+  sigHistoryBodySchema,
+  sigHistoryResponseSchema,
+  type SigStatus,
+} from '@/schemas/history.js';
 import { handleValidateUserDataError } from '@/utils/handle-validate-user-data-error.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const historyCache = app.cache<History>();
-  const connector = new UfabcParserConnector();
   const studentEmailDomain = '@aluno.ufabc.edu.br';
   app.post(
     '/',
-    { schema: sigHistorySchema },
+    { schema: sigHistoryBodySchema },
     async (request, reply) => {
       const { sessionId, headers, body } = request;
       const viewState = headers['view-state'] ?? headers['View-State'];
@@ -48,8 +51,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 
       if (user.ra !== currentRaNumber) {
         try {
-          await validateUserData(studentEmail, currentRaNumber.toString());
-
           const raInUse = await UserModel.exists({
             ra: currentRaNumber,
             _id: { $ne: user._id },
@@ -82,28 +83,54 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           msg: 'Cached history!',
         };
       }
-      const parsedHistory = await connector.getHistory(
-        sessionId,
-        viewState as string
-      );
-      if (parsedHistory.error) {
+
+      const historyUrl = new URL('/v1/sig/history', app.config.UFABC_PARSER_URL);
+      historyUrl.searchParams.set('action', 'history');
+
+      const parserResponse = await fetch(historyUrl, {
+        method: 'POST',
+        headers: {
+          'session-id': sessionId,
+          'view-state': viewState as string,
+        },
+      });
+
+      const parserPayload = (await parserResponse.json()) as {
+        data: unknown;
+        error: string | null;
+      };
+
+      if (parserPayload.error) {
         app.log.error(
           {
             ra,
-            error: parsedHistory.error.issues.map((issue) => ({
-              reason: issue.message,
-              path: issue.path,
-              code: issue.code,
-            })),
-            cause: parsedHistory.error.cause,
+            error: parserPayload.error,
           },
           'error parsing history from parser'
         );
         return reply.internalServerError('Failed to fetch history from UFABC');
       }
 
-      const { student, components, graduations, coefficients } =
-        parsedHistory.data;
+      const parsedHistory = sigHistoryResponseSchema.safeParse(parserPayload.data);
+
+      if (!parsedHistory.success) {
+        app.log.error(
+          {
+            ra,
+            error: parsedHistory.error.issues.map(
+              (issue: { message: string; path: Array<string | number>; code: string }) => ({
+                reason: issue.message,
+                path: issue.path,
+                code: issue.code,
+              })
+            ),
+          },
+          'error parsing history payload'
+        );
+        return reply.internalServerError('Failed to fetch history from UFABC');
+      }
+
+      const { student, components, graduations, coefficients } = parsedHistory.data;
 
       if (!parsedHistory.data?.graduations.grade) {
         app.log.warn(
@@ -184,7 +211,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
                 curso: {
                   $regex: student.course
                     .split(/\s+/)
-                    .map((word) => `(?=.*${word})`)
+                    .map((word: string) => `(?=.*${word})`)
                     .join(''),
                   $options: 'i',
                 },
@@ -314,25 +341,29 @@ const transformCategory = (
   return 'Obrigatória';
 };
 
-function findMode(arr: any[]) {
-  const frequencyMap = arr.reduce((acc, val) => {
-    acc[val] = (acc[val] || 0) + 1;
-    return acc;
-  }, {});
+function findMode<T extends string | number>(arr: T[]): T {
+  if (arr.length === 0) {
+    throw new Error('Cannot find mode of an empty array');
+  }
+
+  const frequencyMap = new Map<T, number>();
+
+  for (const value of arr) {
+    const currentFrequency = frequencyMap.get(value) ?? 0;
+    frequencyMap.set(value, currentFrequency + 1);
+  }
 
   let maxFrequency = 0;
-  let modes: number[] = [];
+  let mode = arr[0];
 
-  for (const [value, frequency] of Object.entries(frequencyMap)) {
-    if (Number(frequency) > maxFrequency) {
-      modes = [Number(value)];
-      maxFrequency = frequency as number;
-    } else if (frequency === maxFrequency) {
-      modes.push(Number(value));
+  for (const [value, frequency] of frequencyMap.entries()) {
+    if (frequency > maxFrequency) {
+      mode = value;
+      maxFrequency = frequency;
     }
   }
 
-  return modes[0]; // Return first mode if multiple exist
+  return mode;
 }
 
 const transformStatus = (status: SigStatus): Situations => {
