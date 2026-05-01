@@ -1,4 +1,5 @@
 import { UfabcParserError } from '@/errors/ufabc-parser.js';
+import { sigHistory, type SigHistory } from '@/schemas/history.js';
 
 import { BaseRequester } from './base-requester.js';
 
@@ -67,6 +68,25 @@ type SyncStudentParams = {
 export class UfabcParserConnector extends BaseRequester {
   constructor(globalTraceId?: string) {
     super(process.env.UFABC_PARSER_URL, globalTraceId);
+  }
+
+  async getHistory(sessionId: string, viewState: string) {
+    const headers = new Headers();
+    headers.set('session-id', sessionId);
+    headers.set('view-state', viewState);
+
+    const response = await this.request<{
+      data: SigHistory | null;
+      error: string | null;
+    }>('/v1/sig/history', {
+      method: 'POST',
+      headers,
+      query: {
+        action: 'history',
+      },
+    });
+
+    return sigHistory.safeParse(response.data);
   }
 
   async getEnrollments(kind: string, season: string) {

@@ -15,7 +15,6 @@ import {
   sendRecoveryEmailSchema,
   validateUserEmailSchema,
 } from '@/schemas/user.js';
-import { handleValidateUserDataError } from '@/utils/handle-validate-user-data-error.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const usersCache = app.cache<Auth>();
