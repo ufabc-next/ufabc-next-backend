@@ -10,8 +10,6 @@ const userRaHistorySchema = new Schema(
 );
 
 userRaHistorySchema.index({ userId: 1, createdAt: -1 });
-userRaHistorySchema.index({ oldRa: 1 });
-userRaHistorySchema.index({ newRa: 1 });
 
 export type UserRaHistory = InferSchemaType<typeof userRaHistorySchema>;
 export type UserRaHistoryDocument = ReturnType<
