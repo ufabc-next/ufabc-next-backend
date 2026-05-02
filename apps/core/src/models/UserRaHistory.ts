@@ -17,6 +17,6 @@ export type UserRaHistoryDocument = ReturnType<
 >;
 
 export const UserRaHistoryModel = model<UserRaHistory>(
-  'user_ra_histories',
+  'user_ras',
   userRaHistorySchema
 );
