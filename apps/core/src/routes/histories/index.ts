@@ -39,7 +39,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         return reply.badRequest('Missing sessionId');
       }
 
-      if (currentRaNumber <= 0) {
+      if (!isValidRaNumber(currentRaNumber)) {
         return reply.badRequest('RA inválido');
       }
 
@@ -326,6 +326,19 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
 };
 
 export default plugin;
+
+const MIN_RA_DIGITS = 4;
+const MAX_RA_DIGITS = 12;
+
+const isValidRaNumber = (ra: number): boolean => {
+  if (!Number.isInteger(ra) || ra <= 0) {
+    return false;
+  }
+
+  const raDigits = ra.toString().length;
+
+  return raDigits >= MIN_RA_DIGITS && raDigits <= MAX_RA_DIGITS;
+};
 
 const transformCategory = (
   category: 'free' | 'mandatory' | 'limited'
