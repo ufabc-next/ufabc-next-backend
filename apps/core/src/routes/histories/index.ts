@@ -25,19 +25,16 @@ import { handleValidateUserDataError } from '@/utils/handle-validate-user-data-e
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const historyCache = app.cache<History>();
   const studentEmailDomain = '@aluno.ufabc.edu.br';
+
   app.post(
     '/',
     { schema: sigHistoryBodySchema },
     async (request, reply) => {
-      const { sessionId, headers, body } = request;
-      const viewState = headers['view-state'] ?? headers['View-State'];
+      const { body } = request;
       const { login, ra } = body;
+
       const currentRaNumber = ra;
       const studentEmail = `${login}${studentEmailDomain}`;
-
-      if (!sessionId || !viewState) {
-        return reply.badRequest('Missing sessionId');
-      }
 
       if (!isValidRaNumber(currentRaNumber)) {
         return reply.badRequest('RA inválido');
@@ -49,35 +46,65 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         return reply.badRequest(`E-mail inválido: ${studentEmail}`);
       }
 
-      if (user.ra !== currentRaNumber) {
-        try {
-          const raInUse = await UserModel.exists({
-            ra: currentRaNumber,
-            _id: { $ne: user._id },
-          });
-
-          if (raInUse) {
-            return reply.badRequest('Este RA já está em uso.');
-          }
-
-          const previousRa = user.ra;
-          if (previousRa !== null && previousRa !== undefined) {
-            await UserRaHistoryModel.create({
-              userId: user._id,
-              oldRa: Number(previousRa),
-              newRa: currentRaNumber,
-            });
-          }
-
-          user.ra = currentRaNumber;
-          await user.save();
-        } catch (err: unknown) {
-          return handleValidateUserDataError(err, request, reply);
-        }
+      if (user.ra === currentRaNumber) {
+        return {
+          msg: 'RA já está atualizado',
+        };
       }
 
-      const cacheKey = `history:${ra}`;
+      try {
+        const raInUse = await UserModel.exists({
+          ra: currentRaNumber,
+          _id: { $ne: user._id },
+        });
+
+        if (raInUse) {
+          return reply.badRequest('Este RA já está em uso.');
+        }
+
+        const previousRa = user.ra;
+
+        if (previousRa !== null && previousRa !== undefined) {
+          await UserRaHistoryModel.create({
+            userId: user._id,
+            oldRa: Number(previousRa),
+            newRa: currentRaNumber,
+          });
+        }
+
+        user.ra = currentRaNumber;
+        await user.save();
+
+        return {
+          msg: 'RA atualizado com sucesso',
+        };
+      } catch (err: unknown) {
+        return handleValidateUserDataError(err, request, reply);
+      }
+    }
+  );
+
+  app.post(
+    '/history',
+    { schema: sigHistoryBodySchema },
+    async (request, reply) => {
+      const { sessionId, headers, body } = request;
+      const viewState = headers['view-state'] ?? headers['View-State'];
+      const { login, ra } = body;
+
+      const currentRaNumber = ra;
+
+      if (!sessionId || !viewState) {
+        return reply.badRequest('Missing sessionId or view-state');
+      }
+
+      if (!isValidRaNumber(currentRaNumber)) {
+        return reply.badRequest('RA inválido');
+      }
+
+      const cacheKey = `history:${currentRaNumber}`;
       const cached = historyCache.get(cacheKey);
+
       if (cached) {
         return {
           msg: 'Cached history!',
@@ -108,6 +135,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           },
           'error parsing history from parser'
         );
+
         return reply.internalServerError('Failed to fetch history from UFABC');
       }
 
@@ -127,6 +155,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
           },
           'error parsing history payload'
         );
+
         return reply.internalServerError('Failed to fetch history from UFABC');
       }
 
@@ -202,11 +231,15 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         history = await HistoryModel.findOneAndUpdate(
           {
             $or: [
-              // Busca exata pelo curso normalizado
-              { curso: student.course },
-              // Busca parcial pelo curso (case insensitive)
-              { curso: { $regex: student.course, $options: 'i' } },
-              // Busca por palavras individuais do curso
+              {
+                curso: student.course,
+              },
+              {
+                curso: {
+                  $regex: student.course,
+                  $options: 'i',
+                },
+              },
               {
                 curso: {
                   $regex: student.course
@@ -260,12 +293,14 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       }
 
       const hasGraduationChanged =
-        student.course !== dbStudent?.cursos[0].nome_curso;
+        student.course !== dbStudent?.cursos?.[0]?.nome_curso;
 
       if (hasGraduationChanged) {
-        // update student with the new graduation, dont overwriting others
         await StudentModel.findOneAndUpdate(
-          { ra: student.ra, season: currentQuad() },
+          {
+            ra: student.ra,
+            season: currentQuad(),
+          },
           {
             $set: {
               cursos: [graduationsToInsert],
@@ -281,30 +316,49 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
       }
 
       return {
-        msg: 'Sync sucessfully',
+        msg: 'Sync successfully',
       };
     }
   );
 
   app.get('/courses', async (request, reply) => {
     const season = currentQuad();
+
     const coursesAggregate = await StudentModel.aggregate<{
       _id: string;
       ids: string[];
     }>([
-      { $match: { season } },
-      { $unwind: '$cursos' },
-      { $match: { 'cursos.id_curso': { $ne: null } } },
+      {
+        $match: {
+          season,
+        },
+      },
+      {
+        $unwind: '$cursos',
+      },
+      {
+        $match: {
+          'cursos.id_curso': {
+            $ne: null,
+          },
+        },
+      },
       {
         $project: {
           'cursos.id_curso': 1,
-          'cursos.nome_curso': { $trim: { input: '$cursos.nome_curso' } },
+          'cursos.nome_curso': {
+            $trim: {
+              input: '$cursos.nome_curso',
+            },
+          },
         },
       },
       {
         $group: {
           _id: '$cursos.nome_curso',
-          ids: { $push: '$cursos.id_curso' },
+          ids: {
+            $push: '$cursos.id_curso',
+          },
         },
       },
     ]);
@@ -312,7 +366,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     const courses = coursesAggregate.map((course) => {
       const validIds = course.ids.filter((id) => id != null && id !== '');
 
-      // Find the most frequent ID
       const courseModeId = validIds.length > 0 ? findMode(validIds) : undefined;
 
       return {
