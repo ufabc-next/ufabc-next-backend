@@ -4,7 +4,8 @@
   "private": false,
   "type": "module",
   "scripts": {
-    "dev": "turbo run dev --parallel",
+    "dev": "turbo run dev --continue",
+    "docker:build": "turbo run docker:build",
     "services:up": "docker compose up -d",
     "build": "turbo run build",
     "tsc": "turbo run tsc --parallel",

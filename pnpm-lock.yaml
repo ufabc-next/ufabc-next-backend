@@ -502,6 +502,8 @@ importers:
         specifier: 'catalog:'
         version: 2.0.0
 
+  tools/docker-infra: {}
+
 packages:
 
   '@aws-crypto/crc32@5.2.0':
