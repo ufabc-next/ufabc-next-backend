@@ -2,7 +2,14 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
 import { currentQuad } from '@next/common';
 
+import { UserModel, UserRaHistoryModel } from '@/models/User.js';
 import { StudentModel } from '@/models/Student.js';
+
+import { handleValidateUserDataError } from '@/utils/handle-validate-user-data-error.js';
+
+import {
+  sigHistoryBodySchema
+} from '@/schemas/user.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get('/courses', async (request, reply) => {
