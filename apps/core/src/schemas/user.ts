@@ -156,3 +156,11 @@ export const sendRecoveryEmailSchema = {
     email: z.string().email(),
   }),
 } satisfies FastifyZodOpenApiSchema;
+
+export const sigHistoryBodySchema = {
+  tags: ['Sigaa'],
+  body: z.object({
+    login: z.string(),
+    ra: z.coerce.number(),
+  }),
+} satisfies FastifyZodOpenApiSchema;
