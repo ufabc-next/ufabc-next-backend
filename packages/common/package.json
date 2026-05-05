@@ -6,20 +6,20 @@
   "license": "ISC",
   "author": "Joabe Varjao <joabevarjao123@gmail.com>",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "index.ts",
   "exports": {
     "types": "./dist/index.d.ts",
-    "require": "./dist/index.js",
-    "import": "./dist/index.js"
+    "require": "./index.ts",
+    "import": "./index.ts"
   },
   "scripts": {
-    "dev": "tsup index.ts --dts --format=esm --watch",
-    "build": "tsup index.ts --dts --format=esm --clean",
-    "tsc": "tsc",
+    "build": "tsc",
+    "tsc": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "test": "node --import=tsx --test lib/*.spec.ts",
     "test:watch": "node --import=tsx --watch --test lib/*.spec.ts",
-    "test:coverage": "c8 --all --src=lib node --test --import=tsx lib/*.spec.ts"
+    "test:coverage": "c8 --all --src=lib node --test --import=tsx lib/*.spec.ts",
+    "clean": "git clean -xdf .cache .turbo dist node_modules"
   },
   "devDependencies": {
     "@next/tsconfig": "workspace:*",

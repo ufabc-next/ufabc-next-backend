@@ -73,16 +73,15 @@ services:
       - REDIS_CONNECTION_URL=redis://default:qj6wGxXINcQyWXdN@next-redis:6379
       - LOCALSTACK_ENDPOINT=http://localstack:4566
     volumes:
-      - ./apps/core/src:/workspace/apps/core/src:ro
-      - ./packages/common/src:/workspace/packages/common/src:ro
-      - ./packages/common/dist:/workspace/packages/common/dist:ro
-      - ./packages/db/src:/workspace/packages/db/src:ro
-      - ./packages/db/dist:/workspace/packages/db/dist:ro
-      - ./packages/queues/src:/workspace/packages/queues/src:ro
-      - ./packages/queues/dist:/workspace/packages/queues/dist:ro
-      - ./packages/testing/src:/workspace/packages/testing/src:ro
-      - ./packages/testing/dist:/workspace/packages/testing/dist:ro
-      - ./packages/tsconfig:/workspace/packages/tsconfig:ro
+      # Mount entire repo for hot-reload (node_modules kept from image)
+      - .:/app:cached
+      - /app/node_modules
+      - /app/apps/core/node_modules
+      - /app/packages/db/node_modules
+      - /app/packages/queues/node_modules
+      - /app/packages/common/node_modules
+      - /app/packages/testing/node_modules
+      - /app/packages/tsconfig/node_modules
     depends_on:
       next-db:
         condition: service_healthy

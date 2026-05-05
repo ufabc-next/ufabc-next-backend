@@ -37,10 +37,10 @@ RUN pnpm install --frozen-lockfile
 
 WORKDIR /app/apps/core
 EXPOSE 5000
-CMD ["pnpm", "run", "dev"]
+CMD ["node", "--import=tsx", "--watch", "--no-warnings", "--env-file=.env.dev", "src/server.ts"]
 
 # =============================================================================
-# Build stage — installs deps, builds app, and deploys self-contained package
+# Build stage — installs deps and deploys self-contained production package
 # -----------------------------------------------------------------------------
 # `pnpm deploy` copies only the files needed by @next/core (respecting
 # each package's "files" field) and produces a flat, portable /prod/core tree.
@@ -53,10 +53,7 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile
 
-# Build app
-RUN pnpm turbo run build --filter=@next/core
-
-# Deploy app
+# Deploy app (no compilation step — TypeScript is executed directly via tsx)
 RUN pnpm deploy --filter=@next/core --prod --ignore-scripts /prod/core
 
 # =============================================================================
@@ -71,19 +68,11 @@ ENV GIT_SECRET_PRIVATE_KEY=$GIT_SECRET_PRIVATE_KEY
 ARG GIT_SECRET_PASSWORD
 ENV GIT_SECRET_PASSWORD=$GIT_SECRET_PASSWORD
 
-<<<<<<< HEAD
 # Install git and git-secret for env decryption
 RUN apk add --no-cache git && \
     sh -c "echo 'https://gitsecret.jfrog.io/artifactory/git-secret-apk/latest-stable/main'" >> /etc/apk/repositories && \
     wget -O /etc/apk/keys/git-secret-apk.rsa.pub 'https://gitsecret.jfrog.io/artifactory/api/security/keypair/public/repositories/git-secret-apk' && \
     apk add --update --no-cache git-secret
-=======
-# Necessary for turborepo
-RUN apk update && apk add --no-cache libc6-compat
-WORKDIR /workspace
-# enable corepack for pnpm
-RUN npm i -g pnpm@10.33.2
->>>>>>> chore/dockerize-setup
 
 RUN git init && \
     git config --global --add safe.directory /app
@@ -100,61 +89,9 @@ RUN mkdir -p logs /pnpm && chown -R core:backend logs /pnpm
 # Copy the deployed, self-contained application
 COPY --chown=core:backend --from=build /prod/core .
 
-<<<<<<< HEAD
 # Copy git-secret files for env decryption
 COPY --chown=core:backend .env.prod.secret .
 COPY --chown=core:backend .gitsecret ./.gitsecret
-=======
-WORKDIR /workspace
-COPY . .
-
-RUN pnpm i
-
-# build app
-
-RUN  --mount=type=cache,target=/workspace/node_modules/.cache \
-  pnpm turbo run build --filter="${APP_NAME}"
-
-# deploy app
-FROM builder as deployer
-WORKDIR /workspace
-RUN export NODE_ENV=prod
-RUN pnpm --filter ${APP_NAME} deploy --prod --ignore-scripts ./out
-
-FROM runtime AS dev
-WORKDIR /workspace
-COPY pnpm*.yaml ./
-RUN pnpm fetch --ignore-scripts
-COPY . .
-RUN pnpm install --frozen-lockfile
-CMD ["pnpm", "--filter", "@next/core", "run", "dev:local"]
-
-FROM runtime as runner
-WORKDIR /workspace
-
-RUN apk update && apk upgrade
-RUN apk add --no-cache git
-RUN  sh -c "echo 'https://gitsecret.jfrog.io/artifactory/git-secret-apk/latest-stable/main'" >> /etc/apk/repositories
-RUN  wget -O /etc/apk/keys/git-secret-apk.rsa.pub 'https://gitsecret.jfrog.io/artifactory/api/security/keypair/public/repositories/git-secret-apk'
-RUN  apk add --update --no-cache git-secret
-RUN  git init
-RUN git config --global --add safe.directory /workspace
-
-
-
-# Don't run production as root
-RUN addgroup --system --gid 1001 backend
-RUN adduser --system --uid 1001 core
-USER root
-
-#  copy files needed to run the app
-
-COPY --chown=core:backend --from=deployer /workspace/out/package.json .
-COPY --chown=core:backend --from=deployer /workspace/out/node_modules/ ./node_modules
-COPY --chown=core:backend --from=deployer /workspace/out/dist/ ./dist
-COPY --chown=core:backend --from=deployer /workspace/.env.prod.secret .
-COPY --chown=core:backend --from=deployer /workspace/.gitsecret  ./.gitsecret
->>>>>>> chore/dockerize-setup
 
 # Decrypt .env.prod file
 RUN echo "$GIT_SECRET_PRIVATE_KEY" >> ./private-container-file-key && \
@@ -167,4 +104,4 @@ USER core
 
 EXPOSE 5000
 
-CMD ["node", "--env-file=.env.prod", "dist/server.js"]
+CMD ["node", "--import=tsx", "--env-file=.env.prod", "src/server.ts"]

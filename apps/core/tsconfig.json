@@ -1,20 +1,12 @@
 {
-  "sourceMap": true,
-  "extends": ["fastify-tsconfig"],
+  "extends": "fastify-tsconfig",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "skipLibCheck": true,
-    "plugins": [
-      {
-        "transform": "typescript-transform-paths"
-      }
-    ],
-    "outDir": "dist",
-    "rootDir": "src",
-    "strictNullChecks": true
+    }
   },
-  "include": ["src/**/*.ts", "esbuild.ts", "test/**/*.ts", "runTests.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts"],
   "exclude": ["node_modules/**/*"]
 }

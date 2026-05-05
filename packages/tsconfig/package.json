@@ -4,13 +4,12 @@
   "private": true,
   "license": "MIT",
   "files": [
-    "apps.json",
-    "libs.json"
+    "base.json"
   ],
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
-    "fastify-tsconfig": "catalog:"
+    "@total-typescript/tsconfig": "catalog:"
   }
 }
