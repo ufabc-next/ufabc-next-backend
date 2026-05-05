@@ -12,6 +12,66 @@ import {
 } from '@/schemas/user.js';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+  const studentEmailDomain = '@aluno.ufabc.edu.br';
+
+  app.post(
+    '/',
+    { schema: sigHistoryBodySchema },
+    async (request, reply) => {
+      const { body } = request;
+      const { login, ra } = body;
+
+      const currentRaNumber = ra;
+      const studentEmail = `${login}${studentEmailDomain}`;
+
+      if (!isValidRaNumber(currentRaNumber)) {
+        return reply.badRequest('RA inválido');
+      }
+
+      const user = await UserModel.findOne({ email: studentEmail });
+
+      if (!user) {
+        return reply.badRequest(`E-mail inválido: ${studentEmail}`);
+      }
+
+      if (user.ra === currentRaNumber) {
+        return {
+          msg: 'RA já está atualizado',
+        };
+      }
+
+      try {
+        const raInUse = await UserModel.exists({
+          ra: currentRaNumber,
+          _id: { $ne: user._id },
+        });
+
+        if (raInUse) {
+          return reply.badRequest('Este RA já está em uso.');
+        }
+
+        const previousRa = user.ra;
+
+        if (previousRa !== null && previousRa !== undefined) {
+          await UserRaHistoryModel.create({
+            userId: user._id,
+            oldRa: Number(previousRa),
+            newRa: currentRaNumber,
+          });
+        }
+
+        user.ra = currentRaNumber;
+        await user.save();
+
+        return {
+          msg: 'RA atualizado com sucesso',
+        };
+      } catch (err: unknown) {
+        return handleValidateUserDataError(err, request, reply);
+      }
+    }
+  );
+
   app.get('/courses', async (request, reply) => {
     const season = currentQuad();
     const coursesAggregate = await StudentModel.aggregate<{
