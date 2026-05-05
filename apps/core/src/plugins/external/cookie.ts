@@ -1,7 +1,7 @@
 import fastifyCookie from '@fastify/cookie';
 import fp from 'fastify-plugin';
 
-import type { Auth } from '@/schemas/auth.js';
+import type { Auth } from '@/schemas/auth.ts';
 
 declare module 'fastify' {
   interface Session {

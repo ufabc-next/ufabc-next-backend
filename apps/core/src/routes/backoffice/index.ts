@@ -2,9 +2,9 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
 import { z } from 'zod';
 
-import type { QueueNames } from '@/queue/types.js';
+import type { QueueNames } from '@/queue/types.ts';
 
-import { UserModel } from '@/models/User.js';
+import { UserModel } from '@/models/User.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.post(

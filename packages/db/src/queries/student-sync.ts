@@ -1,7 +1,7 @@
 import {
   StudentSync,
   type StudentSyncDocument,
-} from '../models/student-sync.js';
+} from '../models/student-sync.ts';
 
 export async function createStudentSyncOperation(
   model: typeof StudentSync,

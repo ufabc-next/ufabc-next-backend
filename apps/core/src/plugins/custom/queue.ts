@@ -2,8 +2,8 @@ import type { FastifyInstance } from 'fastify';
 
 import { fastifyPlugin as fp } from 'fastify-plugin';
 
-import { Jobs } from '@/queue/Job.js';
-import { QueueWorker } from '@/queue/Worker.js';
+import { Jobs } from '@/queue/Job.ts';
+import { QueueWorker } from '@/queue/Worker.ts';
 
 declare module 'fastify' {
   export interface FastifyInstance {

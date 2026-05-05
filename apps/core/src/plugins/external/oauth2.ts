@@ -1,9 +1,9 @@
 import { fastifyOauth2, type OAuth2Namespace } from '@fastify/oauth2';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 
-import type { Auth } from '@/schemas/auth.js';
+import type { Auth } from '@/schemas/auth.ts';
 
-import { REQUESTERS } from '@/constants.js';
+import { REQUESTERS } from '@/constants.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {

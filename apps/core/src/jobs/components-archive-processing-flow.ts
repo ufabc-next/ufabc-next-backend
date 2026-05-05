@@ -3,8 +3,8 @@ import { load } from 'cheerio';
 import { ofetch } from 'ofetch';
 import z from 'zod';
 
-import { MoodleConnector } from '@/connectors/moodle.js';
-import { JOB_NAMES } from '@/constants.js';
+import { MoodleConnector } from '@/connectors/moodle.ts';
+import { JOB_NAMES } from '@/constants.ts';
 
 const connector = new MoodleConnector();
 

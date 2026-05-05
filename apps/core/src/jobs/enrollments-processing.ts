@@ -4,13 +4,13 @@ import { defineJob } from '@next/queues/client';
 import { FastifyBaseLogger } from 'fastify';
 import { z } from 'zod';
 
-import type { SubjectDocument } from '@/models/Subject.js';
+import type { SubjectDocument } from '@/models/Subject.ts';
 
-import { JOB_NAMES } from '@/constants.js';
-import { ComponentModel } from '@/models/Component.js';
-import { EnrollmentModel, type Enrollment } from '@/models/Enrollment.js';
+import { JOB_NAMES } from '@/constants.ts';
+import { ComponentModel } from '@/models/Component.ts';
+import { EnrollmentModel, type Enrollment } from '@/models/Enrollment.ts';
 
-import { findOrCreateSubject } from './utils/subject-resolution.js';
+import { findOrCreateSubject } from './utils/subject-resolution.ts';
 
 const jobSchema = z.object({
   ra: z.number(),

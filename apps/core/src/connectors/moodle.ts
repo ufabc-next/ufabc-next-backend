@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { ofetch } from 'ofetch';
 
-import { BaseRequester } from './base-requester.js';
+import { BaseRequester } from './base-requester.ts';
 
 type MoodleResponse = {
   error: boolean;

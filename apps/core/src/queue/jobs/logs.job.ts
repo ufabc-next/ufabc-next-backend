@@ -3,9 +3,9 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { s3Client } from '@/lib/aws.service.js';
+import { s3Client } from '@/lib/aws.service.ts';
 
-import type { QueueContext } from '../types.js';
+import type { QueueContext } from '../types.ts';
 
 const LOGS_DIR = join(process.cwd(), 'logs');
 const ARCHIVE_DIR = join(LOGS_DIR, 'archive');

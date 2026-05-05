@@ -1,8 +1,8 @@
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
-import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
-import { ComponentModel } from '@/models/Component.js';
-import { syncEnrolledSchema } from '@/schemas/sync/enrolled.js';
+import { UfabcParserConnector } from '@/connectors/ufabc-parser.ts';
+import { ComponentModel } from '@/models/Component.ts';
+import { syncEnrolledSchema } from '@/schemas/sync/enrolled.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const connector = new UfabcParserConnector();

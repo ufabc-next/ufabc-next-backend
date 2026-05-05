@@ -4,7 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import ms from 'ms';
 import { z } from 'zod';
 
-import type { JobManager } from './manager.js';
+import type { JobManager } from './manager.ts';
 
 export type JobData<TData = unknown> = TData & {
   globalTraceId?: string;

@@ -8,7 +8,7 @@ import {
   updateCommentSchema,
   deleteCommentSchema,
   commentsOnTeacherSchema,
-} from '@/schemas/comments.js';
+} from '@/schemas/comments.ts';
 
 import {
   createReaction,
@@ -20,7 +20,7 @@ import {
   getUserComments,
   getUserEnrollments,
   insert,
-} from './service.js';
+} from './service.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get(

@@ -3,7 +3,7 @@ import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { currentQuad } from '@next/common';
 import { z } from 'zod';
 
-import { COURSE_SHIFTS } from '@/models/Student.js';
+import { COURSE_SHIFTS } from '@/models/Student.ts';
 
 const tags = ['Students'];
 

@@ -1,14 +1,14 @@
 import { defineJob } from '@next/queues/client';
 import { z } from 'zod';
 
-import { JOB_NAMES, PARSER_WEBHOOK_SUPPORTED_EVENTS } from '@/constants.js';
+import { JOB_NAMES, PARSER_WEBHOOK_SUPPORTED_EVENTS } from '@/constants.ts';
 
 import {
   ComponentSateSchema,
   StudentFailedEventSchema,
   StudentSyncedEventSchema,
   TeacherCreatedEventSchema,
-} from '../schemas/v2/webhook/ufabc-parser.js';
+} from '../schemas/v2/webhook/ufabc-parser.ts';
 
 const studentSyncedDataSchema = StudentSyncedEventSchema.shape.data;
 const studentFailedDataSchema = StudentFailedEventSchema.shape.data;

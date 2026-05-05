@@ -2,16 +2,16 @@ import { currentQuad, findQuarter } from '@next/common';
 import { defineJob } from '@next/queues/client';
 import { z } from 'zod';
 
-import { JOB_NAMES } from '@/constants.js';
-import { GraduationHistoryModel } from '@/models/GraduationHistory.js';
-import { HistoryModel } from '@/models/History.js';
-import { StudentModel, type StudentCourse } from '@/models/Student.js';
+import { JOB_NAMES } from '@/constants.ts';
+import { GraduationHistoryModel } from '@/models/GraduationHistory.ts';
+import { HistoryModel } from '@/models/History.ts';
+import { StudentModel, type StudentCourse } from '@/models/Student.ts';
 
 import {
   StudentFailedEventSchema,
   StudentSyncedEventSchema,
   type ComponentData,
-} from '../schemas/v2/webhook/ufabc-parser.js';
+} from '../schemas/v2/webhook/ufabc-parser.ts';
 
 const studentSyncedDataSchema = StudentSyncedEventSchema.shape.data;
 const studentFailedDataSchema = StudentFailedEventSchema.shape.data;

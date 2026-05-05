@@ -1,8 +1,8 @@
 import { Types } from 'mongoose';
 
-import { EnrollmentModel } from '@/models/Enrollment.js';
-import { SubjectModel, type Subject } from '@/models/Subject.js';
-import { TeacherModel, type Teacher } from '@/models/Teacher.js';
+import { EnrollmentModel } from '@/models/Enrollment.ts';
+import { SubjectModel, type Subject } from '@/models/Subject.ts';
+import { TeacherModel, type Teacher } from '@/models/Teacher.ts';
 
 type SearchResult = {
   total: number;

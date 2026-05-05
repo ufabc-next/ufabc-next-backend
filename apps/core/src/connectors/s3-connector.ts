@@ -4,7 +4,7 @@ import {
   type S3Client,
 } from '@aws-sdk/client-s3';
 
-import { BaseAWSConnector } from './base-aws-connector.js';
+import { BaseAWSConnector } from './base-aws-connector.ts';
 
 export class S3Connector extends BaseAWSConnector<S3Client> {
   async upload(

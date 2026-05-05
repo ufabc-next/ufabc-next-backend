@@ -1,18 +1,18 @@
-import { JOB_NAMES } from '../constants.js';
+import { JOB_NAMES } from '../constants.ts';
 import {
   componentsArchivesProcessingJob,
   pdfDownloadJob,
   archivesSummaryJob,
-} from './components-archive-processing-flow.js';
-import { createComponentJob } from './components-processing.js';
+} from './components-archive-processing-flow.ts';
+import { createComponentJob } from './components-processing.ts';
 import {
   enrolledStudentsJob,
   processEnrollmentJob,
-} from './enrolled-students.js';
-import { enrollmentsProcessingJob } from './enrollments-processing.js';
-import { studentSyncProcessingJob } from './student-sync-processing.js';
-import { teacherCreatedJob } from './teacher-created.js';
-import { ufabcParserWebhookProcessingJob } from './ufabc-parser-webhook-processing.js';
+} from './enrolled-students.ts';
+import { enrollmentsProcessingJob } from './enrollments-processing.ts';
+import { studentSyncProcessingJob } from './student-sync-processing.ts';
+import { teacherCreatedJob } from './teacher-created.ts';
+import { ufabcParserWebhookProcessingJob } from './ufabc-parser-webhook-processing.ts';
 
 export const jobRegistry = {
   [JOB_NAMES.COMPONENTS_ARCHIVES_PROCESSING]: componentsArchivesProcessingJob,

@@ -3,10 +3,10 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { currentQuad } from '@next/common';
 import { z } from 'zod';
 
-import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
-import { matriculaSession } from '@/hooks/matricula-session.js';
-import { sigaaSession } from '@/hooks/sigaa-session.js';
-import { StudentModel } from '@/models/Student.js';
+import { UfabcParserConnector } from '@/connectors/ufabc-parser.ts';
+import { matriculaSession } from '@/hooks/matricula-session.ts';
+import { sigaaSession } from '@/hooks/sigaa-session.ts';
+import { StudentModel } from '@/models/Student.ts';
 
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 1 day
 

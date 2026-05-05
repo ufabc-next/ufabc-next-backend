@@ -1,6 +1,6 @@
 import { type InferSchemaType, Schema, model } from 'mongoose';
 
-import { GroupModel } from './Group.js';
+import { GroupModel } from './Group.ts';
 
 const COMMENT_TYPE = ['teoria', 'pratica'] as const;
 const enrollmentSchema = new Schema(

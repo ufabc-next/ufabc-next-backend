@@ -1,4 +1,4 @@
-import type { Config } from '@/plugins/external/config.js';
+import type { Config } from '@/plugins/external/config.ts';
 
 export function getAWSClientOptions(config: Config) {
   const baseConfig = {

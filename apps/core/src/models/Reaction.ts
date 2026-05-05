@@ -5,9 +5,9 @@ import {
   model,
 } from 'mongoose';
 
-import { CommentModel } from './Comment.js';
-import { EnrollmentModel } from './Enrollment.js';
-import { UserModel } from './User.js';
+import { CommentModel } from './Comment.ts';
+import { EnrollmentModel } from './Enrollment.ts';
+import { UserModel } from './User.ts';
 
 const REACTIONS_KIND = ['like', 'recommendation', 'star'] as const;
 const reactionSchema = new Schema(

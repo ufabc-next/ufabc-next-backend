@@ -1,7 +1,7 @@
 import { JobManager } from '@next/queues/manager';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 
-import { jobRegistry, type JobRegistry } from '@/jobs/registry.js';
+import { jobRegistry, type JobRegistry } from '@/jobs/registry.ts';
 
 declare module 'fastify' {
   export interface FastifyInstance {

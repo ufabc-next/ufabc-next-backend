@@ -2,7 +2,7 @@ import type { FastifyBaseLogger } from 'fastify';
 
 import { fastifyPlugin as fp } from 'fastify-plugin';
 
-import { TRACING_DIRECTION, TRACING_MESSAGES } from '@/constants.js';
+import { TRACING_DIRECTION, TRACING_MESSAGES } from '@/constants.ts';
 
 declare module '@fastify/request-context' {
   interface RequestContextData {

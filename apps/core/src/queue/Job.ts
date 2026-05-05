@@ -10,10 +10,10 @@ import type {
   JobNames,
   JobResultType,
   TypeSafeQueue,
-} from './types.js';
+} from './types.ts';
 
-import { boardUiPath, createBoard } from './board.js';
-import { JOBS, QUEUE_JOBS, type QueueNames } from './definitions.js';
+import { boardUiPath, createBoard } from './board.ts';
+import { JOBS, QUEUE_JOBS, type QueueNames } from './definitions.ts';
 
 interface JobImpl {
   setup(): Promise<void>;

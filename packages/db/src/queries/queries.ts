@@ -1,1 +1,1 @@
-export * from './student-sync.js';
+export * from './student-sync.ts';

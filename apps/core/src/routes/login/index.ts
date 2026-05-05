@@ -4,12 +4,12 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 import { Types, type QueryFilter as FilterQuery } from 'mongoose';
 import { ofetch } from 'ofetch';
 
-import { type UserDocument, UserModel, type User } from '@/models/User.js';
-import { statePayloadType } from '@/plugins/external/oauth2.js';
+import { type UserDocument, UserModel, type User } from '@/models/User.ts';
+import { statePayloadType } from '@/plugins/external/oauth2.ts';
 import {
   googleCallbackSchema,
   type LegacyGoogleUser,
-} from '@/schemas/login.js';
+} from '@/schemas/login.ts';
 
 export const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get('/google', async function (request, reply) {

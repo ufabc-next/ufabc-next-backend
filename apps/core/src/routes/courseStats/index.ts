@@ -2,16 +2,16 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
 import { calculateCoefficients } from '@next/common';
 
-import type { GraduationHistory } from '@/models/GraduationHistory.js';
+import type { GraduationHistory } from '@/models/GraduationHistory.ts';
 
-import { gradesStatsSchema, userGradesSchema } from '@/schemas/courseStats.js';
+import { gradesStatsSchema, userGradesSchema } from '@/schemas/courseStats.ts';
 
 import {
   findLatestHistory,
   findOneGraduation,
   getCrDistribution,
   getGraduationHistory,
-} from './service.js';
+} from './service.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get('/grades', { schema: gradesStatsSchema }, async (request, reply) => {

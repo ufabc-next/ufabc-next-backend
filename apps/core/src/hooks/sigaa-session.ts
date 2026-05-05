@@ -2,7 +2,7 @@ import type { preHandlerAsyncHookHandler } from 'fastify';
 
 import { load } from 'cheerio';
 
-import { SigaaConnector } from '@/connectors/sigaa.js';
+import { SigaaConnector } from '@/connectors/sigaa.ts';
 
 declare module 'fastify' {
   interface FastifyRequest {

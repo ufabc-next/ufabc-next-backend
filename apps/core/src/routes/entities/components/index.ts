@@ -4,18 +4,18 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 import { currentQuad } from '@next/common';
 import { orderBy as LodashOrderBy } from 'lodash-es';
 
-import type { SubjectDocument } from '@/models/Subject.js';
-import type { TeacherDocument } from '@/models/Teacher.js';
+import type { SubjectDocument } from '@/models/Subject.ts';
+import type { TeacherDocument } from '@/models/Teacher.ts';
 
-import { type Component, ComponentModel } from '@/models/Component.js';
-import { StudentModel } from '@/models/Student.js';
+import { type Component, ComponentModel } from '@/models/Component.ts';
+import { StudentModel } from '@/models/Student.ts';
 import {
   listKickedSchema,
   listTeacherComponents,
   type NonPaginatedComponents,
-} from '@/schemas/entities/components.js';
+} from '@/schemas/entities/components.ts';
 
-import { findTeachers } from './service.js';
+import { findTeachers } from './service.ts';
 
 const validateStudent: preHandlerAsyncHookHandler = async (request, reply) => {
   const { studentId, season } = request.query as {

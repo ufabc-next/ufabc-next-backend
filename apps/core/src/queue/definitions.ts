@@ -1,12 +1,12 @@
 import type { ConnectionOptions, WorkerOptions } from 'bullmq';
 
-import { sendConfirmationEmail, sendBulkEmail } from './jobs/email.job.js';
-import { uploadLogsToS3 } from './jobs/logs.job.js';
-import { postInfoIntoNotionDB } from './jobs/notion-help.job.js';
+import { sendConfirmationEmail, sendBulkEmail } from './jobs/email.job.ts';
+import { uploadLogsToS3 } from './jobs/logs.job.ts';
+import { postInfoIntoNotionDB } from './jobs/notion-help.job.ts';
 import {
   processComponentEnrollment,
   userEnrollmentsUpdate,
-} from './jobs/user-enrollments.job.js';
+} from './jobs/user-enrollments.job.ts';
 
 type JobNames =
   | 'send_email'
