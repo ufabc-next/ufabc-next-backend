@@ -1,354 +1,445 @@
-# UFABC Next Backend - AI Agent Instructions
+# AGENTS.md — ufabc-next-backend
 
-## Architecture Overview
+## 1. Project Overview
 
-**Monorepo** using Turborepo + pnpm workspaces:
+TypeScript monorepo (pnpm + Turborepo) running a Fastify REST API for the UFABC Next platform. MongoDB via Mongoose for data, BullMQ on Redis for background jobs. The main app is `apps/core`; shared libraries live in `packages/`. All UFABC academic data (students, components, enrollments, teachers, histories) flows through this service. It receives webhooks from the external `ufabc-parser` scraper service and exposes APIs to the web frontend, Chrome extension, and Discord bot.
 
-- `apps/core` — Fastify API (main application)
-- `packages/common` — Shared utilities (`currentQuad`, `calculateCoefficients`, `generateIdentifier`)
-- `packages/db` — Mongoose models and database client as a Fastify plugin
-- `packages/queues` — BullMQ job system with type-safe `JobBuilder` pattern
-- `packages/testing` — Testcontainers setup for integration tests
+---
 
-## Key Patterns
+## 2. Stack and Commands
 
-### Route Registration
+| Tool | Version |
+|---|---|
+| Node.js | ^24 |
+| pnpm | ^9 (9.15.9) |
+| Turborepo | catalog |
+| Fastify | ^5 |
+| MongoDB / Mongoose | ^8 |
+| BullMQ | ^5 |
+| Zod | ^3 |
+| Lint | oxlint + ultracite |
 
-Routes use `@fastify/autoload` with file-based routing in `apps/core/src/routes/`. Authentication is controlled in `autohooks.ts`:
+```bash
+# Install dependencies
+pnpm install
 
-- `PUBLIC_ROUTES` — No authentication
-- `EXTENSION_ROUTES` — Session-based auth via `request.isStudent()`
-- All other routes — JWT via `request.jwtVerify()`
+# Start infrastructure (MongoDB + Redis + LocalStack)
+pnpm services:up            # docker compose up -d
 
-### V2 Controllers
+# Dev server (all packages, parallel)
+pnpm dev
 
-New controllers use `fastify-type-provider-zod` under `/v2` prefix. Add to `routesV2` array in `apps/core/src/app.ts`:
+# Build all packages
+pnpm build
 
-```typescript
-const controller: FastifyPluginAsyncZod = async (app) => {
-  app.route({
-    method: 'POST',
-    url: '/endpoint',
-    schema: { body: z.object({...}), response: { 200: z.object({...}) } },
-    handler: async (request, reply) => { /* ... */ }
-  });
-};
+# Tests (integration, needs Docker for Testcontainers)
+pnpm test
+
+# Lint + format
+pnpm lint                   # oxlint via ultracite fix
+
+# Type check
+pnpm tsc
+
+# Check dependency updates
+pnpm deps-check
 ```
 
-### Hooks Pattern
+**Single package:**
+```bash
+cd apps/core && pnpm dev
+cd apps/core && pnpm test
+```
 
-Hooks in `apps/core/src/hooks/` validate external sessions and cache results. Pattern:
+**Environment setup:**
+```bash
+cp apps/core/.env.example apps/core/.env.dev
+# Fill in: UFABC_PARSER_URL, OAUTH_GOOGLE_CLIENT_ID, OAUTH_GOOGLE_SECRET,
+#          UFABC_PARSER_REQUESTER_KEY, NEXT_AGENT_URL, ALLOWED_ORIGINS
+```
 
-1. Extend `FastifyRequest` or `@fastify/request-context` with session type
+---
+
+## 3. Folder Structure
+
+```
+apps/core/src/
+├── app.ts              # App factory — register v2 controllers here; do not add inline routes
+├── server.ts           # Entry point — do not modify
+├── constants.ts        # JOB_NAMES, webhook event names — ADD NEW CONSTANTS HERE
+├── connectors/         # HTTP clients to external services (ufabc-parser, moodle, sigaa, s3)
+├── controllers/        # v2 controllers registered before autoloaded routes
+├── errors/             # Typed error classes
+├── hooks/              # Fastify lifecycle hooks (jwt-verify, admin, board-authenticate, sessions)
+├── jobs/               # BullMQ v2 job definitions — NEW JOBS GO HERE
+│   ├── registry.ts     # Register all new jobs here
+│   └── utils/          # Shared job utilities
+├── lib/                # Service wrappers (AWS, Notion)
+├── models/             # Mongoose models — one file per collection
+├── plugins/
+│   ├── external/       # Third-party Fastify plugins (autoloaded alphabetically)
+│   ├── custom/         # App-specific plugins (autoloaded alphabetically)
+│   └── v2/             # New infra plugins (redis, queue, aws, test-utils)
+├── queue/              # LEGACY queue system — DO NOT ADD NEW JOBS HERE
+├── routes/             # @fastify/autoload routes — one folder per resource
+│   ├── autohooks.ts    # Global route hooks (JWT verification)
+│   └── <feature>/
+│       ├── index.ts    # Route handlers only
+│       └── service.ts  # DB queries + business logic
+├── schemas/            # Zod schemas for request/response validation
+├── services/           # Cross-route business logic
+└── utils/              # Utilities (logger, aws-client-options, resolve-stats-steps)
+
+packages/
+├── common/             # calculateCoefficients, findQuad, currentQuad, identifier
+├── db/                 # Shared Mongoose client + HistoryProcessingJob, StudentSync models
+├── queues/             # defineJob() JobBuilder — do not modify internals
+├── testing/            # Test factories, containers, mocks
+└── tsconfig/           # Shared TypeScript configs (apps.json, libs.json)
+```
+
+**Workspace imports:**
+- `@next/common` — shared utilities
+- `@next/db/client` — database plugin
+- `@next/db/models` — model types
+- `@next/queues/client` — `defineJob()`
+- `@next/queues/manager` — JobManager
+- `@next/testing` — test helpers
+- `@/` — path alias for `apps/core/src/`
+
+---
+
+## 4. Code Patterns
+
+### Route handler — correct
+
+```typescript
+// apps/core/src/routes/widgets/index.ts
+import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
+import { widgetListSchema } from '@/schemas/widgets.js';
+import { listWidgets } from './service.js';
+
+const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
+  app.get('/', { schema: widgetListSchema }, async (request, reply) => {
+    return listWidgets(request.user.ra);
+  });
+};
+
+export default plugin;
+```
+
+### Route handler — wrong
+
+```typescript
+// WRONG: inline DB query in route handler
+app.get('/', async (request) => {
+  return await WidgetModel.find({ ra: request.user.ra }); // belongs in service.ts
+});
+
+// WRONG: legacy type provider
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+// use fastify-zod-openapi instead
+```
+
+### Service layer
+
+```typescript
+// apps/core/src/routes/widgets/service.ts
+import { WidgetModel } from '@/models/Widget.js';
+
+export async function listWidgets(ra: number) {
+  return WidgetModel.find({ ra }).lean();
+}
+```
+
+### v2 Controller (route registered before autoload)
+
+```typescript
+// apps/core/src/controllers/widget-controller.ts
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
+
+const widgetController: FastifyPluginAsyncZod = async (app) => {
+  app.route({
+    method: 'GET',
+    url: '/widgets/:id',
+    schema: {
+      params: z.object({ id: z.string() }),
+      response: { 200: z.object({ name: z.string() }) },
+    },
+    handler: async (request, reply) => {
+      // handler
+    },
+  });
+};
+
+export default widgetController;
+// Then add to routesV2 array in app.ts
+```
+
+### New v2 Job
+
+```typescript
+// apps/core/src/jobs/widget-processing.ts
+import { defineJob } from '@next/queues/client';
+import { z } from 'zod';
+import { JOB_NAMES } from '@/constants.js';
+
+export const widgetProcessingJob = defineJob(JOB_NAMES.WIDGET_PROCESSING)
+  .input(z.object({ widgetId: z.string() }))
+  .handler(async ({ job, app }) => {
+    const { widgetId } = job.data;
+    // use app.db for DB access, app.manager.dispatch() for sub-jobs
+    return { processed: true };
+  });
+```
+
+Then in `constants.ts`:
+```typescript
+WIDGET_PROCESSING: 'widget_processing',
+```
+
+Then in `jobs/registry.ts`:
+```typescript
+[JOB_NAMES.WIDGET_PROCESSING]: widgetProcessingJob,
+```
+
+Dispatch: `await app.manager.dispatch(JOB_NAMES.WIDGET_PROCESSING, { widgetId: '...' })`
+
+### Mongoose model
+
+```typescript
+// apps/core/src/models/Widget.ts
+import { type InferSchemaType, Schema, model } from 'mongoose';
+
+const widgetSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    ra: { type: Number, required: true },
+  },
+  { timestamps: true }
+);
+
+widgetSchema.index({ ra: 'asc' });
+
+export type Widget = InferSchemaType<typeof widgetSchema>;
+export type WidgetDocument = ReturnType<(typeof WidgetModel)['hydrate']>;
+export const WidgetModel = model('widgets', widgetSchema);
+```
+
+### Admin-only route
+
+```typescript
+app.get('/admin-only', {
+  preHandler: (request, reply) => request.isAdmin(reply),
+  schema: mySchema,
+}, async (request) => { ... });
+```
+
+### Hook pattern (external session validation)
+
+1. Extend `FastifyRequest` with session type
 2. Extract credentials from headers
 3. Check cache (LRU or Redis), return early if valid
 4. Validate against external service
 5. Cache valid session, attach to request context
 
-See `moodle-session.ts` (uses LRU cache) and `sigaa-session.ts` (uses Redis) for examples.
+See `moodle-session.ts` (LRU cache) and `sigaa-session.ts` (Redis) for examples.
 
-### Job System (Two Systems Coexist)
+---
 
-**Legacy jobs** in `apps/core/src/queue/` — Use `JOBS` and `QUEUE_JOBS` in `definitions.ts`
+## 5. Database Access Rules
 
-**New jobs** in `apps/core/src/jobs/` — Use `defineJob()` builder:
+- **Never** query MongoDB directly in route `index.ts` — always extract to `service.ts`
+- **Always** call `.lean()` on read queries that don't need Mongoose document methods
+- **Always** define indexes in the schema file alongside the model — not in separate scripts
+- **Use** `findOneAndUpdate({ ...query }, { $set: data }, { new: true })` for upserts
+- **Never** use `await Model.find()` without `.limit()` on large collections (`enrollments`, `histories`)
+- Models accessed via `app.db` in jobs (decorated by `@next/db`); import directly in services
+- Enable container reuse in `.testcontainer.properties`: `testcontainers.reuse.enabled=true`
 
-```typescript
-export const myJob = defineJob('JOB_NAME')
-  .input(z.object({ data: z.string() }))
-  .handler(async ({ job, app, manager }) => {
-    /* ... */
-  });
-```
+---
 
-Register in `apps/core/src/jobs/registry.ts`.
+## 6. Test Requirements
 
-### Database Access
-
-Models accessed via `app.db` (decorated by `@next/db`). Schemas in `apps/core/src/models/`.
-
-### External Connectors
-
-Connectors in `apps/core/src/connectors/` wrap external APIs:
-
-- `MoodleConnector` — UFABC Moodle
-- `SigaaConnector` — Academic system
-- `S3Connector` — AWS S3 (LocalStack in dev)
-
-## Development Commands
-
-```bash
-pnpm i                    # Install dependencies
-pnpm build                # Build all packages (required before first run)
-pnpm services:up          # Start MongoDB, Redis, LocalStack via Docker
-pnpm dev                  # Development server with hot reload
-pnpm test                 # Run tests with Vitest
-pnpm lint                 # Lint (oxlint) + format (oxfmt)
-```
-
-### Environment Setup
-
-```bash
-cp apps/core/.env.example apps/core/.env.dev
-```
-
-## Testing
-
-- **Vitest** with **Testcontainers** (MongoDB, Redis, LocalStack)
-- Enable container reuse: `testcontainers.reuse.enabled=true` in `.testcontainer.properties`
+- Integration tests live in `apps/core/tests/integration/`
+- Tests use **real MongoDB and Redis** via Testcontainers — **never mock the database**
 - Use `startTestStack()` from `@next/testing` for isolated infrastructure
 - Queue workers skip automatically when `NODE_ENV=test`
+- Test factories are in `packages/testing/src/factories.ts`
 
-## Deployment
+```bash
+# Run all tests
+pnpm test
 
-Docker multi-stage build with git-secret for encrypted env vars:
+# Run single test file
+cd apps/core && pnpm test tests/integration/components/list.spec.ts
+```
 
+**What must be tested:**
+- All new route handlers (happy path + 400/404 cases)
+- Job handlers that mutate data
+- Business logic with branching conditions
+
+---
+
+## 7. Build and Pre-Commit Checklist
+
+```bash
+pnpm tsc       # 0 errors required
+pnpm lint      # 0 errors required
+pnpm build     # all packages must succeed
+pnpm test      # integration tests must pass
+```
+
+CI runs: build → lint → tsc (`.github/workflows/ci.yml`). Tests not yet in CI.
+
+**Docker build (for deployment verification):**
 ```bash
 docker build --secret id=env,src=.env -f ./Dockerfile . -t ufabc-next:latest
 ```
 
-Production runs on port 5000 with `pnpm run start`.
+---
 
-## Configuration
+## 8. Environment Variables
 
-Env vars validated via Zod in `apps/core/src/plugins/external/config.ts`. Access via `app.config.VAR_NAME`.
+**Required (no defaults — app fails to start without these):**
+| Variable | Purpose |
+|---|---|
+| `ALLOWED_ORIGINS` | Comma-separated CORS origins |
+| `UFABC_PARSER_URL` | Base URL of ufabc-parser service |
+| `UFABC_PARSER_REQUESTER_KEY` | Auth key for ufabc-parser API calls |
+| `NEXT_AGENT_URL` | Agent service URL |
+| `OAUTH_GOOGLE_CLIENT_ID` | Google OAuth2 client ID |
+| `OAUTH_GOOGLE_SECRET` | Google OAuth2 secret (min 16 chars) |
+| `AWS_REGION` | AWS region |
+| `AWS_ACCESS_KEY_ID` | AWS credentials |
+| `AWS_SECRET_ACCESS_KEY` | AWS credentials |
 
-## Workspace Imports
+**Optional (have defaults — review before prod):**
+| Variable | Default | Notes |
+|---|---|---|
+| `JWT_SECRET` | hardcoded dev value | **MUST change in prod** |
+| `WEBHOOK_API_KEY` | `webhook-api-key` | **MUST change in prod** |
+| `MONGODB_CONNECTION_URL` | `mongodb://127.0.0.1:27017/ufabc-matricula` | |
+| `REDIS_CONNECTION_URL` | `redis://localhost:6379` | |
+| `USE_LOCALSTACK` | `true` | Set `false` in prod |
+| `LOCALSTACK_ENDPOINT` | `http://localhost:4566` | Local AWS only |
+| `AWS_BUCKET` | `ufabc-next` | |
+| `PORT` | `5000` | |
+| `BACKOFFICE_EMAILS` | — | Comma-separated admin emails |
+| `AXIOM_TOKEN`, `AXIOM_DATASET` | — | Skip for local dev |
+| `NOTION_INTEGRATION_SECRET`, `NOTION_DATABASE_ID` | dev values | For help form |
+| `UFABC_PARSER_WEBHOOK_SECRET` | — | HMAC validation (optional) |
 
-- `@next/common` — Shared utilities
-- `@next/db/client` — Database plugin
-- `@next/db/models` — Model types
-- `@next/queues/manager` — JobManager
-- `@next/queues/client` — `defineJob()`
-- `@next/testing` — Test helpers
-- `@/` — Path alias within `apps/core` (e.g., `@/connectors/moodle.js`)
-
-## Change Impact Categories (Blast Radius)
-
-### Small Bomb
-
-- **Scope**: Single route, model, utility, or schema
-- **Action**: Atomic commit with focused description
-- **Testing**: Run specific test file only
-- **Examples**: Adding a new endpoint, fixing a bug in one model
-
-### Medium Bomb
-
-- **Scope**: Controller + related schemas, service + models
-- **Action**: Single commit but verify integration
-- **Testing**: Run related test suite + integration tests
-- **Examples**: Adding V2 controller with multiple endpoints, refactoring service layer
-
-### Large Bomb
-
-- **Scope**: Core infrastructure (plugins, jobs, auth), database schema changes
-- **Action**: Multiple commits, each with clear scope
-- **Testing**: Full test suite + manual verification
-- **Examples**: Migrating from legacy to new job system, changing auth patterns
-
-## Strict Prohibitions
-
-### NEVER Use These Patterns
-
-- **`any` type** - Use `unknown` with type guards or proper interfaces
-- **Legacy queue system** - Always prefer `defineJob()` in `/jobs/` over `/queue/`
-- **Direct request object mutation** - Create copies: `const data = { ...request.body }`
-- **Bypassing Zod validation** - All V2 routes MUST use `fastify-type-provider-zod`
-- **Cross-package import pollution** - Respect workspace boundaries, use proper exports
-
-### ALWAYS Follow These Patterns
-
-- **Type-first development** - Define interfaces/Zod schemas before implementation
-- **Atomic commits** - One logical change per commit
-- **Test before finish** - Run relevant tests before marking task complete
-- **Prefer V2 patterns** - Use new controller pattern over legacy file-based routes
-
-## Debugging Protocol
-
-### When Tests Fail
-
-1. **Check Infrastructure**: `pnpm services:up` (MongoDB, Redis, LocalStack)
-2. **Verify Environment**: Ensure `apps/core/.env.dev` exists and is valid
-3. **Run Single Test**: `pnpm test path/to/failing.test.spec.ts`
-4. **Check Container Reuse**: Verify `testcontainers.reuse.enabled=true` in `.testcontainer.properties`
-5. **Clean State**: `docker compose down -v && pnpm services:up` if containers are corrupted
-
-### When Build Fails
-
-1. **Check Dependencies**: `pnpm i` to ensure workspace links are correct
-2. **Type Errors**: Run `pnpm tsc` for detailed TypeScript diagnostics
-3. **Clean Build**: `rm -rf apps/core/dist && pnpm build`
-
-### When Runtime Fails
-
-1. **Check Port Conflicts**: Ensure ports 5000, 27017, 6379 are available
-2. **Verify Services**: `docker ps` to confirm all containers are running
-3. **Check Logs**: `docker compose logs [service-name]` for detailed errors
-
-## Decision Trees
-
-### Route Implementation Choices
-
-```
-Need new endpoint?
-├─ Need strict typing + OpenAPI? → V2 controller in /controllers/
-├─ Simple public endpoint? → File-based route in /routes/public/
-├─ Extension route (student auth)? → File-based route in /routes/entities/
-└─ Admin/internal route? → File-based route with JWT auth
-```
-
-### Background Processing Choices
-
-```
-Need background work?
-├─ New feature? → defineJob() in /jobs/ (register in registry.ts)
-├─ Maintaining existing? → Use existing job system location
-└─ Simple one-off? → Consider if endpoint sync is sufficient
-```
-
-### Database Access Patterns
-
-```
-Need data operations?
-├─ New entity? → Model in /models/ + schema in /schemas/entities/
-├─ Complex query? → Service in /services/ or /routes/*/service.ts
-├─ Simple CRUD? → Direct in route controller
-└─ Cross-entity logic? → Service layer with transaction support
-```
-
-### Authentication Strategy
-
-```
-Protecting endpoint?
-├─ Public data? → Add to PUBLIC_ROUTES in autohooks.ts
-├─ Student session required? → Add to EXTENSION_ROUTES in autohooks.ts
-├─ JWT token required? → Default (no list addition needed)
-└─ Admin/board access? → Use authenticateBoard hook
-```
-
-# Ultracite Code Standards
-
-This project uses **Ultracite**, a zero-config Biome preset that enforces strict code quality standards through automated formatting and linting.
-
-## Quick Reference
-
-- **Format code**: `pnpm dlx ultracite fix`
-- **Check for issues**: `pnpm dlx ultracite check`
-- **Diagnose setup**: `pnpm dlx ultracite doctor`
-
-Biome (the underlying engine) provides extremely fast Rust-based linting and formatting. Most issues are automatically fixable.
+**To add a new env var:** add to `configSchema` Zod object in `apps/core/src/plugins/external/config.ts`, then update `apps/core/.env.example`.
 
 ---
 
-## Core Principles
+## 9. Absolute Rules
 
-Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
+**NEVER:**
+- Add new jobs to `apps/core/src/queue/` — legacy system; use `apps/core/src/jobs/` with `defineJob()`
+- Mock MongoDB or Redis in tests — use Testcontainers with real instances
+- Add raw DB queries in route `index.ts` files — always extract to `service.ts`
+- Remove or alter Mongoose indexes without understanding query patterns
+- Use `any` — use `unknown` with type guards or proper interfaces
+- Skip `withConnection()` wrapper when defining legacy `QUEUE_JOBS`
+- Call `app.job.dispatch()` for new functionality — use `app.manager.dispatch()` (v2)
+- Add barrel files (index files that re-export everything)
+- Use spread syntax in accumulators inside loops
 
-### Type Safety & Explicitness
-
-- Use explicit types for function parameters and return values when they enhance clarity
-- Prefer `unknown` over `any` when the type is genuinely unknown
-- Use const assertions (`as const`) for immutable values and literal types
-- Leverage TypeScript's type narrowing instead of type assertions
-- Use meaningful variable names instead of magic numbers - extract constants with descriptive names
-
-### Modern JavaScript/TypeScript
-
-- Use arrow functions for callbacks and short functions
-- Prefer `for...of` loops over `.forEach()` and indexed `for` loops
-- Use optional chaining (`?.`) and nullish coalescing (`??`) for safer property access
-- Prefer template literals over string concatenation
-- Use destructuring for object and array assignments
-- Use `const` by default, `let` only when reassignment is needed, never `var`
-
-### Async & Promises
-
-- Always `await` promises in async functions - don't forget to use the return value
-- Use `async/await` syntax instead of promise chains for better readability
-- Handle errors appropriately in async code with try-catch blocks
-- Don't use async functions as Promise executors
-
-### React & JSX
-
-- Use function components over class components
-- Call hooks at the top level only, never conditionally
-- Specify all dependencies in hook dependency arrays correctly
-- Use the `key` prop for elements in iterables (prefer unique IDs over array indices)
-- Nest children between opening and closing tags instead of passing as props
-- Don't define components inside other components
-- Use semantic HTML and ARIA attributes for accessibility:
-  - Provide meaningful alt text for images
-  - Use proper heading hierarchy
-  - Add labels for form inputs
-  - Include keyboard event handlers alongside mouse events
-  - Use semantic elements (`<button>`, `<nav>`, etc.) instead of divs with roles
-
-### Error Handling & Debugging
-
-- Remove `console.log`, `debugger`, and `alert` statements from production code
-- Throw `Error` objects with descriptive messages, not strings or other values
-- Use `try-catch` blocks meaningfully - don't catch errors just to rethrow them
-- Prefer early returns over nested conditionals for error cases
-
-### Code Organization
-
-- Keep functions focused and under reasonable cognitive complexity limits
-- Extract complex conditions into well-named boolean variables
-- Use early returns to reduce nesting
-- Prefer simple conditionals over nested ternary operators
-- Group related code together and separate concerns
-
-### Security
-
-- Add `rel="noopener"` when using `target="_blank"` on links
-- Avoid `dangerouslySetInnerHTML` unless absolutely necessary
-- Don't use `eval()` or assign directly to `document.cookie`
-- Validate and sanitize user input
-
-### Performance
-
-- Avoid spread syntax in accumulators within loops
-- Use top-level regex literals instead of creating them in loops
-- Prefer specific imports over namespace imports
-- Avoid barrel files (index files that re-export everything)
-- Use proper image components (e.g., Next.js `<Image>`) over `<img>` tags
-
-### Framework-Specific Guidance
-
-**Next.js:**
-
-- Use Next.js `<Image>` component for images
-- Use `next/head` or App Router metadata API for head elements
-- Use Server Components for async data fetching instead of async Client Components
-
-**React 19+:**
-
-- Use ref as a prop instead of `React.forwardRef`
-
-**Solid/Svelte/Vue/Qwik:**
-
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
+**ALWAYS:**
+- Use `.js` extensions in TypeScript imports (`import { foo } from './bar.js'`)
+- Use `@/` alias for imports within `apps/core/src`
+- Export `<Name>Model`, `type <Name>`, `type <Name>Document` from each model file
+- Register new job names in `constants.ts` (JOB_NAMES) AND `jobs/registry.ts`
+- Define Zod schemas in `schemas/` — not inline in route handlers
+- Use `const` by default; `let` only when reassignment needed; never `var`
+- Use `async/await` over promise chains
+- Use `for...of` over `.forEach()` and indexed `for` loops
+- Call `.lean()` on read-only Mongoose queries
+- Use `unknown` with type narrowing over `any`
 
 ---
 
-## Testing
+## 10. Critical Flows — Do Not Break
 
-- Write assertions inside `it()` or `test()` blocks
-- Avoid done callbacks in async tests - use async/await instead
-- Don't use `.only` or `.skip` in committed code
-- Keep test suites reasonably flat - avoid excessive `describe` nesting
-
-## When Biome Can't Help
-
-Biome's linter will catch most issues automatically. Focus your attention on:
-
-1. **Business logic correctness** - Biome can't validate your algorithms
-2. **Meaningful naming** - Use descriptive names for functions, variables, and types
-3. **Architecture decisions** - Component structure, data flow, and API design
-4. **Edge cases** - Handle boundary conditions and error states
-5. **User experience** - Accessibility, performance, and usability considerations
-6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
+| Flow | Location | Risk |
+|---|---|---|
+| Google OAuth2 login | `routes/login/index.ts` | All users locked out |
+| Webhook receiver | `controllers/ufabc-parser-webhook-controller.ts` | All component/student sync stops |
+| Webhook idempotency | same file (Redis TTL check) | Duplicate job dispatches corrupt data |
+| Component upsert | `jobs/components-processing.ts` | Components stale; teacher links broken |
+| Enrollment upsert | `jobs/enrollments-processing.ts` | Student grade history corrupted |
+| Student sync | `jobs/student-sync-processing.ts` | History and coefficients stop updating |
+| JWT auth hook | `routes/autohooks.ts` | All authenticated endpoints fail |
+| Plugin order in `app.ts` | `buildApp()` | Config must load before DB/Redis/Queue or startup fails |
+| Levenshtein teacher match | `jobs/components-processing.ts` | New teachers silently unlinked from components |
 
 ---
 
-Most formatting and common issues are automatically fixed by Biome. Run `pnpm dlx ultracite fix` before committing to ensure compliance.
+## 11. Ecosystem Context
+
+| Repo | Language | Role | Relationship |
+|---|---|---|---|
+| `ufabc-next-backend` (this) | TypeScript | Central API + job processor | — |
+| `ufabc-next-web` | TypeScript | React/Next.js frontend | Consumes all authenticated endpoints |
+| `ufabc-next-extension` | Vue | Chrome extension | Calls `/sync/enrolled`, `/entities/*` for student sync |
+| `ufabc-next-server` | JavaScript | Legacy Node.js API | Predecessor; being superseded by this repo |
+| `next-discord-bot` | Python | Discord bot | Consumes `/public/*` endpoints |
+| `ufabc-next-tf-modules` | HCL | Infrastructure as code | Provisions AWS resources (S3, SES, etc.) used here |
+| `ufabc-parser` (external) | — | UFABC scraper | Sends webhooks here; this API calls it for component/student data |
+
+---
+
+## 12. Contributing Workflow and PR Requirements
+
+1. Branch from `main`
+2. Make changes; follow all patterns in section 4
+3. Run full checklist: `pnpm tsc && pnpm lint && pnpm build`
+4. Add or update integration tests
+5. Run `pnpm test`
+6. Open PR against `main`
+7. CI must pass (build + lint + tsc)
+
+**PR requirements:**
+- No `@ts-ignore` without an inline comment explaining why
+- New endpoints must have Zod schemas in `schemas/`
+- New models must have indexes defined in the schema file
+- New jobs registered in both `constants.ts` and `jobs/registry.ts`
+- No `.only` or `.skip` in committed test files
+
+---
+
+## 13. Debugging Protocol
+
+### When tests fail
+1. `pnpm services:up` — verify MongoDB, Redis, LocalStack running
+2. Ensure `apps/core/.env.dev` exists with required vars
+3. Run single test: `cd apps/core && pnpm test path/to/test.spec.ts`
+4. Verify `testcontainers.reuse.enabled=true` in `.testcontainer.properties`
+5. `docker compose down -v && pnpm services:up` if containers are corrupted
+
+### When build fails
+1. `pnpm install` to ensure workspace links are correct
+2. `pnpm tsc` for detailed TypeScript errors
+3. `rm -rf apps/core/dist && pnpm build` for clean build
+
+### When runtime fails
+1. Check ports 5000, 27017, 6379 are free
+2. `docker ps` to confirm containers running
+3. `docker compose logs [service-name]` for container errors
+
+---
+
+## 14. Code Quality (Ultracite/Biome)
+
+Biome enforces formatting and linting. Most issues are auto-fixed:
+
+```bash
+pnpm dlx ultracite fix    # fix all fixable issues
+pnpm dlx ultracite check  # check without fixing
+```
+
+Focus manual review on: business logic correctness, meaningful naming, architecture decisions, edge case handling, and accessibility.
