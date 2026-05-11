@@ -69,7 +69,7 @@ async function validateRules(reaction: ReactionDocument) {
 }
 
 async function computeReactions(reaction: ReactionDocument) {
-  const commentId = reaction.comment._id || reaction.comment;
+  const commentId = (reaction.comment as unknown as Record<string, unknown>)._id || reaction.comment;
   const ReactionModel = reaction.constructor as any;
 
   const reactionCount = await ReactionModel.countDocuments({
@@ -89,7 +89,7 @@ async function computeReactions(reaction: ReactionDocument) {
 }
 
 reactionSchema.pre('save', async function () {
-  const slug = `${this.kind}:${this.comment._id}:${this.user._id}`;
+  const slug = `${this.kind}:${(this.comment as unknown as Record<string, unknown>)._id}:${(this.user as unknown as Record<string, unknown>)._id}`;
   if (this.isNew) {
     const equalReaction = await this.collection.findOne({ slug });
     if (equalReaction) {

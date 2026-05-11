@@ -5,8 +5,6 @@ import { z } from 'zod';
 
 import { COURSE_SHIFTS } from '@/models/Student.ts';
 
-const tags = ['Students'];
-
 const listMatriculaStudentSchema = z.object({
   studentId: z.number().int().nullish(),
   updatedAt: z.string().datetime(),
@@ -34,7 +32,7 @@ export type UpdatedStudent = z.infer<typeof updatedStudentSchema>;
 export type MatriculaStudent = z.infer<typeof listMatriculaStudentSchema>;
 
 export const listStudentsStatsComponents = {
-  tags,
+  
   querystring: z.object({
     season: z.string().default(currentQuad()),
   }),
@@ -55,7 +53,7 @@ export const listStudentsStatsComponents = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const listStudentSchema = {
-  tags,
+  
   response: {
     200: {
       content: {
@@ -83,7 +81,7 @@ export const listStudentSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const listMatriculaStudent = {
-  tags,
+  
   headers: z.object({
     uf_login: z.string().openapi({
       example: 'john.doe',
@@ -105,7 +103,7 @@ export const listMatriculaStudent = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const updateStudentSchema = {
-  tags,
+  
   body: z.object({
     ra: z.coerce.number().nullable().openapi({
       example: 112222332,

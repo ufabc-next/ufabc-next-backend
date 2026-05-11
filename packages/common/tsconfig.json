@@ -4,8 +4,10 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,
-    "outDir": "./dist"
+    "noEmit": false,
+    "outDir": "./dist",
+    "rootDir": "."
   },
   "include": ["./lib/**/*.ts", "./index.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "**/*.spec.ts"]
 }

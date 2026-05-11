@@ -25,9 +25,9 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "tsc": "tsc --noEmit",
-    "check-types": "tsc --noEmit",
+    "build": "tsgo",
+    "tsc": "tsgo --noEmit",
+    "check-types": "tsgo --noEmit",
     "clean": "git clean -xdf .cache .turbo dist node_modules"
   },
   "devDependencies": {
@@ -39,6 +39,7 @@
     "@types/node": "catalog:",
     "nock": "catalog:",
     "testcontainers": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   }
 }

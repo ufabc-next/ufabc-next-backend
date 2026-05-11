@@ -5,6 +5,7 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "strictNullChecks": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   }
 }

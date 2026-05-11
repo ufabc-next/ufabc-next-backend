@@ -19,7 +19,7 @@ export const autoConfig = (app: FastifyInstance) => {
 };
 
 export default fp(
-  async (app, opts: { redisURL: URL }) => {
+  async (app: FastifyInstance, opts: { redisURL: URL }) => {
     const worker = new QueueWorker(app, opts.redisURL);
     const jobs = new Jobs(app, opts.redisURL);
 

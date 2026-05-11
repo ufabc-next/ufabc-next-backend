@@ -1,3 +1,4 @@
+import type { FastifyInstance } from 'fastify';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import LRUWeakCache from 'lru-weak-cache';
 
@@ -28,7 +29,7 @@ type CacheOptions = {
 };
 
 export default fp(
-  (app, opts) => {
+  (app: FastifyInstance, opts: CacheOptions) => {
     const defaultOpts = {
       capacity: 200,
       maxAge: 1000 * 60 * 5,

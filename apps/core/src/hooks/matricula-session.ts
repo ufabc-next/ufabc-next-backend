@@ -1,4 +1,4 @@
-import type { preHandlerAsyncHookHandler } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
 declare module '@fastify/request-context' {
   interface RequestContextData {
@@ -8,9 +8,9 @@ declare module '@fastify/request-context' {
   }
 }
 
-export const matriculaSession: preHandlerAsyncHookHandler = async (
-  request,
-  reply
+export const matriculaSession = async (
+  request: FastifyRequest,
+  reply: FastifyReply
 ) => {
   const { 'session-id': sessionId } = request.headers;
 

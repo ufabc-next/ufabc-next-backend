@@ -1,4 +1,4 @@
-import type { preHandlerAsyncHookHandler } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { load } from 'cheerio';
 
@@ -12,9 +12,9 @@ declare module 'fastify' {
     };
   }
 }
-export const sigaaSession: preHandlerAsyncHookHandler = async (
-  request,
-  reply
+export const sigaaSession = async (
+  request: FastifyRequest,
+  reply: FastifyReply
 ) => {
   const { 'session-id': sessionId, 'view-id': viewId } = request.headers;
 

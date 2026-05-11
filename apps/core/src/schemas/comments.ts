@@ -3,10 +3,7 @@ import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { Types } from 'mongoose';
 import { z } from 'zod';
 
-const tags = ['Comments'];
-
-export const missingCommentsSchema = {
-  tags,
+export const missingCommentsSchema = {  
   params: z.object({
     userId: z.string().transform((value) => new Types.ObjectId(value)),
   }),
@@ -22,7 +19,6 @@ export const missingCommentsSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const createCommentSchema = {
-  tags,
   body: z.object({
     enrollment: z.string(),
     comment: z.string(),
@@ -40,7 +36,7 @@ export const createCommentSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const updateCommentSchema = {
-  tags,
+  
   body: z.object({
     comment: z.string(),
   }),
@@ -59,7 +55,7 @@ export const updateCommentSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const deleteCommentSchema = {
-  tags,
+  
   params: z.object({
     commentId: z.string().transform((val) => new Types.ObjectId(val)),
   }),
@@ -75,7 +71,7 @@ export const deleteCommentSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const commentsOnTeacherSchema = {
-  tags,
+  
   params: z.object({
     teacherId: z.string().transform((val) => new Types.ObjectId(val)),
     subjectId: z
@@ -90,7 +86,7 @@ export const commentsOnTeacherSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const createReactionSchema = {
-  tags,
+  
   params: z.object({
     commentId: z.string().transform((val) => new Types.ObjectId(val)),
   }),
@@ -109,7 +105,7 @@ export const createReactionSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const deleteReactionSchema = {
-  tags,
+  
   params: z.object({
     commentId: z.string().transform((val) => new Types.ObjectId(val)),
     kind: z.enum(['like', 'recommendation', 'star']),

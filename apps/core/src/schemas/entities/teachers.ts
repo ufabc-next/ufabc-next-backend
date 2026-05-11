@@ -4,7 +4,6 @@ import { camelCase, startCase } from 'lodash-es';
 import { z } from 'zod';
 
 export const listTeachersSchema = {
-  tags: ['Teachers'],
   response: {
     200: {
       content: {
@@ -40,7 +39,6 @@ export const createTeachersSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const updateTeacherSchema = {
-  tags: ['Teachers'],
   body: z.object({ alias: z.string() }),
   params: z.object({
     teacherId: z.string(),

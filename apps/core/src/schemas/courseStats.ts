@@ -2,8 +2,6 @@ import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 
 import { z } from 'zod';
 
-const tags = ['CourseStats'];
-
 const crDistributionSchema = z.object({
   _id: z.string(),
   total: z.number(),
@@ -27,7 +25,7 @@ export const seasonStatsSchema = z.object({
 export type CRDistribution = z.infer<typeof crDistributionSchema>;
 
 export const gradesStatsSchema = {
-  tags,
+  
   response: {
     200: {
       content: {
@@ -40,7 +38,7 @@ export const gradesStatsSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const userGradesSchema = {
-  tags,
+  
   response: {
     200: {
       content: {

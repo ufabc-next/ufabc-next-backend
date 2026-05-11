@@ -1,8 +1,8 @@
-import type { preHandlerAsyncHookHandler } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
-export const jwtVerifyHook: preHandlerAsyncHookHandler = async (
-  request,
-  reply
+export const jwtVerifyHook = async (
+  request: FastifyRequest,
+  reply: FastifyReply
 ) => {
   try {
     await request.jwtVerify();

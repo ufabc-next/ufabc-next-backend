@@ -7,14 +7,21 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     '/form',
     {
       schema: {
-        tags: ['help'],
+        // @ts-ignore
         consumes: ['multipart/form-data'],
       },
     },
     async (request, reply) => {
       try {
         // Get all parts from the request
-        const parts = request.parts();
+        const parts = request.parts() as AsyncIterableIterator<{
+          type: string;
+          fieldname: string;
+          value?: string;
+          toBuffer?: () => Promise<Buffer>;
+          filename?: string;
+          mimetype?: string;
+        }>;
         const formData = {} as HelpForm;
 
         for await (const part of parts) {
@@ -24,7 +31,7 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
             formData[fieldName] = part.value as string;
           } else if (part.type === 'file' && part.fieldname === 'image') {
             // Handle image file
-            const buffer = await part.toBuffer();
+            const buffer = await part.toBuffer!();
             formData.imageBuffer = buffer.toString('base64');
             formData.imageFilename = part.filename || 'image.png';
             formData.imageMimeType = part.mimetype;

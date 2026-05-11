@@ -13,8 +13,8 @@
     "docker:logs": "docker compose -f ../../docker-compose.yml logs -f core",
     "dev": "pnpm docker:up && pnpm docker:logs",
     "dev:local": "node --import=tsx --watch --no-warnings --env-file=.env.dev src/server.ts",
-    "build": "tsc --noEmit",
-    "tsc": "tsc --noEmit",
+    "build": "tsgo --noEmit",
+    "tsc": "tsgo --noEmit",
     "start": "node --import=tsx --env-file=.env.prod src/server.ts",
     "test": "vitest",
     "test:watch": "vitest watch"
@@ -72,6 +72,7 @@
     "fastify-tsconfig": "catalog:",
     "pino-pretty": "catalog:",
     "testcontainers": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:",
     "vite-tsconfig-paths": "catalog:",
     "vitest": "catalog:"

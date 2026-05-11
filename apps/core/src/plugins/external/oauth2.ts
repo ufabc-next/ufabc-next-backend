@@ -1,3 +1,4 @@
+import type { FastifyInstance, FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { fastifyOauth2, type OAuth2Namespace } from '@fastify/oauth2';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 
@@ -20,8 +21,8 @@ export type statePayloadType = {
 };
 
 export default fp(
-  async (app) => {
-    await app.register(fastifyOauth2, {
+  async (app: FastifyInstance) => {
+    await app.register(fastifyOauth2 as unknown as FastifyPluginCallback<Record<string, unknown>>, {
       name: 'google',
       userAgent: 'UFABC next (2.0.0)',
       credentials: {
@@ -32,9 +33,9 @@ export default fp(
         auth: fastifyOauth2.GOOGLE_CONFIGURATION,
       },
       scope: ['profile', 'email'],
-      callbackUri: (req) =>
+      callbackUri: (req: FastifyRequest) =>
         `${app.config.PROTOCOL}://${req.host}/login/google/callback`,
-      generateStateFunction: (request) => {
+      generateStateFunction: (request: FastifyRequest) => {
         // @ts-ignore
         const payload = {
           userId: (request.query as any).userId ?? null,
@@ -43,7 +44,7 @@ export default fp(
 
         return Buffer.from(JSON.stringify(payload)).toString('base64url');
       },
-      checkStateFunction: (request) => {
+      checkStateFunction: (request: FastifyRequest) => {
         const { requesterKey } = JSON.parse(
           Buffer.from((request.query as any).state, 'base64url').toString(
             'utf8'

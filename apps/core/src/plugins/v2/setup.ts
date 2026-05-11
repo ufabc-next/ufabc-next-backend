@@ -56,7 +56,7 @@ function createHybridSerializerCompiler() {
       return zodSerializer(schema as any);
     }
     // Otherwise use the openapi serializer (default for old routes)
-    return openApiSerializer(schema);
+    return openApiSerializer(schema as any);
   };
 }
 

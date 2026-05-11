@@ -13,9 +13,9 @@
     "import": "./index.ts"
   },
   "scripts": {
-    "build": "tsc",
-    "tsc": "tsc --noEmit",
-    "check-types": "tsc --noEmit",
+    "build": "tsgo",
+    "tsc": "tsgo --noEmit",
+    "check-types": "tsgo --noEmit",
     "test": "node --import=tsx --test lib/*.spec.ts",
     "test:watch": "node --import=tsx --watch --test lib/*.spec.ts",
     "test:coverage": "c8 --all --src=lib node --test --import=tsx lib/*.spec.ts",
@@ -27,8 +27,8 @@
     "@types/node": "catalog:",
     "c8": "catalog:",
     "lodash-es": "catalog:",
-    "tsup": "catalog:",
     "tsx": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   }
 }

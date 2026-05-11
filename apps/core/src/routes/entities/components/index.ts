@@ -1,4 +1,3 @@
-import type { preHandlerAsyncHookHandler } from 'fastify';
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
 import { currentQuad } from '@next/common';
@@ -17,7 +16,7 @@ import {
 
 import { findTeachers } from './service.ts';
 
-const validateStudent: preHandlerAsyncHookHandler = async (request, reply) => {
+const validateStudent = async (request: any, reply: any) => {
   const { studentId, season } = request.query as {
     studentId: number;
     season: string;

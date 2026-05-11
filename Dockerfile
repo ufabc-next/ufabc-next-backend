@@ -26,7 +26,7 @@ FROM base AS dev
 WORKDIR /app
 
 # Copy workspace config first for layer caching
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
 # Copy entire repo (respects .dockerignore). At runtime docker-compose mounts
 # overlay the copied source, giving hot-reload while keeping node_modules intact.
@@ -48,7 +48,7 @@ CMD ["node", "--import=tsx", "--watch", "--no-warnings", "--env-file=.env.dev", 
 FROM base AS build
 WORKDIR /app
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY . .
 
 RUN pnpm install --frozen-lockfile

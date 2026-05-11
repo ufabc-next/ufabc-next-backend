@@ -1,4 +1,4 @@
-import { type InferSchemaType, Schema, model } from 'mongoose';
+import { type InferSchemaType, Schema, model, Types } from 'mongoose';
 
 import { GroupModel } from './Group.ts';
 
@@ -83,9 +83,15 @@ function setTheoryAndPractice(update: { $set: Partial<Enrollment> }) {
   const enrollment = update.$set;
 
   if ('teoria' in enrollment || 'pratica' in enrollment) {
-    const theoryTeacher = enrollment.teoria?._id ?? enrollment.teoria;
-    const practiceTeacher = enrollment.pratica?._id ?? enrollment.pratica;
-    enrollment.mainTeacher = theoryTeacher || practiceTeacher;
+    const teoria = enrollment.teoria;
+    const pratica = enrollment.pratica;
+    const theoryTeacher = teoria && typeof teoria === 'object' && '_id' in teoria
+      ? teoria._id
+      : teoria;
+    const practiceTeacher = pratica && typeof pratica === 'object' && '_id' in pratica
+      ? pratica._id
+      : pratica;
+    enrollment.mainTeacher = (theoryTeacher || practiceTeacher) as (Types.ObjectId | null | undefined);
   }
 }
 

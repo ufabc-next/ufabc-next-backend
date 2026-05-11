@@ -1,7 +1,7 @@
 import type { QueryFilter as FilterQuery } from 'mongoose';
 
 import { defineJob } from '@next/queues/client';
-import { FastifyBaseLogger } from 'fastify';
+import type { FastifyBaseLogger } from 'fastify';
 import { z } from 'zod';
 
 import type { SubjectDocument } from '@/models/Subject.ts';

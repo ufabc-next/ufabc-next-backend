@@ -1,6 +1,4 @@
-import type { DatabaseModels } from '@next/db/models';
-import type { FastifyInstance, FastifyServerOptions } from 'fastify';
-import type { Mongoose } from 'mongoose';
+import type { FastifyInstance } from 'fastify';
 
 import { fastifyAutoload } from '@fastify/autoload';
 import dbPlugin from '@next/db/client';
@@ -21,13 +19,6 @@ import redisV2Plugin from './plugins/v2/redis.ts';
 import { setupV2Routes } from './plugins/v2/setup.ts';
 import testUtilsPlugin from './plugins/v2/test-utils.ts';
 
-declare module 'fastify' {
-  interface FastifyInstance {
-    db: DatabaseModels;
-    rawMongoose: Mongoose;
-  }
-}
-
 const routesV2 = [
   componentsController,
   backofficeController,
@@ -37,7 +28,7 @@ const routesV2 = [
 
 export async function buildApp(
   app: FastifyInstance,
-  opts: FastifyServerOptions = {}
+  opts: Record<string, unknown> = {}
 ) {
   await setupV2Routes(app, routesV2);
 

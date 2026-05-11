@@ -1,3 +1,4 @@
+import type { FastifyInstance } from 'fastify';
 import { fastifyRedis } from '@fastify/redis';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import ms from 'ms';
@@ -7,7 +8,7 @@ import { HTTP_REDIS_KEY_PREFIX } from '@/constants.ts';
 type RedisService = {
   acquireLock: (key: string, ttl: string) => Promise<boolean>;
   releaseLock: (key: string) => Promise<boolean>;
-  setJSON: <T>(key: string, value: T, ttl: string) => Promise<'OK'>;
+  setJSON: <T>(key: string, value: T, ttl: string) => Promise<string | null>;
   getJSON: <T>(key: string) => Promise<T | null>;
 };
 
@@ -20,7 +21,7 @@ declare module 'fastify' {
 }
 
 export default fp(
-  async (app) => {
+  async (app: FastifyInstance) => {
     await app.register(fastifyRedis, {
       url: app.config.REDIS_CONNECTION_URL,
       closeClient: true,

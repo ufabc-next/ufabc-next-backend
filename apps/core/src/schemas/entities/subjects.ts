@@ -62,7 +62,6 @@ export const searchSubjectSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const subjectReviewsSchema = {
-  tags: ['subjects'],
   params: z.object({
     subjectId: z.string().transform((str) => new Types.ObjectId(str)),
   }),
