@@ -1,6 +1,4 @@
-import type { DatabaseModels } from '@next/db/models';
-import type { FastifyInstance, FastifyServerOptions } from 'fastify';
-import type { Mongoose } from 'mongoose';
+import type { FastifyInstance } from 'fastify';
 
 import { fastifyAutoload } from '@fastify/autoload';
 import dbPlugin from '@next/db/client';
@@ -10,23 +8,16 @@ import {
 } from 'fastify-zod-openapi';
 import { join } from 'node:path';
 
-import backofficeController from './controllers/backoffice-controller.js';
-import componentsController from './controllers/components-controller.js';
-import studentsController from './controllers/students-controller.js';
-import { UfabcParserIncomingWebhookController } from './controllers/ufabc-parser-webhook-controller.js';
-import { authenticateBoard } from './hooks/board-authenticate.js';
-import awsV2Plugin from './plugins/v2/aws.js';
-import queueV2Plugin from './plugins/v2/queue.js';
-import redisV2Plugin from './plugins/v2/redis.js';
-import { setupV2Routes } from './plugins/v2/setup.js';
-import testUtilsPlugin from './plugins/v2/test-utils.js';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    db: DatabaseModels;
-    rawMongoose: Mongoose;
-  }
-}
+import backofficeController from './controllers/backoffice-controller.ts';
+import componentsController from './controllers/components-controller.ts';
+import studentsController from './controllers/students-controller.ts';
+import { UfabcParserIncomingWebhookController } from './controllers/ufabc-parser-webhook-controller.ts';
+import { authenticateBoard } from './hooks/board-authenticate.ts';
+import awsV2Plugin from './plugins/v2/aws.ts';
+import queueV2Plugin from './plugins/v2/queue.ts';
+import redisV2Plugin from './plugins/v2/redis.ts';
+import { setupV2Routes } from './plugins/v2/setup.ts';
+import testUtilsPlugin from './plugins/v2/test-utils.ts';
 
 const routesV2 = [
   componentsController,
@@ -37,7 +28,7 @@ const routesV2 = [
 
 export async function buildApp(
   app: FastifyInstance,
-  opts: FastifyServerOptions = {}
+  opts: Record<string, unknown> = {}
 ) {
   await setupV2Routes(app, routesV2);
 

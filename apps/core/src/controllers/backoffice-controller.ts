@@ -2,7 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
 import { z } from 'zod';
 
-import { adminHook } from '@/hooks/admin.js';
+import { adminHook } from '@/hooks/admin.ts';
 
 const backofficeController: FastifyPluginAsyncZod = async (app) => {
   app.route({

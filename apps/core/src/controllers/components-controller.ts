@@ -3,17 +3,17 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { currentQuad } from '@next/common';
 import { z } from 'zod';
 
-import { MoodleConnector } from '@/connectors/moodle.js';
-import { JOB_NAMES } from '@/constants.js';
-import { jwtVerifyHook } from '@/hooks/jwt-verify.js';
-import { moodleSession } from '@/hooks/moodle-session.js';
-import { ComponentModel } from '@/models/Component.js';
+import { MoodleConnector } from '@/connectors/moodle.ts';
+import { JOB_NAMES } from '@/constants.ts';
+import { jwtVerifyHook } from '@/hooks/jwt-verify.ts';
+import { moodleSession } from '@/hooks/moodle-session.ts';
+import { ComponentModel } from '@/models/Component.ts';
 import {
   ListComponent,
   listComponentsSchema,
   PopulatedComponent,
-} from '@/schemas/v2/components.js';
-import { getComponentArchives } from '@/services/components-service.js';
+} from '@/schemas/v2/components.ts';
+import { getComponentArchives } from '@/services/components-service.ts';
 
 const moodleConnector = new MoodleConnector();
 
@@ -34,7 +34,7 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
       }),
     },
     handler: async (request, reply) => {
-      const session = request.requestContext.get('moodleSession')!;
+      const session = request.requestContext.get<{ sessionId: string; sessKey: string }>('moodleSession')!;
       const hasLock = await request.acquireLock(session.sessionId, '24h');
 
       if (!hasLock) {
@@ -87,7 +87,7 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
       },
     },
     handler: async (request, reply) => {
-      const session = request.requestContext.get('moodleSession')!;
+      const session = request.requestContext.get<{ sessionId: string; sessKey: string }>('moodleSession')!;
       const components = await moodleConnector.getComponents(
         session.sessionId,
         session.sessKey

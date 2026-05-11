@@ -3,17 +3,17 @@ import type { Types } from 'mongoose';
 import { defineJob } from '@next/queues/client';
 import z from 'zod';
 
-import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
-import { JOB_NAMES, PARSER_WEBHOOK_SUPPORTED_EVENTS } from '@/constants.js';
-import { ComponentModel } from '@/models/Component.js';
+import { UfabcParserConnector } from '@/connectors/ufabc-parser.ts';
+import { JOB_NAMES, PARSER_WEBHOOK_SUPPORTED_EVENTS } from '@/constants.ts';
+import { ComponentModel } from '@/models/Component.ts';
 import {
   TeacherModel,
   findBestLevenshteinMatch,
   normalizeName,
-} from '@/models/Teacher.js';
-import { ComponentSateSchema } from '@/schemas/v2/webhook/ufabc-parser.js';
+} from '@/models/Teacher.ts';
+import { ComponentSateSchema } from '@/schemas/v2/webhook/ufabc-parser.ts';
 
-import { findOrCreateSubject } from './utils/subject-resolution.js';
+import { findOrCreateSubject } from './utils/subject-resolution.ts';
 
 const teacherCache = new Map<string, Types.ObjectId | null>();
 

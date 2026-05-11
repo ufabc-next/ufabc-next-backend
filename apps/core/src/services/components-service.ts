@@ -1,6 +1,6 @@
-import type { MoodleComponent } from '@/connectors/moodle.js';
+import type { MoodleComponent } from '@/connectors/moodle.ts';
 
-import { componentArchiveSchema } from '@/schemas/v2/components.js';
+import { componentArchiveSchema } from '@/schemas/v2/components.ts';
 
 export async function getComponentArchives(
   components: MoodleComponent | undefined

@@ -1,8 +1,8 @@
 import type { AnyObject, QueryFilter as FilterQuery, Types } from 'mongoose';
 
-import { type Comment, CommentModel } from '@/models/Comment.js';
-import { EnrollmentModel } from '@/models/Enrollment.js';
-import { type Reaction, ReactionModel } from '@/models/Reaction.js';
+import { type Comment, CommentModel } from '@/models/Comment.ts';
+import { EnrollmentModel } from '@/models/Enrollment.ts';
+import { type Reaction, ReactionModel } from '@/models/Reaction.ts';
 
 export async function getUserEnrollments(ra: number) {
   const userEnrollments = await EnrollmentModel.find({

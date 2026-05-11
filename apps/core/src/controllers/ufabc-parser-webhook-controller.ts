@@ -1,10 +1,10 @@
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 
-import { JOB_NAMES, PARSER_WEBHOOK_SUPPORTED_EVENTS } from '@/constants.js';
+import { JOB_NAMES, PARSER_WEBHOOK_SUPPORTED_EVENTS } from '@/constants.ts';
 
-import { createUfabcParserWebhookAuthHook } from '../hooks/ufabc-parser-webhook-auth.js';
-import { UfabcParserWebhookSchema } from '../schemas/v2/webhook/ufabc-parser.js';
+import { createUfabcParserWebhookAuthHook } from '../hooks/ufabc-parser-webhook-auth.ts';
+import { UfabcParserWebhookSchema } from '../schemas/v2/webhook/ufabc-parser.ts';
 
 export const UfabcParserIncomingWebhookController: FastifyPluginAsyncZod =
   async (app) => {

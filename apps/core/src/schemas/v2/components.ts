@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { z } from 'zod';
 
-import { Component } from '@/models/Component.js';
+import { Component } from '@/models/Component.ts';
 
 export const componentArchiveSchema = z
   .object({

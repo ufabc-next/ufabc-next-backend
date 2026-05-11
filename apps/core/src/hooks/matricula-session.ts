@@ -8,10 +8,7 @@ declare module '@fastify/request-context' {
   }
 }
 
-export const matriculaSession: preHandlerAsyncHookHandler = async (
-  request,
-  reply
-) => {
+export const matriculaSession: preHandlerAsyncHookHandler = async (request, reply) => {
   const { 'session-id': sessionId } = request.headers;
 
   if (!sessionId || typeof sessionId !== 'string') {

@@ -1,5 +1,3 @@
-import type { FastifySchema } from 'fastify';
-
 import { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 import { z } from 'zod';
 import 'zod-openapi/extend';
@@ -67,8 +65,7 @@ export const loginSchema = {
     authuser: z.string(),
     prompt: z.string(),
   }),
-  tags: ['Login'],
-} satisfies FastifySchema;
+};
 
 export const googleCallbackSchema = {
   querystring: z.object({

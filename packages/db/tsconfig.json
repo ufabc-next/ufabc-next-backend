@@ -1,13 +1,12 @@
 {
-  "extends": ["@next/tsconfig/libs.json"],
+  "extends": "@next/tsconfig/base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true,
+    "emitDeclarationOnly": true,
     "noEmit": false,
-    "strictNullChecks": true
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": ["./src/**/*.ts"],
   "exclude": ["node_modules"]

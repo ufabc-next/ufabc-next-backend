@@ -1,20 +1,20 @@
 import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
-import { ComponentModel } from '@/models/Component.js';
+import { ComponentModel } from '@/models/Component.ts';
 import {
   listMatriculaStudent,
   listStudentSchema,
   listStudentsStatsComponents,
   type MatriculaStudent,
   updateStudentSchema,
-} from '@/schemas/entities/students.js';
+} from '@/schemas/entities/students.ts';
 
 import {
   getAllCourses,
   getComponentsStudentsStats,
   getStudent,
   update,
-} from './service.js';
+} from './service.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get(

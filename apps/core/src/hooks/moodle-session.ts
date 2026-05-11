@@ -2,7 +2,7 @@ import type { preHandlerAsyncHookHandler } from 'fastify';
 
 import LRUWeakCache from 'lru-weak-cache';
 
-import { MoodleConnector } from '@/connectors/moodle.js';
+import { MoodleConnector } from '@/connectors/moodle.ts';
 
 declare module '@fastify/request-context' {
   interface RequestContextData {
@@ -23,10 +23,7 @@ const sessionCache = new LRUWeakCache<{ sessionId: string }>({
   maxAge: 1000 * 60 * 5,
 });
 
-export const moodleSession: preHandlerAsyncHookHandler = async (
-  request,
-  reply
-) => {
+export const moodleSession: preHandlerAsyncHookHandler = async (request, reply) => {
   const { 'session-id': sessionId, 'sess-key': sessKey } = request.headers;
 
   if (

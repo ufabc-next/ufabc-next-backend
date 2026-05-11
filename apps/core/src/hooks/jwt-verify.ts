@@ -1,9 +1,6 @@
 import type { preHandlerAsyncHookHandler } from 'fastify';
 
-export const jwtVerifyHook: preHandlerAsyncHookHandler = async (
-  request,
-  reply
-) => {
+export const jwtVerifyHook: preHandlerAsyncHookHandler = async (request, reply) => {
   try {
     await request.jwtVerify();
   } catch {

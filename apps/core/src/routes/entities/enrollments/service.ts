@@ -1,12 +1,12 @@
 import type { currentQuad } from '@next/common';
 
-import type { SubjectDocument } from '@/models/Subject.js';
-import type { TeacherDocument } from '@/models/Teacher.js';
-import type { EnrollmentsList } from '@/schemas/entities/enrollments.js';
+import type { SubjectDocument } from '@/models/Subject.ts';
+import type { TeacherDocument } from '@/models/Teacher.ts';
+import type { EnrollmentsList } from '@/schemas/entities/enrollments.ts';
 
-import { CommentModel } from '@/models/Comment.js';
-import { ComponentModel } from '@/models/Component.js';
-import { EnrollmentModel } from '@/models/Enrollment.js';
+import { CommentModel } from '@/models/Comment.ts';
+import { ComponentModel } from '@/models/Component.ts';
+import { EnrollmentModel } from '@/models/Enrollment.ts';
 
 type PopulatedFields = {
   pratica: TeacherDocument;

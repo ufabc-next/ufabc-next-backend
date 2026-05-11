@@ -1,4 +1,4 @@
-import { StudentModel } from '@/models/Student.js';
+import { StudentModel } from '@/models/Student.ts';
 
 export async function getAllCourses() {
   const courses = await StudentModel.aggregate<{

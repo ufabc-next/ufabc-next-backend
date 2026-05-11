@@ -1,9 +1,9 @@
 import { lastQuad } from '@next/common';
 
-import type { Graduation } from '@/models/Graduation.js';
+import type { Graduation } from '@/models/Graduation.ts';
 
-import { GraduationHistoryModel } from '@/models/GraduationHistory.js';
-import { HistoryModel } from '@/models/History.js';
+import { GraduationHistoryModel } from '@/models/GraduationHistory.ts';
+import { HistoryModel } from '@/models/History.ts';
 
 export async function getCrDistribution(points: number, interval: number) {
   const { year, quad } = lastQuad();

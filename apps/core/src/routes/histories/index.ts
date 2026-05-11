@@ -2,7 +2,7 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
 import { currentQuad } from '@next/common';
 
-import { StudentModel } from '@/models/Student.js';
+import { StudentModel } from '@/models/Student.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   app.get('/courses', async (request, reply) => {

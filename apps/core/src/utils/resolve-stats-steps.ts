@@ -1,6 +1,6 @@
 import type { QueryFilter as FilterQuery } from 'mongoose';
 
-import type { Component } from '@/models/Component.js';
+import type { Component } from '@/models/Component.ts';
 
 export function resolveStep(
   action: 'overview' | 'component' | 'courses',

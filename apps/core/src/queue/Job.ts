@@ -10,10 +10,10 @@ import type {
   JobNames,
   JobResultType,
   TypeSafeQueue,
-} from './types.js';
+} from './types.ts';
 
-import { boardUiPath, createBoard } from './board.js';
-import { JOBS, QUEUE_JOBS, type QueueNames } from './definitions.js';
+import { boardUiPath, createBoard } from './board.ts';
+import { JOBS, QUEUE_JOBS, type QueueNames } from './definitions.ts';
 
 interface JobImpl {
   setup(): Promise<void>;
@@ -208,7 +208,6 @@ export class Jobs implements JobImpl {
         try {
           if (query.token) {
             await request.jwtVerify({
-              //@ts-expect-error extractToken property not well defined in jwt type definitions
               extractToken: (req: any) => req.query.token,
             });
             request.isAdmin(reply);
@@ -222,7 +221,6 @@ export class Jobs implements JobImpl {
             return reply.redirect('/board/ui/', 303);
           }
           await request.jwtVerify({
-            //@ts-expect-error extractToken property not well defined in jwt type definitions
             extractToken: (req: any) => req.cookies.token,
           });
           request.isAdmin(reply);
@@ -237,8 +235,7 @@ export class Jobs implements JobImpl {
         }
       });
 
-      // @ts-expect-error Library types are not compatible with FastifyAdapter
-      app.register(bullBoard.registerPlugin(), {
+      app.register(bullBoard.registerPlugin() as any, {
         prefix: boardUiPath,
         basePath: boardUiPath,
         logLevel: 'silent',

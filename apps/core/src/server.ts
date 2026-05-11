@@ -1,10 +1,10 @@
 import gracefullyShutdown from 'close-with-grace';
-import { fastify, type FastifyServerOptions } from 'fastify';
+import fastify from 'fastify';
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import { randomUUID } from 'node:crypto';
 
-import { buildApp } from './app.js';
-import { logger } from './utils/logger.js';
+import { buildApp } from './app.ts';
+import { logger } from './utils/logger.ts';
 
 const appOptions = {
   loggerInstance: logger,
@@ -13,7 +13,7 @@ const appOptions = {
   requestIdLogLabel: 'globalTraceId',
   genReqId: () => randomUUID(),
   pluginTimeout: 35_000,
-} satisfies FastifyServerOptions;
+};
 
 const app = fastify(appOptions);
 

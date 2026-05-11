@@ -8,8 +8,8 @@ import {
   model,
 } from 'mongoose';
 
-import { EnrollmentModel } from './Enrollment.js';
-import { ReactionModel } from './Reaction.js';
+import { EnrollmentModel } from './Enrollment.ts';
+import { ReactionModel } from './Reaction.ts';
 
 const COMMENT_TYPE = ['teoria', 'pratica'] as const;
 

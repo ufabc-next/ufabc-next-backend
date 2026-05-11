@@ -2,14 +2,14 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
 import { Types } from 'mongoose';
 
-import { SubjectModel, type Subject } from '@/models/Subject.js';
-import { TeacherModel } from '@/models/Teacher.js';
+import { SubjectModel, type Subject } from '@/models/Subject.ts';
+import { TeacherModel } from '@/models/Teacher.ts';
 import {
   listSubjectsSchema,
   searchSubjectSchema,
-} from '@/schemas/entities/subjects.js';
+} from '@/schemas/entities/subjects.ts';
 
-import { rawSubjectsReviews, type Distribution } from './service.js';
+import { rawSubjectsReviews, type Distribution } from './service.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const subjectsCache = app.cache<{}>();

@@ -51,7 +51,6 @@ export const SessionUserSchema = z.object({
 });
 
 export const userAuthSchema = {
-  tags: ['User'],
   response: {
     200: {
       content: {

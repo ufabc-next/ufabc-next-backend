@@ -2,8 +2,6 @@ import type { FastifyZodOpenApiSchema } from 'fastify-zod-openapi';
 
 import { z } from 'zod';
 
-const tags = ['graduations'];
-
 const paginatedGraduationSubjectsSchema = z.object({
   total: z.number().int(),
   pages: z.number().int(),
@@ -25,7 +23,7 @@ export type PaginatedGraduationSubjectsSchema = z.infer<
 >;
 
 export const listGraduationsSubjectsSchema = {
-  tags,
+  
   querystring: z.object({
     limit: z.coerce.number().int().default(25),
     page: z.coerce.number().int().default(1),
@@ -42,7 +40,7 @@ export const listGraduationsSubjectsSchema = {
 } satisfies FastifyZodOpenApiSchema;
 
 export const listGraduationsSubjectsByIdSchema = {
-  tags,
+  
   params: z.object({
     graduationId: z.string(),
   }),

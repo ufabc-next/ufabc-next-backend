@@ -1,6 +1,6 @@
-import { UfabcParserError } from '@/errors/ufabc-parser.js';
+import { UfabcParserError } from '@/errors/ufabc-parser.ts';
 
-import { BaseRequester } from './base-requester.js';
+import { BaseRequester } from './base-requester.ts';
 
 type ComponentId = number;
 type StudentIds = number;

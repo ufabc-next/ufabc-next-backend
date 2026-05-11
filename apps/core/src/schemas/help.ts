@@ -19,7 +19,6 @@ const helpFormBodySchema = z.object({
 });
 
 export const helpFormSchema = {
-  tags: ['help'],
   body: helpFormBodySchema,
 } satisfies FastifyZodOpenApiSchema;
 

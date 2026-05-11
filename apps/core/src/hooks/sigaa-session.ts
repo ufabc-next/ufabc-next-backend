@@ -2,7 +2,7 @@ import type { preHandlerAsyncHookHandler } from 'fastify';
 
 import { load } from 'cheerio';
 
-import { SigaaConnector } from '@/connectors/sigaa.js';
+import { SigaaConnector } from '@/connectors/sigaa.ts';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -12,10 +12,7 @@ declare module 'fastify' {
     };
   }
 }
-export const sigaaSession: preHandlerAsyncHookHandler = async (
-  request,
-  reply
-) => {
+export const sigaaSession: preHandlerAsyncHookHandler = async (request, reply) => {
   const { 'session-id': sessionId, 'view-id': viewId } = request.headers;
 
   if (

@@ -3,21 +3,21 @@ import type { QueryFilter as FilterQuery, PipelineStage } from 'mongoose';
 
 import { currentQuad } from '@next/common';
 
-import { CommentModel } from '@/models/Comment.js';
-import { type Component, ComponentModel } from '@/models/Component.js';
-import { EnrollmentModel } from '@/models/Enrollment.js';
-import { GraduationModel } from '@/models/Graduation.js';
-import { StudentModel } from '@/models/Student.js';
-import { UserModel } from '@/models/User.js';
+import { CommentModel } from '@/models/Comment.ts';
+import { type Component, ComponentModel } from '@/models/Component.ts';
+import { EnrollmentModel } from '@/models/Enrollment.ts';
+import { GraduationModel } from '@/models/Graduation.ts';
+import { StudentModel } from '@/models/Student.ts';
+import { UserModel } from '@/models/User.ts';
 import {
   listComponentsResume,
   listGraduationsSchema,
   listStudentStats,
   type GraduationList,
-} from '@/schemas/public.js';
-import { resolveStep } from '@/utils/resolve-stats-steps.js';
+} from '@/schemas/public.ts';
+import { resolveStep } from '@/utils/resolve-stats-steps.ts';
 
-import { getAllCourses } from './service.js';
+import { getAllCourses } from './service.ts';
 
 type ComponentsStats = {
   teachers: number;

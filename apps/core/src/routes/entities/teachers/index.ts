@@ -2,13 +2,13 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
 import { Types } from 'mongoose';
 
-import { TeacherModel } from '@/models/Teacher.js';
+import { TeacherModel } from '@/models/Teacher.ts';
 import {
   createTeachersSchema,
   listTeachersSchema,
   searchTeacherSchema,
   updateTeacherSchema,
-} from '@/schemas/entities/teachers.js';
+} from '@/schemas/entities/teachers.ts';
 
 import {
   findAndUpdate,
@@ -17,7 +17,7 @@ import {
   populateWithSubject,
   rawReviews,
   searchMany,
-} from './service.js';
+} from './service.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const teachersCache = app.cache<{}>();

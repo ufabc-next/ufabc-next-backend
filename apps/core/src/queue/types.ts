@@ -1,7 +1,7 @@
 import type { Job, Queue, Worker } from 'bullmq';
 import type { FastifyInstance } from 'fastify';
 
-import type { JOBS, QUEUE_JOBS } from './definitions.js';
+import type { JOBS, QUEUE_JOBS } from './definitions.ts';
 
 // Basic types for job definitions
 export type JobNames = keyof typeof JOBS;

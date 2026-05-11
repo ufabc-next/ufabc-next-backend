@@ -6,7 +6,7 @@ import {
   model,
 } from 'mongoose';
 
-import type { CoefficientsMap } from './History.js';
+import type { CoefficientsMap } from './History.ts';
 
 const CONCEITOS = ['A', 'B', 'C', 'D', 'O', 'F', '-'] as const;
 const POSSIBLE_SITUATIONS = [

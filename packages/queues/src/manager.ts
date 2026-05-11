@@ -19,7 +19,7 @@ import type {
   JobBuilder,
   JobContext,
   JobData,
-} from './builder.js';
+} from './builder.ts';
 
 export type BoardAuthHook = (
   request: FastifyRequest,

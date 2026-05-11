@@ -1,8 +1,8 @@
 import {
   HistoryProcessingJobModel as HistoryProcessingJob,
-  HistoryProcessingJobDocument,
-} from './models/history-processing-job.js';
-import { StudentSync } from './models/student-sync.js';
+  type HistoryProcessingJobDocument,
+} from './models/history-processing-job.ts';
+import { StudentSync } from './models/student-sync.ts';
 
 export const db = {
   StudentSync,

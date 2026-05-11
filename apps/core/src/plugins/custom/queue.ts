@@ -2,8 +2,8 @@ import type { FastifyInstance } from 'fastify';
 
 import { fastifyPlugin as fp } from 'fastify-plugin';
 
-import { Jobs } from '@/queue/Job.js';
-import { QueueWorker } from '@/queue/Worker.js';
+import { Jobs } from '@/queue/Job.ts';
+import { QueueWorker } from '@/queue/Worker.ts';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -19,7 +19,7 @@ export const autoConfig = (app: FastifyInstance) => {
 };
 
 export default fp(
-  async (app, opts: { redisURL: URL }) => {
+  async (app: FastifyInstance, opts: { redisURL: URL }) => {
     const worker = new QueueWorker(app, opts.redisURL);
     const jobs = new Jobs(app, opts.redisURL);
 

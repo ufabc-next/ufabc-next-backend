@@ -2,12 +2,12 @@ import type { QueryFilter as FilterQuery } from 'mongoose';
 
 import { currentQuad } from '@next/common';
 
-import type { UpdatedStudent } from '@/schemas/entities/students.js';
+import type { UpdatedStudent } from '@/schemas/entities/students.ts';
 
-import { ComponentModel } from '@/models/Component.js';
-import { HistoryModel } from '@/models/History.js';
-import { StudentModel, type Student } from '@/models/Student.js';
-import { logger } from '@/utils/logger.js';
+import { ComponentModel } from '@/models/Component.ts';
+import { HistoryModel } from '@/models/History.ts';
+import { StudentModel, type Student } from '@/models/Student.ts';
+import { logger } from '@/utils/logger.ts';
 
 export async function getComponentsStudentsStats(
   season: string,

@@ -2,11 +2,11 @@ import type { FastifyPluginAsyncZodOpenApi } from 'fastify-zod-openapi';
 
 import { currentQuad } from '@next/common';
 
-import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
-import { UfabcParserError } from '@/errors/ufabc-parser.js';
-import { StudentModel } from '@/models/Student.js';
-import { UserModel, type User } from '@/models/User.js';
-import { completeUserSchema, type Auth } from '@/schemas/auth.js';
+import { UfabcParserConnector } from '@/connectors/ufabc-parser.ts';
+import { UfabcParserError } from '@/errors/ufabc-parser.ts';
+import { StudentModel } from '@/models/Student.ts';
+import { UserModel, type User } from '@/models/User.ts';
+import { completeUserSchema, type Auth } from '@/schemas/auth.ts';
 import {
   confirmUserSchema,
   deactivateUserSchema,
@@ -14,7 +14,7 @@ import {
   resendEmailSchema,
   sendRecoveryEmailSchema,
   validateUserEmailSchema,
-} from '@/schemas/user.js';
+} from '@/schemas/user.ts';
 
 const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
   const usersCache = app.cache<Auth>();

@@ -4,14 +4,23 @@
   "description": "Database models and queries for UFABC Next backend",
   "type": "module",
   "exports": {
-    "./models": "./dist/models.js",
-    "./queries": "./dist/queries.js",
-    "./client": "./dist/client.js"
+    "./models": {
+      "types": "./dist/models.d.ts",
+      "import": "./src/models.ts"
+    },
+    "./queries": {
+      "types": "./dist/queries.d.ts",
+      "import": "./src/queries.ts"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./src/client.ts"
+    }
   },
   "scripts": {
-    "dev": "rimraf dist && tsc --watch",
-    "build": "rimraf dist && tsc",
-    "check-types": "tsc --noEmit",
+    "build": "tsgo",
+    "tsc": "tsgo --noEmit",
+    "check-types": "tsgo --noEmit",
     "clean": "git clean -xdf .cache .turbo dist node_modules"
   },
   "dependencies": {
@@ -23,7 +32,7 @@
     "@types/node": "catalog:",
     "fastify": "catalog:",
     "fastify-plugin": "catalog:",
-    "rimraf": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   }
 }

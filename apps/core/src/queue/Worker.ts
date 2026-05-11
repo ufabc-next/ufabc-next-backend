@@ -7,9 +7,9 @@ import type {
   JobResultType,
   QueueContext,
   TypeSafeWorker,
-} from './types.js';
+} from './types.ts';
 
-import { JOBS, QUEUE_JOBS } from './definitions.js';
+import { JOBS, QUEUE_JOBS } from './definitions.ts';
 
 export class QueueWorker {
   private workers: Partial<Record<JobNames, TypeSafeWorker>> = {};

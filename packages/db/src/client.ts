@@ -4,7 +4,7 @@ import { fastifyPlugin as fp } from 'fastify-plugin';
 import mongoose, { type Mongoose, connect } from 'mongoose';
 import { inspect } from 'node:util';
 
-import { db, type DatabaseModels } from './models.js';
+import { db, type DatabaseModels } from './models.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {

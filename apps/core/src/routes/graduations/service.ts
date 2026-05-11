@@ -1,6 +1,6 @@
-import type { SubjectDocument } from '@/models/Subject.js';
+import type { SubjectDocument } from '@/models/Subject.ts';
 
-import { GraduationSubjectModel } from '@/models/GraduationSubject.js';
+import { GraduationSubjectModel } from '@/models/GraduationSubject.ts';
 
 type PopulatedFields = {
   subject: SubjectDocument;

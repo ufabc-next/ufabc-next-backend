@@ -10,7 +10,6 @@
     "build": "turbo run build",
     "tsc": "turbo run tsc --parallel",
     "start": "turbo run start",
-    "start:watch": "turbo run start:watch",
     "test": "turbo run test",
     "lint": "pnpm dlx ultracite fix",
     "deps-check": "pnpm dlx taze -r"
@@ -24,8 +23,7 @@
     "ultracite": "^7.0.4"
   },
   "engines": {
-    "node": "^24",
-    "pnpm": "^10"
+    "node": "^24"
   },
-  "packageManager": "pnpm@10.33.2"
+  "packageManager": "pnpm@10.33.3"
 }
