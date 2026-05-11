@@ -10,6 +10,7 @@ import {
   processEnrollmentJob,
 } from './enrolled-students.js';
 import { enrollmentsProcessingJob } from './enrollments-processing.js';
+import { wppGroupsCheckJob } from './wpp-groups-check.js';
 import { studentSyncProcessingJob } from './student-sync-processing.js';
 import { teacherCreatedJob } from './teacher-created.js';
 import { ufabcParserWebhookProcessingJob } from './ufabc-parser-webhook-processing.js';
@@ -25,6 +26,7 @@ export const jobRegistry = {
   [JOB_NAMES.UFABC_PARSER_WEBHOOK_PROCESSING]: ufabcParserWebhookProcessingJob,
   [JOB_NAMES.STUDENT_SYNC_PROCESSING]: studentSyncProcessingJob,
   [JOB_NAMES.TEACHER_CREATED]: teacherCreatedJob,
+  [JOB_NAMES.WPP_GROUPS_CHECK]: wppGroupsCheckJob,
 } as const;
 
 export type JobRegistry = typeof jobRegistry;

@@ -241,9 +241,6 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
     const { season } = request.query as { season?: string };
     const { groupURL } = request.body as { groupURL: string };
 
-    if (!groupURL) {
-      return reply.badRequest('groupURL in request body is required');
-    }
 
     try {
       app.log.info({ disciplinaId, season, groupURL }, 'Updating groupURL');
