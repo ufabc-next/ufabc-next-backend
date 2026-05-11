@@ -10,11 +10,6 @@ declare module 'fastify' {
   }
 }
 
-/**
- * This plugins enables the use of cookies.
- *
- * @see {@link https://github.com/fastify/fastify-cookie}
- */
 export default fp(
   async (app: FastifyInstance) => {
     app.register(fastifyCookie as unknown as FastifyPluginCallback);

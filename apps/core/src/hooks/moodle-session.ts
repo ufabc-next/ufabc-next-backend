@@ -1,4 +1,4 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { preHandlerAsyncHookHandler } from 'fastify';
 
 import LRUWeakCache from 'lru-weak-cache';
 
@@ -23,10 +23,7 @@ const sessionCache = new LRUWeakCache<{ sessionId: string }>({
   maxAge: 1000 * 60 * 5,
 });
 
-export const moodleSession = async (
-  request: FastifyRequest,
-  reply: FastifyReply
-) => {
+export const moodleSession: preHandlerAsyncHookHandler = async (request, reply) => {
   const { 'session-id': sessionId, 'sess-key': sessKey } = request.headers;
 
   if (

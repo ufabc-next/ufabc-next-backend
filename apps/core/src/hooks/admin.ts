@@ -1,6 +1,6 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { preHandlerAsyncHookHandler } from 'fastify';
 
-export const adminHook = async (request: FastifyRequest, reply: FastifyReply) => {
+export const adminHook: preHandlerAsyncHookHandler = async (request, reply) => {
   const user = request.user;
 
   if (!user) {
