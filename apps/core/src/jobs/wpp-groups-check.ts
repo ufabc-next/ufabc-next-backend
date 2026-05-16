@@ -4,6 +4,8 @@ import { defineJob } from '@next/queues/client';
 import { CommunicationsConnector } from '@/connectors/communications.js';
 import { JOB_NAMES } from '@/constants.js';
 import { ComponentModel } from '@/models/Component.js';
+import { ComponentRepository } from '@/repositories/ComponentRepository.js';
+import type { ComponentGroupDTO } from '@/dtos/ComponentDTO.js';
 
 
 export const wppGroupsCheckJob = defineJob(JOB_NAMES.WPP_GROUPS_CHECK)
@@ -11,22 +13,9 @@ export const wppGroupsCheckJob = defineJob(JOB_NAMES.WPP_GROUPS_CHECK)
 
     const communicationsConnector = new CommunicationsConnector();
 
-    const components = (await ComponentModel.find(
-      {
-        groupURL: { $exists: true, $ne: null },
-        season: currentQuad(),
-      },
-      {
-        groupURL: 1,
-        disciplina_id: 1,
-      },
-      { sort: { updateAt: -1 } }
-    )
-      .lean()
-      .exec()) as Array<{
-        groupURL?: string | null;
-        disciplina_id?: number | null;
-      }>;
+    const components = (await ComponentRepository.findGroupComponentsForSeason(
+      currentQuad()
+    )) as ComponentGroupDTO[];
 
 
 
@@ -37,24 +26,16 @@ export const wppGroupsCheckJob = defineJob(JOB_NAMES.WPP_GROUPS_CHECK)
 
     const results: Array<{ groupUrl: string; status: 'sent' | 'failed' }> = [];
 
-    for (const { groupURL, disciplina_id } of components) {
+    for (const { groupUrl, disciplinaId } of components) {
       try {
-        const disciplinaId = String(disciplina_id);
-
-        await communicationsConnector.sendLinkToValidate(
-          //@ts-ignore -- protected from null/empty errors by mongodb query 
-          groupURL,
-          disciplinaId
-        );
-        //@ts-ignore -- protected from null/empty errors by mongodb query 
-        results.push({ groupUrl: groupURL, status: 'sent' });
+        await communicationsConnector.sendLinkToValidate(groupUrl, String(disciplinaId));
+        results.push({ groupUrl, status: 'sent' });
       } catch (error) {
         app.log.error(
-          { groupUrl: groupURL, disciplina_id: String(disciplina_id), error },
+          { groupUrl, disciplina_id: String(disciplinaId), error },
           'failed to validate group link'
         );
-        //@ts-ignore -- protected from null/empty errors by mongodb query 
-        results.push({ groupUrl: groupURL, status: 'failed' });
+        results.push({ groupUrl, status: 'failed' });
       }
     }
 

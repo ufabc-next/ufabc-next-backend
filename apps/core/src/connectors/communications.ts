@@ -12,12 +12,12 @@ export class CommunicationsConnector extends BaseRequester {
 
   async sendLinkToValidate(
     link: string,
-    disciplina_id: string
+    componentId: string
   ): Promise<unknown> {
 
     const response = await this.request<unknown>('groups/validate-link', {
       method: 'POST',
-      body: { link, disciplina_id },
+      body: { link, disciplina_id: componentId },
     });
 
     return response;
