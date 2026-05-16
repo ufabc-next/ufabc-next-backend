@@ -251,6 +251,7 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 - Use const assertions (`as const`) for immutable values and literal types
 - Leverage TypeScript's type narrowing instead of type assertions
 - Use meaningful variable names instead of magic numbers - extract constants with descriptive names
+- Follow `camelCase` for identifiers, variables, functions, and internal object keys; avoid introducing `snake_case` and migrate existing internal names to `camelCase` when touching code
 
 ### Modern JavaScript/TypeScript
 
