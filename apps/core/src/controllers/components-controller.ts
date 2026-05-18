@@ -14,6 +14,8 @@ import {
   PopulatedComponent,
 } from '@/schemas/v2/components.js';
 import { getComponentArchives } from '@/services/components-service.js';
+import { ComponentMetadataModel } from '@/models/ComponentMetadata.js';
+import { AIProxyConnector } from '@/connectors/ai-proxy.js';
 
 const moodleConnector = new MoodleConnector();
 
@@ -265,6 +267,55 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
       return reply.status(200).send(mappedComponents);
     },
   });
+
+
+
+  app.route({
+    method: 'POST',
+    url: '/components/metadata',
+    schema: {
+      querystring: z.object({
+        season: z.string().default('2026:2'),
+        componentId: z.string()
+      }),
+      body: z.object({
+        userMessage: z.string(),
+      }),
+      response: {
+        200: z.object({
+          status: z.string(),
+          data: z.any().optional(),
+        }),
+      },
+    },
+    handler: async (request, reply) => {
+
+      const baseUrl = process.env.NEXT_AGENT_URL;
+      //@ts-ignore
+      const aiConnector = new AIProxyConnector(baseUrl, 'whatsapp');
+
+      const { season, componentId } = request.query;
+
+      const component = await ComponentMetadataModel.findOne({
+        'metadata.component_code': componentId 
+      }).lean();
+
+      const { userMessage } = request.body as { userMessage: string };
+
+      const response = await aiConnector.requestNaturalResponse(component, userMessage);       
+
+      if (!component) {
+        return reply.notFound('Component not found');
+      }
+
+      return reply.status(200).send({
+        status: 'success',
+        data: response,
+      });
+    },
+  });
+
+
 };
 
 export default componentsController;
