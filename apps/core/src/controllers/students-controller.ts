@@ -7,6 +7,7 @@ import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
 import { matriculaSession } from '@/hooks/matricula-session.js';
 import { sigaaSession } from '@/hooks/sigaa-session.js';
 import { StudentModel } from '@/models/Student.js';
+import { UserModel, UserRaHistoryModel } from '@/models/User.js';
 
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 1 day
 
@@ -131,9 +132,49 @@ export const studentsController: FastifyPluginAsyncZod = async (app) => {
     },
     preHandler: [sigaaSession],
     handler: async (request, reply) => {
+      const studentEmailDomain = '@aluno.ufabc.edu.br';
+
       const connector = new UfabcParserConnector(request.id);
+
       const { ra, login } = request.body;
       const { sessionId, viewId } = request.sigaaSession;
+
+      const currentRaNumber = ra;
+      const currentRaString = String(ra);
+      const studentEmail = `${login}${studentEmailDomain}`;
+
+      const user = await UserModel.findOne({ email: studentEmail });
+
+      if (!user) {
+        return reply.notFound(`Usuário não encontrado para o e-mail ${studentEmail}`);
+      }
+
+      const userRaString = user.ra !== null && user.ra !== undefined ? String(user.ra) : null;
+
+      if (userRaString !== currentRaString) {
+        const raInUse = await UserModel.exists({
+          ra: currentRaNumber,
+          _id: { $ne: user._id },
+        });
+
+        if (raInUse) {
+          return reply.badRequest('Este RA já está em uso.');
+        }
+
+        const previousRa = String(user.ra);
+
+        if (previousRa !== null && previousRa !== undefined) {
+          await UserRaHistoryModel.create({
+            userId: user._id,
+            oldRa: previousRa,
+            newRa: currentRaString,
+          });
+        }
+
+        user.ra = currentRaNumber;
+        await user.save();
+      }
+
       const cacheKey = `http:students:sigaa:${ra}`;
 
       const cached = await app.redis.get(cacheKey);
