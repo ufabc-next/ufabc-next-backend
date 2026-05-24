@@ -185,10 +185,10 @@ export const studentsController: FastifyPluginAsyncZod = async (app) => {
         });
       }
 
-      let studentSync = await app.db.StudentSync.findOne({ ra: String(ra) });
+      let studentSync = await app.db.StudentSync.findOne({ ra: currentRaString });
       if (!studentSync) {
         studentSync = await app.db.StudentSync.create({
-          ra: String(ra),
+          ra: currentRaString,
           status: 'created',
           timeline: [
             {
