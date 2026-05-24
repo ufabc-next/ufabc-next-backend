@@ -1,5 +1,3 @@
-import type { FastifyInstance } from 'fastify';
-
 import { fastifyPlugin as fp } from 'fastify-plugin';
 import mongoose, { type Mongoose, connect } from 'mongoose';
 import { inspect } from 'node:util';
@@ -15,7 +13,7 @@ declare module 'fastify' {
 }
 
 export default fp(
-  async (app: FastifyInstance) => {
+  async (app) => {
     try {
       mongoose.connection.on('connected', () => {
         app.log.info('[MONGO] Connected to instance');

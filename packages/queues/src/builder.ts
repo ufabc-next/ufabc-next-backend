@@ -72,7 +72,7 @@ export class JobBuilder<
 
   input<T extends z.ZodTypeAny>(
     schema: T
-  ): JobBuilder<TName, z.infer<T>, TResult, TIterator> {
+  ): JobBuilder<TName, z.infer<T>, TResult, undefined> {
     this._inputSchema = schema as any;
     this._workerSchema = schema as any;
     return this as any;
@@ -123,8 +123,8 @@ export class JobBuilder<
     return this;
   }
 
-  every(pattern: string, tz = 'UTC'): this {
-    const msPattern = ms(pattern) as unknown as number;
+  every(pattern: `${number}`, tz = 'UTC'): this {
+    const msPattern = ms(pattern);
     this._schedule = Number(msPattern);
     this._scheduleTimezone = tz;
     return this;

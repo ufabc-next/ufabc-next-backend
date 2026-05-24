@@ -39,8 +39,12 @@ export class BaseRequester {
             : request instanceof Request
               ? request.url
               : '';
-        const fullUrl =
-          this.baseURL && requestPath
+        const isAbsoluteUrl =
+          requestPath.startsWith('http://') ||
+          requestPath.startsWith('https://');
+        const fullUrl = isAbsoluteUrl
+          ? requestPath
+          : this.baseURL && requestPath
             ? `${this.baseURL}${requestPath.startsWith('/') ? '' : '/'}${requestPath}`
             : this.baseURL || requestPath || '';
 

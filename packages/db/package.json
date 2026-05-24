@@ -4,18 +4,8 @@
   "description": "Database models and queries for UFABC Next backend",
   "type": "module",
   "exports": {
-    "./models": {
-      "types": "./dist/models.d.ts",
-      "import": "./src/models.ts"
-    },
-    "./queries": {
-      "types": "./dist/queries.d.ts",
-      "import": "./src/queries.ts"
-    },
-    "./client": {
-      "types": "./dist/client.d.ts",
-      "import": "./src/client.ts"
-    }
+    "./client": "./src/client.ts",
+    "./models": "./src/models.ts"
   },
   "scripts": {
     "build": "tsgo",
@@ -24,7 +14,6 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules"
   },
   "dependencies": {
-    "fastify": "catalog:",
     "mongoose": "catalog:"
   },
   "devDependencies": {

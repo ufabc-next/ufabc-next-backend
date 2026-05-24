@@ -38,16 +38,16 @@ services:
     image: localstack/localstack:latest
     container_name: localstack
     ports:
-      - '4567:4566' # LocalStack gateway
-      - '4572:4571' # Alternative API gateway
+      - "4567:4566" # LocalStack gateway
+      - "4572:4571" # Alternative API gateway
     environment:
-      SERVICES: 's3,lambda,dynamodb,sqs,sns,ses'
-      AWS_ACCESS_KEY_ID: 'AWS_ACCESS_KEY_ID_LOCALSTACK'
-      AWS_SECRET_ACCESS_KEY: 'AWS_SECRET_ACCESS_KEY_LOCALSTACK'
-      DEBUG: '1'
+      SERVICES: "s3,lambda,dynamodb,sqs,sns,ses"
+      AWS_ACCESS_KEY_ID: "AWS_ACCESS_KEY_ID_LOCALSTACK"
+      AWS_SECRET_ACCESS_KEY: "AWS_SECRET_ACCESS_KEY_LOCALSTACK"
+      DEBUG: "1"
     volumes:
-      - './scripts/docker/localstack:/var/lib/localstack'
-      - './scripts/init-localstack.sh:/etc/localstack/init/ready.d/init.sh'
+      - "./scripts/docker/localstack:/var/lib/localstack"
+      - "./scripts/init-localstack.sh:/etc/localstack/init/ready.d/init.sh"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 5s
@@ -68,10 +68,12 @@ services:
     env_file:
       - ./apps/core/.env.dev
     environment:
-      # Docker network overrides — service hostnames instead of localhost
       - MONGODB_CONNECTION_URL=mongodb://next-db:27017/ufabc-matricula
       - REDIS_CONNECTION_URL=redis://default:qj6wGxXINcQyWXdN@next-redis:6379
       - LOCALSTACK_ENDPOINT=http://localstack:4566
+      - UFABC_PARSER_URL=http://host.docker.internal:5001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # Mount entire repo for hot-reload (node_modules kept from image)
       - .:/app:cached
