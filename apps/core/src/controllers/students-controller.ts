@@ -215,6 +215,7 @@ export const studentsController: FastifyPluginAsyncZod = async (app) => {
 
       return reply.status(202).send({
         status: 'success',
+        data: { ra: currentRaString, login }
       });
     },
   });
