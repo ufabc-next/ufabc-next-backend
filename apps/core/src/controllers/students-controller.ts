@@ -161,9 +161,10 @@ export const studentsController: FastifyPluginAsyncZod = async (app) => {
           return reply.badRequest('Este RA já está em uso.');
         }
 
-        const previousRa = String(user.ra);
+        const previousRa =
+          user.ra !== null && user.ra !== undefined ? String(user.ra) : null;
 
-        if (previousRa !== null && previousRa !== undefined) {
+        if (previousRa !== null) {
           await UserRaHistoryModel.create({
             userId: user._id,
             oldRa: previousRa,
