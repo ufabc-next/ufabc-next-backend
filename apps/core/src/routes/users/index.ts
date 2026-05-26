@@ -141,17 +141,30 @@ const plugin: FastifyPluginAsyncZodOpenApi = async (app) => {
         const hasUfabcContract = await ufabcParserConnector.getTeacher(
           student.login
         );
+        
         if (hasUfabcContract) {
           return reply.forbidden('O aluno não pode ter contrato com a UFABC.');
 
         }
-        // Now accepting both aluno and general UFABC emails, as some students might have only the general one
-        const emailFromStudent = student.email.find((e) =>
-          e.includes('@ufabc.edu.br') 
+
+        if (student.email.length > 1) {
+          request.log.warn(
+            {
+              msg: 'Multiplos emails registrados para o usuario',
+              ra,
+              emails: student.email,
+            }
+          );
+        }
+
+        // Now accepting both aluno and general UFABC emails @aluno.ufabc and @ufabc.edu
+        const matchedEmail = student.email.some(
+          (emailParser) => emailParser === email
         );
-        if (emailFromStudent !== email) {
+
+        if (!matchedEmail) {
           return reply.forbidden(
-            'O email fornecido não corresponde ao domínio UFABC.'
+            'O email fornecido não corresponde ao domínio UFABC ou não possui cadastro válido.'
           );
         }
       } catch (error: unknown) {
