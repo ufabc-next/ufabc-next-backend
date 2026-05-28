@@ -152,13 +152,58 @@ export const studentsController: FastifyPluginAsyncZod = async (app) => {
       const userRaString = user.ra !== null && user.ra !== undefined ? String(user.ra) : null;
 
       if (userRaString !== currentRaString) {
-        const raInUse = await UserModel.exists({
+        const userWithSameRa = await UserModel.findOne({
           ra: currentRaNumber,
           _id: { $ne: user._id },
         });
 
-        if (raInUse) {
-          return reply.badRequest('Este RA já está em uso.');
+        if (userWithSameRa) {
+          const lastRaChange = await UserRaHistoryModel.findOne({
+            userId: userWithSameRa._id,
+            $or: [
+              { oldRa: currentRaString },
+              { newRa: currentRaString },
+            ],
+          }).sort({ createdAt: -1 });
+
+          if (!lastRaChange) {
+            return reply.conflict(
+              'Este RA já está vinculado a outro usuário, mas não há histórico suficiente para validar a reatribuição automática.'
+            );
+          }
+
+          const RECENT_RA_CHANGE_WINDOW_DAYS = 30;
+
+          const isRecentChange =
+            Date.now() - lastRaChange.createdAt.getTime() <
+            RECENT_RA_CHANGE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+          const oldUserLeftThisRa =
+            lastRaChange.oldRa === currentRaString &&
+            lastRaChange.newRa !== currentRaString &&
+            lastRaChange.newRa !== null &&
+            lastRaChange.newRa !== undefined;
+
+          if (!oldUserLeftThisRa) {
+            return reply.conflict(
+              'Este RA já está vinculado a outro usuário e o histórico não indica que ele deixou esse RA.'
+            );
+          }
+
+          if (isRecentChange) {
+            return reply.conflict(
+              'Este RA já foi alterado recentemente para outro usuário. A reatribuição automática foi bloqueada.'
+            );
+          }
+
+          await UserRaHistoryModel.create({
+            userId: userWithSameRa._id,
+            oldRa: currentRaString,
+            newRa: null,
+          });
+
+          userWithSameRa.ra = null;
+          await userWithSameRa.save();
         }
 
         const previousRa =
