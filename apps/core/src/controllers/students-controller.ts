@@ -3,14 +3,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { currentQuad } from '@next/common';
 import { z } from 'zod';
 
-import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
 import { matriculaSession } from '@/hooks/matricula-session.js';
 import { sigaaSession } from '@/hooks/sigaa-session.js';
 import { StudentModel } from '@/models/Student.js';
-import { UserModel, UserRaHistoryModel } from '@/models/User.js';
 import { syncStudentFromSigaa } from '@/services/sigaa-student-sync.js';
 
-const CACHE_TTL = 1000 * 60 * 60 * 24; // 1 day
 
 export const studentsController: FastifyPluginAsyncZod = async (app) => {
   app.route({
