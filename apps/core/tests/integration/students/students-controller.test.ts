@@ -156,8 +156,10 @@ describe('studentsController - POST /students/sigaa', () => {
       viewId: 'view-fake',
     });
 
-    mocks.userFindOne.mockResolvedValue(user);
-    mocks.userExists.mockResolvedValue(null);
+    mocks.userFindOne
+      .mockResolvedValueOnce(user)
+      .mockResolvedValueOnce(null);
+
     mocks.userRaHistoryCreate.mockResolvedValue({});
 
     mocks.redisGet.mockResolvedValue('aluno');
@@ -177,11 +179,11 @@ describe('studentsController - POST /students/sigaa', () => {
 
     expect(response.statusCode).toBe(202);
 
-    expect(mocks.userFindOne).toHaveBeenCalledWith({
+    expect(mocks.userFindOne).toHaveBeenNthCalledWith(1, {
       email: 'aluno@aluno.ufabc.edu.br',
     });
 
-    expect(mocks.userExists).toHaveBeenCalledWith({
+    expect(mocks.userFindOne).toHaveBeenNthCalledWith(2, {
       ra: 123456,
       _id: { $ne: 'user-id-1' },
     });
