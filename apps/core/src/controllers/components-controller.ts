@@ -297,16 +297,17 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
       const { season, componentId } = request.query;
 
       const component = await ComponentMetadataModel.findOne({
-        'metadata.component_code': componentId 
-      }).lean();
-
-      const { userMessage } = request.body as { userMessage: string };
-
-      const response = await aiConnector.requestNaturalResponse(component, userMessage);       
+        'metadata.component_code': componentId,
+        'metadata.component_data.season': season,
+      });
 
       if (!component) {
         return reply.notFound('Component not found');
       }
+
+      const { userMessage } = request.body as { userMessage: string };
+
+      const response = await aiConnector.requestNaturalResponse(component, userMessage);
 
       return reply.status(200).send({
         status: 'success',

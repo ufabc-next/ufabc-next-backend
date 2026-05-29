@@ -81,7 +81,7 @@ const disciplinasMetadataSchema = new Schema(
 
 disciplinasMetadataSchema.index({ 'metadata.component_code': 'asc' });
 
-export type Component = InferSchemaType<typeof disciplinasMetadataSchema>;
+export type ComponentMetadata = InferSchemaType<typeof disciplinasMetadataSchema>;
 export type ComponentMetadataDocument = ReturnType<(typeof ComponentMetadataModel)['hydrate']>;
 
 export const ComponentMetadataModel = model('disciplinas_metadata', disciplinasMetadataSchema, 'disciplinas_metadata');

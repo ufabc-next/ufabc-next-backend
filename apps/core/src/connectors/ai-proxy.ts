@@ -56,8 +56,8 @@ export class AIProxyConnector extends BaseRequester {
       componentData?.metadata?.component_data?.teachers?.[0]?.name ?? ''
     );
 
-    const cronogramaArr = Array.isArray(componentData?.metadata?.component_data?.syllabus)
-      ? componentData.metadata.component_data.syllabus
+    const cronogramaArr = Array.isArray(componentData?.cronograma)
+      ? componentData.cronograma
       : [];
     const cronograma_str = cronogramaArr
       .map((a: any) => `- ${a.data}: ${a.aula}`)
