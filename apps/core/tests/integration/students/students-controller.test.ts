@@ -201,4 +201,51 @@ describe('studentsController - POST /students/sigaa', () => {
 
     expect(mocks.syncStudent).not.toHaveBeenCalled();
   });
+
+  it('deve não atualizar o RA quando o RA não mudou', async () => {
+    const user = {
+      _id: 'user-id-1',
+      ra: 123456,
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+
+    mocks.redisServiceGetJSON.mockResolvedValue({
+      sessionId: 'session-fake',
+      viewId: 'view-fake',
+    });
+
+    mocks.userFindOne.mockResolvedValue(user);
+
+    mocks.redisGet.mockResolvedValue('aluno');
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/students/sigaa',
+      headers: {
+        'session-id': 'session-fake',
+        'view-id': 'view-fake',
+      },
+      payload: {
+        ra: 123456,
+        login: 'aluno',
+      },
+    });
+
+    expect(response.statusCode).toBe(202);
+
+    expect(mocks.userFindOne).toHaveBeenCalledTimes(1);
+
+    expect(mocks.userFindOne).toHaveBeenCalledWith({
+      email: 'aluno@aluno.ufabc.edu.br',
+    });
+
+    expect(mocks.userRaHistoryCreate).not.toHaveBeenCalled();
+
+    expect(user.ra).toBe(123456);
+    expect(user.save).not.toHaveBeenCalled();
+
+    expect(mocks.redisGet).toHaveBeenCalledWith('http:students:sigaa:123456');
+
+    expect(mocks.syncStudent).not.toHaveBeenCalled();
+  });
 });
