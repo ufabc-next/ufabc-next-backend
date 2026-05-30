@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   userFindOne: vi.fn(),
   userExists: vi.fn(),
   userRaHistoryCreate: vi.fn(),
+  userRaHistoryFindOne: vi.fn(),
 
   syncStudent: vi.fn(),
 
@@ -40,6 +41,7 @@ vi.mock('../../../src/models/User.js', () => ({
   },
   UserRaHistoryModel: {
     create: mocks.userRaHistoryCreate,
+    findOne: mocks.userRaHistoryFindOne,
   },
 }));
 
@@ -240,6 +242,94 @@ describe('studentsController - POST /students/sigaa', () => {
 
     expect(mocks.redisGet).toHaveBeenCalledWith('http:students:sigaa:123456');
 
+    expect(mocks.syncStudent).not.toHaveBeenCalled();
+  });
+
+  it('deve bloquear quando o RA foi sincronizado em outro usuário recentemente', async () => {
+    const user = {
+      _id: 'user-id-1',
+      ra: 111111,
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const userWithSameRa = {
+      _id: 'user-id-2',
+      ra: 123456,
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const lastRaChange = {
+      userId: 'user-id-2',
+      oldRa: '123456',
+      newRa: '999999',
+      createdAt: new Date(),
+    };
+
+    const sortMock = vi.fn().mockResolvedValue(lastRaChange);
+
+    mocks.redisServiceGetJSON.mockResolvedValue({
+      sessionId: 'session-fake',
+      viewId: 'view-fake',
+    });
+
+    mocks.userFindOne
+      .mockResolvedValueOnce(user)
+      .mockResolvedValueOnce(userWithSameRa);
+
+    mocks.userRaHistoryFindOne.mockReturnValue({
+      sort: sortMock,
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/students/sigaa',
+      headers: {
+        'session-id': 'session-fake',
+        'view-id': 'view-fake',
+      },
+      payload: {
+        ra: 123456,
+        login: 'aluno',
+      },
+    });
+
+    console.log('STATUS:', response.statusCode);
+    console.log('BODY:', response.body);
+
+    expect(response.statusCode).toBe(409);
+
+    expect(response.json()).toEqual({
+      statusCode: 409,
+      error: 'Conflict',
+      message:
+        'Este RA já foi alterado recentemente para outro usuário. A reatribuição automática foi bloqueada.',
+    });
+
+    expect(mocks.userFindOne).toHaveBeenNthCalledWith(1, {
+      email: 'aluno@aluno.ufabc.edu.br',
+    });
+
+    expect(mocks.userFindOne).toHaveBeenNthCalledWith(2, {
+      ra: 123456,
+      _id: { $ne: 'user-id-1' },
+    });
+
+    expect(mocks.userRaHistoryFindOne).toHaveBeenCalledWith({
+      userId: 'user-id-2',
+      $or: [{ oldRa: '123456' }, { newRa: '123456' }],
+    });
+
+    expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 });
+
+    expect(mocks.userRaHistoryCreate).not.toHaveBeenCalled();
+
+    expect(user.ra).toBe(111111);
+    expect(user.save).not.toHaveBeenCalled();
+
+    expect(userWithSameRa.ra).toBe(123456);
+    expect(userWithSameRa.save).not.toHaveBeenCalled();
+
+    expect(mocks.redisGet).not.toHaveBeenCalled();
     expect(mocks.syncStudent).not.toHaveBeenCalled();
   });
 });
