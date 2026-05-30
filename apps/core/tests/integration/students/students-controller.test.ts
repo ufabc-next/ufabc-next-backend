@@ -43,12 +43,6 @@ vi.mock('../../../src/models/User.js', () => ({
   },
 }));
 
-vi.mock('../../../src/models/UserRaHistory.js', () => ({
-  UserRaHistoryModel: {
-    create: mocks.userRaHistoryCreate,
-  },
-}));
-
 vi.mock('@/connectors/UfabcParserConnector.js', () => ({
   UfabcParserConnector: vi.fn().mockImplementation(() => ({
     syncStudent: mocks.syncStudent,
