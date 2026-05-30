@@ -332,4 +332,101 @@ describe('studentsController - POST /students/sigaa', () => {
     expect(mocks.redisGet).not.toHaveBeenCalled();
     expect(mocks.syncStudent).not.toHaveBeenCalled();
   });
+
+  it('deve permitir reatribuição quando o RA foi alterado em outro usuário há mais de 30 dias', async () => {
+    const user = {
+      _id: 'user-id-1',
+      ra: 111111,
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const userWithSameRa = {
+      _id: 'user-id-2',
+      ra: 123456,
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const lastRaChange = {
+      userId: 'user-id-2',
+      oldRa: '123456',
+      newRa: '999999',
+      createdAt: new Date(Date.now() - 151 * 24 * 60 * 60 * 1000),
+    };
+
+    const sortMock = vi.fn().mockResolvedValue(lastRaChange);
+
+    mocks.redisServiceGetJSON.mockResolvedValue({
+      sessionId: 'session-fake',
+      viewId: 'view-fake',
+    });
+
+    mocks.userFindOne
+      .mockResolvedValueOnce(user)
+      .mockResolvedValueOnce(userWithSameRa);
+
+    mocks.userRaHistoryFindOne.mockReturnValue({
+      sort: sortMock,
+    });
+
+    mocks.userRaHistoryCreate.mockResolvedValue({});
+
+    mocks.redisGet.mockResolvedValue('aluno');
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/students/sigaa',
+      headers: {
+        'session-id': 'session-fake',
+        'view-id': 'view-fake',
+      },
+      payload: {
+        ra: 123456,
+        login: 'aluno',
+      },
+    });
+
+    expect(response.statusCode).toBe(202);
+
+    expect(response.json()).toEqual({
+      status: 'cached',
+    });
+
+    expect(mocks.userFindOne).toHaveBeenNthCalledWith(1, {
+      email: 'aluno@aluno.ufabc.edu.br',
+    });
+
+    expect(mocks.userFindOne).toHaveBeenNthCalledWith(2, {
+      ra: 123456,
+      _id: { $ne: 'user-id-1' },
+    });
+
+    expect(mocks.userRaHistoryFindOne).toHaveBeenCalledWith({
+      userId: 'user-id-2',
+      $or: [{ oldRa: '123456' }, { newRa: '123456' }],
+    });
+
+    expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 });
+
+    expect(mocks.userRaHistoryCreate).toHaveBeenCalledWith({
+      userId: 'user-id-2',
+      oldRa: '123456',
+      newRa: null,
+    });
+
+    expect(mocks.userRaHistoryCreate).toHaveBeenCalledWith({
+      userId: 'user-id-1',
+      oldRa: '111111',
+      newRa: '123456',
+    });
+
+    expect(userWithSameRa.ra).toBe(null);
+    expect(userWithSameRa.save).toHaveBeenCalled();
+
+    expect(user.ra).toBe(123456);
+    expect(user.save).toHaveBeenCalled();
+
+    expect(mocks.redisGet).toHaveBeenCalledWith('http:students:sigaa:123456');
+
+    expect(mocks.syncStudent).not.toHaveBeenCalled();
+  });
 });
