@@ -50,6 +50,7 @@ describe('Archive Flow Integration', () => {
     });
     const pdfs = JSON.parse(pdfsRes.body);
 
-    expect(pdfs.length).toBeGreaterThan(1);
+    expect(pdfs.status).toBe('success');
+    expect(pdfs.data.length).toBeGreaterThan(1);
   });
 });
