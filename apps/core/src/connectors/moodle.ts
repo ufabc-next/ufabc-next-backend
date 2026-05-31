@@ -162,7 +162,6 @@ export class MoodleConnector extends BaseRequester {
         finalUrl: isPdf ? finalUrl : undefined,
       };
     } catch (error) {
-      // Some servers don't support HEAD requests, try GET with range header
       try {
         let finalUrl = url;
         let contentType: string | null = null;
@@ -191,7 +190,6 @@ export class MoodleConnector extends BaseRequester {
           finalUrl: isPdf ? finalUrl : undefined,
         };
       } catch {
-        // If both fail, it's likely not accessible or not a PDF
         return { isPdf: false, finalUrl: undefined };
       }
     }
