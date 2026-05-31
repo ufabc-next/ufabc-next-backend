@@ -4,7 +4,6 @@ import { currentQuad } from '@next/common';
 import { z } from 'zod';
 
 import { MoodleConnector } from '@/connectors/moodle.js';
-import { JOB_NAMES } from '@/constants.js';
 import { jwtVerifyHook } from '@/hooks/jwt-verify.js';
 import { moodleSession } from '@/hooks/moodle-session.js';
 import { ComponentModel } from '@/models/Component.js';
@@ -13,7 +12,7 @@ import {
   listComponentsSchema,
   PopulatedComponent,
 } from '@/schemas/v2/components.js';
-import { getComponentArchives } from '@/services/components-service.js';
+import { ComponentsService } from '@/services/components-service.js';
 
 const moodleConnector = new MoodleConnector();
 
@@ -22,6 +21,12 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
     method: 'POST',
     url: '/components/archives',
     preHandler: [moodleSession],
+    onError: async (request) => {
+      const session = request.requestContext.get('moodleSession');
+      if (session) {
+        await request.releaseLock(session.sessionId);
+      }
+    },
     schema: {
       response: {
         202: z.object({
@@ -36,8 +41,9 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
     handler: async (request, reply) => {
       const session = request.requestContext.get('moodleSession')!;
       const hasLock = await request.acquireLock(session.sessionId, '24h');
-
-      if (!hasLock) {
+      const isDevelopment = app.config.NODE_ENV !== 'prod'
+      
+      if (!hasLock && !isDevelopment) {
         request.log.debug(
           { sessionId: session.sessionId },
           'Archives already processing'
@@ -45,32 +51,24 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
         return reply.status(202).send({ status: 'success' });
       }
 
-      try {
-        const courses = await moodleConnector.getComponents(
-          session.sessionId,
-          session.sessKey
-        );
+      const componentsService = new ComponentsService({
+        manager: app.manager,
+        globalTraceId: request.id,
+      })
 
-        const componentArchives = await getComponentArchives(courses[0]);
-        if (componentArchives.error || !componentArchives.data) {
-          await request.releaseLock(session.sessionId);
-          return reply.badRequest(componentArchives.error ?? 'No data');
-        }
+      const result = await componentsService.processComponentArchives(
+        session,
+        request.id,
+      );
 
-        await app.manager.dispatch(JOB_NAMES.COMPONENTS_ARCHIVES_PROCESSING, {
-          component: componentArchives.data,
-          globalTraceId: request.id,
-          session,
-        });
-
-        return reply.status(202).send({
-          status: 'success',
-        });
-      } catch (error) {
-        request.log.error(error, 'Error getting archives');
+      if (result.error) {
         await request.releaseLock(session.sessionId);
-        return reply.internalServerError('Error getting archives');
+        return reply.badRequest(result.error);
       }
+
+      return reply.status(202).send({
+        status: 'success',
+      });
     },
   });
 

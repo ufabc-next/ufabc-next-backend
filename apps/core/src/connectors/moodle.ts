@@ -43,8 +43,8 @@ export class MoodleConnector extends BaseRequester {
   private lastRequestTime = 0;
   private readonly minRequestInterval = 300;
 
-  constructor() {
-    super('https://moodle.ufabc.edu.br');
+  constructor(globalTraceId?: string) {
+    super('https://moodle.ufabc.edu.br', globalTraceId);
   }
 
   async validateToken(sessionId: string, sessKey: string) {
