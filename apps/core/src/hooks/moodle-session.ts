@@ -10,6 +10,9 @@ declare module '@fastify/request-context' {
       sessionId: string;
       sessKey: string;
     };
+    moodleUser: {
+      fullname: string;
+    };
   }
 }
 
@@ -18,7 +21,12 @@ export type Session = {
   sessKey: string;
 };
 
-const sessionCache = new LRUWeakCache<{ sessionId: string }>({
+type SessionCacheEntry = {
+  sessionId: string;
+  fullname?: string;
+};
+
+const sessionCache = new LRUWeakCache<SessionCacheEntry>({
   capacity: 5000,
   maxAge: 1000 * 60 * 5,
 });
@@ -40,26 +48,48 @@ export const moodleSession: preHandlerAsyncHookHandler = async (
   }
 
   if (sessionCache.has(sessionId)) {
+    const cached = sessionCache.get(sessionId)!;
     request.log.debug({ sessionId }, 'Session found in cache');
     request.requestContext.set('moodleSession', {
       sessionId,
       sessKey,
     });
+
+    if (cached.fullname) {
+      request.requestContext.set('moodleUser', {
+        fullname: cached.fullname,
+      });
+    }
+
     return;
   }
 
-  const isTokenValid = await validateToken(sessionId, sessKey);
+  const [isTokenValid, userInfo] = await Promise.all([
+    validateToken(sessionId, sessKey),
+    resolveUserInfo(sessionId, sessKey),
+  ]);
+
   request.log.debug({ isTokenValid }, 'Token validated');
   if (!isTokenValid) {
     return reply.forbidden('Invalid Session');
   }
   request.log.debug({ sessionId }, 'Session validated');
 
-  sessionCache.set(sessionId, { sessionId });
+  const cacheEntry: SessionCacheEntry = { sessionId };
+
   request.requestContext.set('moodleSession', {
     sessionId,
     sessKey,
   });
+
+  if (userInfo) {
+    cacheEntry.fullname = userInfo.fullname;
+    request.requestContext.set('moodleUser', {
+      fullname: userInfo.fullname,
+    });
+  }
+
+  sessionCache.set(sessionId, cacheEntry);
 };
 
 async function validateToken(sessionId: string, sessKey: string) {
@@ -73,4 +103,22 @@ async function validateToken(sessionId: string, sessKey: string) {
   }
 
   return true;
+}
+
+async function resolveUserInfo(sessionId: string, sessKey: string) {
+  try {
+    const connector = new MoodleConnector();
+    const response = await connector.getUserInfo(sessionId, sessKey);
+    const data = response?.[0];
+
+    if (data?.error || !data?.data?.fullname) {
+      return null;
+    }
+
+    return {
+      fullname: data.data.fullname,
+    };
+  } catch {
+    return null;
+  }
 }
