@@ -114,7 +114,7 @@ export class ArchiveEngine {
 
   async downloadAndUpload(
     rawUrl: string,
-    componentId: number,
+    componentId: string,
     bucket: string,
   ) {
     const url = new URL(rawUrl);

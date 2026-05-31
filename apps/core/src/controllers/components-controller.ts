@@ -40,6 +40,7 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
     },
     handler: async (request, reply) => {
       const session = request.requestContext.get('moodleSession')!;
+      const moodleUser = request.requestContext.get('moodleUser');
       const hasLock = await request.acquireLock(session.sessionId, '24h');
       const isDevelopment = app.config.NODE_ENV !== 'prod'
       
@@ -59,6 +60,7 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
       const result = await componentsService.processComponentArchives(
         session,
         request.id,
+        moodleUser,
       );
 
       if (result.error) {
