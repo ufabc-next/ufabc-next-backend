@@ -28,9 +28,10 @@ const componentArchiveSchema = new Schema(
       ref: 'disciplinas',
       required: true,
     },
-    s3_key: { type: String, required: true },
+    s3_key: { type: String },
     original_url: { type: String, required: true },
-    file_name: { type: String, required: true },
+    file_name: { type: String },
+    source: { type: String, enum: ['moodle', 'manual', 'sigaa'], required: true, default: 'moodle' },
     status: {
       type: String,
       enum: COMPONENT_ARCHIVE_STATUS,
@@ -43,7 +44,7 @@ const componentArchiveSchema = new Schema(
 );
 
 componentArchiveSchema.index({ component: 1, status: 1 });
-componentArchiveSchema.index({ s3_key: 1 }, { unique: true });
+componentArchiveSchema.index({ component: 1, original_url: 1 }, { unique: true });
 
 export type ComponentArchive = InferSchemaType<typeof componentArchiveSchema>;
 

@@ -244,7 +244,7 @@ export class BaseRequester {
     const sizeInBytes = Buffer.byteLength(stringified, 'utf8');
 
     if (sizeInBytes > MAX_LOG_SIZE) {
-      return `[Data truncated: ${(sizeInBytes / 1024).toFixed(2)}KB exceeds 600KB limit]`;
+      return `[Data truncated: ${(sizeInBytes / 1024).toFixed(2)}KB exceeds ${MAX_LOG_SIZE / 1024}KB limit]`;
     }
 
     return data;
