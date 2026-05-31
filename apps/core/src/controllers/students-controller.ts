@@ -3,12 +3,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { currentQuad } from '@next/common';
 import { z } from 'zod';
 
-import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
 import { matriculaSession } from '@/hooks/matricula-session.js';
 import { sigaaSession } from '@/hooks/sigaa-session.js';
 import { StudentModel } from '@/models/Student.js';
+import { syncStudentFromSigaa } from '@/services/sigaa-student-sync.js';
 
-const CACHE_TTL = 1000 * 60 * 60 * 24; // 1 day
 
 export const studentsController: FastifyPluginAsyncZod = async (app) => {
   app.route({
@@ -131,50 +130,32 @@ export const studentsController: FastifyPluginAsyncZod = async (app) => {
     },
     preHandler: [sigaaSession],
     handler: async (request, reply) => {
-      const connector = new UfabcParserConnector(request.id);
       const { ra, login } = request.body;
       const { sessionId, viewId } = request.sigaaSession;
+
       const cacheKey = `http:students:sigaa:${ra}`;
 
-      const cached = await app.redis.get(cacheKey);
-      if (cached) {
+      const result = await syncStudentFromSigaa(
+        app,
+        { ra, login },
+        { sessionId, viewId },
+        request.id
+      );
+
+      if (result.status === 'not_found') {
+        return reply.notFound(result.message);
+      }
+
+      if (result.status === 'conflict') {
+        return reply.conflict(result.message);
+      }
+
+      if (result.status === 'cached') {
         app.log.debug({ cacheKey }, 'Student already synced');
-        return reply.status(202).send({
-          status: 'cached',
-        });
+        return reply.status(202).send({ status: 'cached' });
       }
 
-      let studentSync = await app.db.StudentSync.findOne({ ra: String(ra) });
-      if (!studentSync) {
-        studentSync = await app.db.StudentSync.create({
-          ra: String(ra),
-          status: 'created',
-          timeline: [
-            {
-              status: 'created',
-              metadata: {
-                login,
-              },
-            },
-          ],
-        });
-      }
-
-      await connector.syncStudent({
-        sessionId,
-        viewId,
-        requesterKey: app.config.UFABC_PARSER_REQUESTER_KEY,
-      });
-
-      await studentSync.transition('awaiting', {
-        source: 'sigaa',
-        login,
-      });
-      await app.redis.set(cacheKey, login, 'PX', CACHE_TTL);
-
-      return reply.status(202).send({
-        status: 'success',
-      });
+      return reply.status(202).send(result);
     },
   });
 };
