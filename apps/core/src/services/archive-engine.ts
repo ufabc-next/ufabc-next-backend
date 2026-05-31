@@ -1,8 +1,16 @@
 import { load } from 'cheerio';
 import { ofetch } from 'ofetch';
 
+import { currentQuad } from '@next/common';
+
 import { MoodleConnector } from '@/connectors/moodle.js';
 import { S3Connector } from '@/connectors/s3-connector.js';
+import { ComponentModel } from '@/models/Component.js';
+import {
+  TeacherModel,
+  findBestLevenshteinMatch,
+  normalizeName,
+} from '@/models/Teacher.js';
 
 import { componentArchiveSchema } from '@/schemas/v2/components.js';
 import { logger as baseLogger } from '@/utils/logger.js';
@@ -10,6 +18,14 @@ import { logger as baseLogger } from '@/utils/logger.js';
 export type MoodleSession = {
   sessionId: string;
   sessKey: string;
+};
+
+export type MoodleCourse = {
+  viewurl: string;
+  fullname: string;
+  shortname?: string;
+  idnumber?: string;
+  id: number;
 };
 
 export class ArchiveEngine {
@@ -23,6 +39,133 @@ export class ArchiveEngine {
     this.moodleConnector = new MoodleConnector(globalTraceId);
     this.session = session
     this.s3Connector = s3Connector;
+  }
+
+  async findComponentByMoodleCourse(
+    moodleCourse: MoodleCourse,
+    teacherName?: string,
+  ) {
+    const season = currentQuad();
+    this.logger.info(
+      { courseId: moodleCourse.id, courseName: moodleCourse.fullname, season },
+      'Matching moodle course to internal component',
+    );
+
+    const candidates: string[] = [];
+
+    if (moodleCourse.idnumber) {
+      candidates.push(moodleCourse.idnumber);
+    }
+
+    if (moodleCourse.shortname) {
+      const codeMatch = moodleCourse.shortname.match(/[A-Z]{2,}\d{3,}(?:-\d+)?/);
+      if (codeMatch) {
+        candidates.push(codeMatch[0]);
+      }
+    }
+
+    const codeMatch = moodleCourse.fullname.match(/[A-Z]{2,}\d{3,}(?:-\d+)?/);
+    if (codeMatch) {
+      candidates.push(codeMatch[0]);
+    }
+
+    const uniqueCandidates = [...new Set(candidates)];
+    this.logger.info(
+      { candidates: uniqueCandidates },
+      'Extracted candidate codes from moodle course',
+    );
+
+    let teacherId: string | undefined;
+    if (teacherName) {
+      const normalizedTeacherName = normalizeName(teacherName);
+      let teacher = await TeacherModel.findOne({
+        name: normalizedTeacherName,
+      });
+
+      if (!teacher) {
+        this.logger.info(
+          { teacherName, normalizedName: normalizedTeacherName },
+          'Exact teacher match not found, trying levenshtein',
+        );
+        const allTeachers = await TeacherModel.find({});
+        const levMatch = findBestLevenshteinMatch(teacherName, allTeachers);
+        if (levMatch) {
+          teacher = levMatch;
+        }
+      }
+
+      teacherId = teacher?._id?.toString();
+    }
+
+    this.logger.info(
+      { teacherId: teacherId ?? null },
+      'Resolved teacher for matching',
+    );
+
+    let matchedComponent = null;
+
+    for (const candidateCode of uniqueCandidates) {
+      matchedComponent = await ComponentModel.findOne({
+        codigo: candidateCode,
+        season,
+        ...(teacherId && {
+          $or: [{ teoria: teacherId }, { pratica: teacherId }],
+        }),
+      });
+
+      if (matchedComponent) {
+        this.logger.info(
+          { candidateCode, componentDbId: matchedComponent._id },
+          'Matched component by candidate code',
+        );
+        break;
+      }
+    }
+
+    if (!matchedComponent && teacherId) {
+      const words = moodleCourse.fullname
+        .toLowerCase()
+        .split(/[\s-]+/)
+        .filter((w) => w.length > 3)
+        .slice(0, 3);
+
+      this.logger.info({ words }, 'No candidate match, trying disciplina keywords');
+
+      for (const word of words) {
+        matchedComponent = await ComponentModel.findOne({
+          season,
+          disciplina: { $regex: word, $options: 'i' },
+          $or: [{ teoria: teacherId }, { pratica: teacherId }],
+        });
+
+        if (matchedComponent) {
+          this.logger.info(
+            { word, componentDbId: matchedComponent._id },
+            'Matched component by disciplina keyword',
+          );
+          break;
+        }
+      }
+    }
+
+    if (matchedComponent) {
+      await ComponentModel.findByIdAndUpdate(matchedComponent._id, {
+        $set: { moodleCourseId: moodleCourse.id },
+      });
+
+      this.logger.info(
+        { componentDbId: matchedComponent._id, moodleCourseId: moodleCourse.id },
+        'Updated component with moodleCourseId',
+      );
+
+      return matchedComponent;
+    }
+
+    this.logger.warn(
+      { moodleCourseId: moodleCourse.id, courseName: moodleCourse.fullname },
+      'No matching component found',
+    );
+    return null;
   }
 
   async fetchAndValidateCourses(session: MoodleSession) {
@@ -118,8 +261,13 @@ export class ArchiveEngine {
     bucket: string,
   ) {
     const url = new URL(rawUrl);
+    const headers: Record<string, string> = {};
+    if (this.session) {
+      headers.Cookie = `MoodleSession=${this.session.sessionId}`;
+    }
     const buffer = await ofetch(url.href, {
       responseType: 'arrayBuffer',
+      headers,
     });
 
     const filename = this.extractFilenameFromUrl(url);
