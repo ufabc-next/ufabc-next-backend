@@ -59,20 +59,6 @@ export async function syncStudentFromSigaa(
         Date.now() - lastRaChange.createdAt.getTime() <
         RECENT_RA_CHANGE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
-      // const oldUserLeftThisRa =
-      //   lastRaChange.oldRa === currentRaString &&
-      //   lastRaChange.newRa !== currentRaString &&
-      //   lastRaChange.newRa !== null &&
-      //   lastRaChange.newRa !== undefined;
-
-      // if (!oldUserLeftThisRa) {
-      //   return {
-      //     status: 'conflict',
-      //     message:
-      //       'Este RA já está vinculado a outro usuário e o histórico não indica que ele deixou esse RA.',
-      //   } as const;
-      // }
-
       if (isRecentChange) {
         return {
           status: 'conflict',
