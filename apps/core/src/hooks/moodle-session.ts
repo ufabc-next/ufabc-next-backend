@@ -10,9 +10,6 @@ declare module '@fastify/request-context' {
       sessionId: string;
       sessKey: string;
     };
-    moodleUser: {
-      fullname: string;
-    };
   }
 }
 
@@ -21,12 +18,7 @@ export type Session = {
   sessKey: string;
 };
 
-type SessionCacheEntry = {
-  sessionId: string;
-  fullname?: string;
-};
-
-const sessionCache = new LRUWeakCache<SessionCacheEntry>({
+const sessionCache = new LRUWeakCache<{ sessionId: string }>({
   capacity: 5000,
   maxAge: 1000 * 60 * 5,
 });
@@ -48,26 +40,15 @@ export const moodleSession: preHandlerAsyncHookHandler = async (
   }
 
   if (sessionCache.has(sessionId)) {
-    const cached = sessionCache.get(sessionId)!;
     request.log.debug({ sessionId }, 'Session found in cache');
     request.requestContext.set('moodleSession', {
       sessionId,
       sessKey,
     });
-
-    if (cached.fullname) {
-      request.requestContext.set('moodleUser', {
-        fullname: cached.fullname,
-      });
-    }
-
     return;
   }
 
-  const [isTokenValid, userInfo] = await Promise.all([
-    validateToken(sessionId, sessKey),
-    resolveUserInfo(sessionId, sessKey),
-  ]);
+  const isTokenValid = await validateToken(sessionId, sessKey);
 
   request.log.debug({ isTokenValid }, 'Token validated');
   if (!isTokenValid) {
@@ -75,21 +56,12 @@ export const moodleSession: preHandlerAsyncHookHandler = async (
   }
   request.log.debug({ sessionId }, 'Session validated');
 
-  const cacheEntry: SessionCacheEntry = { sessionId };
-
   request.requestContext.set('moodleSession', {
     sessionId,
     sessKey,
   });
 
-  if (userInfo) {
-    cacheEntry.fullname = userInfo.fullname;
-    request.requestContext.set('moodleUser', {
-      fullname: userInfo.fullname,
-    });
-  }
-
-  sessionCache.set(sessionId, cacheEntry);
+  sessionCache.set(sessionId, { sessionId });
 };
 
 async function validateToken(sessionId: string, sessKey: string) {
@@ -97,28 +69,5 @@ async function validateToken(sessionId: string, sessKey: string) {
   const response = await connector.validateToken(sessionId, sessKey);
   const hasError = response.some((item) => item.error);
   const hasException = response.some((item) => item.exception);
-
-  if (hasError || hasException) {
-    return false;
-  }
-
-  return true;
-}
-
-async function resolveUserInfo(sessionId: string, sessKey: string) {
-  try {
-    const connector = new MoodleConnector();
-    const response = await connector.getUserInfo(sessionId, sessKey);
-    const data = response?.[0];
-
-    if (data?.error || !data?.data?.fullname) {
-      return null;
-    }
-
-    return {
-      fullname: data.data.fullname,
-    };
-  } catch {
-    return null;
-  }
+  return !(hasError || hasException);
 }

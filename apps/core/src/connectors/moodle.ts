@@ -104,27 +104,17 @@ export class MoodleConnector extends BaseRequester {
     return response;
   }
 
-  async getUserInfo(sessionId: string, sessKey: string) {
+  async fetchUserListPage(sessionId: string, courseId: number) {
     const headers = new Headers();
     headers.set('Cookie', `MoodleSession=${sessionId}`);
-    headers.set('Content-Type', 'application/json');
 
-    const response = await this.request<Array<{ error: boolean; exception?: Record<string, unknown>; data: { fullname: string; email?: string } }>>(
-      '/lib/ajax/service.php',
-      {
-        method: 'POST',
-        query: { sesskey: sessKey },
-        headers,
-        body: [
-          {
-            index: 0,
-            methodname: 'core_webservice_get_site_info',
-            args: {},
-          },
-        ],
-        timeout: 5_000,
-      },
-    );
+    const response = await this.request<string>('/user/index.php', {
+      method: 'GET',
+      headers,
+      query: { id: courseId, roleid: 3 },
+      responseType: 'text',
+      timeout: 10_000,
+    });
 
     return response;
   }
