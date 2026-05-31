@@ -77,6 +77,11 @@ const componentSchema = new Schema(
       default: false,
       required: false,
     },
+    moodleCourseId: {
+      type: Number,
+      sparse: true,
+      default: null,
+    },
   },
   {
     timestamps: true,
