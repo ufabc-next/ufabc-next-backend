@@ -43,8 +43,8 @@ export class MoodleConnector extends BaseRequester {
   private lastRequestTime = 0;
   private readonly minRequestInterval = 300;
 
-  constructor() {
-    super('https://moodle.ufabc.edu.br');
+  constructor(globalTraceId?: string) {
+    super('https://moodle.ufabc.edu.br', globalTraceId);
   }
 
   async validateToken(sessionId: string, sessKey: string) {
@@ -78,6 +78,21 @@ export class MoodleConnector extends BaseRequester {
     return response;
   }
 
+  async getUserPage(sessionId: string) {
+    const headers = new Headers();
+    headers.set('Cookie', `MoodleSession=${sessionId}`);
+
+    const response = await this.request<string>('/user/profile.php', {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+      responseType: 'text',
+      timeout: 10_000,
+    });
+
+    return response;
+  }
+
   async getComponents(sessionId: string, sessKey: string) {
     const headers = new Headers();
     headers.set('Cookie', `MoodleSession=${sessionId}`);
@@ -104,6 +119,21 @@ export class MoodleConnector extends BaseRequester {
     return response;
   }
 
+  async getUsersByCoursePage(sessionId: string, courseId: number) {
+    const headers = new Headers();
+    headers.set('Cookie', `MoodleSession=${sessionId}`);
+
+    const response = await this.request<string>('/user/index.php', {
+      method: 'GET',
+      headers,
+      query: { id: courseId, roleid: 3 },
+      responseType: 'text',
+      timeout: 10_000,
+    });
+
+    return response;
+  }
+
   async getComponentContentsPage(sessionId: string, url: string, id: string) {
     const headers = new Headers();
     headers.set('Cookie', `MoodleSession=${sessionId}`);
@@ -118,18 +148,6 @@ export class MoodleConnector extends BaseRequester {
     });
 
     return response;
-  }
-
-  private async rateLimit() {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-
-    if (timeSinceLastRequest < this.minRequestInterval) {
-      const delay = this.minRequestInterval - timeSinceLastRequest;
-      await sleep(delay);
-    }
-
-    this.lastRequestTime = Date.now();
   }
 
   async validatePdfLink(url: string, sessionId: string, sessionKey: string) {
@@ -162,7 +180,6 @@ export class MoodleConnector extends BaseRequester {
         finalUrl: isPdf ? finalUrl : undefined,
       };
     } catch (error) {
-      // Some servers don't support HEAD requests, try GET with range header
       try {
         let finalUrl = url;
         let contentType: string | null = null;
@@ -191,9 +208,20 @@ export class MoodleConnector extends BaseRequester {
           finalUrl: isPdf ? finalUrl : undefined,
         };
       } catch {
-        // If both fail, it's likely not accessible or not a PDF
         return { isPdf: false, finalUrl: undefined };
       }
     }
+  }
+  
+  private async rateLimit() {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const delay = this.minRequestInterval - timeSinceLastRequest;
+      await sleep(delay);
+    }
+
+    this.lastRequestTime = Date.now();
   }
 }

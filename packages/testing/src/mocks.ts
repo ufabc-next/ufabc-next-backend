@@ -21,6 +21,15 @@ export const moodleMock = {
       ]);
 
     nock('https://moodle.ufabc.edu.br')
+      .get('/user/index.php')
+      .query(true)
+      .reply(
+        200,
+        `<html><body><table class="generaltable"><tr><td><a href="https://moodle.ufabc.edu.br/user/view.php?id=1&course=1432">Teacher Name</a></td></tr></table></body></html>`,
+        { 'Content-Type': 'text/html' },
+      );
+
+    nock('https://moodle.ufabc.edu.br')
       .get(`/course/${componentId}`)
       .query(true)
       .reply(200, `<a href="https://moodle.com/file.pdf"><span>PDF</span></a>`);

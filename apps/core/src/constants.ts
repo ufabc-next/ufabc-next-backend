@@ -36,7 +36,7 @@ export const REQUESTERS = ['ufabc-next', 'ufabc-cronos'] as const;
 export const REDIRECT_TARGETS = ['web', 'web-local'] as const;
 
 export const HTTP_REDIS_KEY_PREFIX = 'http';
-export const MAX_LOG_SIZE = 600 * 1024;
+export const MAX_LOG_SIZE = 5 * 1024;
 
 export const PARSER_WEBHOOK_EVENTS = {
   STUDENT_SYNCED: 'student.synced',
