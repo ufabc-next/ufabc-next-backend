@@ -151,10 +151,6 @@ async function createOrLogin(
       findUserQuery.push({ email: oauthUser.email, confirmed: true });
     }
 
-    if (oauthUser?.google) {
-      findUserQuery.push({ 'oauth.google': oauthUser.google });
-    }
-
     // Add user ID if provided and valid
     if (userId && userId !== 'undefined') {
       try {
@@ -169,6 +165,14 @@ async function createOrLogin(
       findUserQuery.length > 0
         ? await UserModel.findOne({ $or: findUserQuery })
         : null;
+
+    if (!user && oauthUser?.email) {
+      const login = oauthUser.email.split('@')[0];
+      user = await UserModel.findOne({
+        email: new RegExp(`^${login}@aluno\\.ufabc\\.edu\\.br$`, 'i'),
+        confirmed: true,
+      });
+    }
 
     // If no user found, create a new one
     if (!user) {
