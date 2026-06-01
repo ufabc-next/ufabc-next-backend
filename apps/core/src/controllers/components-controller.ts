@@ -1,17 +1,20 @@
+import { load } from 'cheerio';
+import { z } from 'zod';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
 import { currentQuad } from '@next/common';
-import { z } from 'zod';
 
 import { MoodleConnector } from '@/connectors/moodle.js';
 import { jwtVerifyHook } from '@/hooks/jwt-verify.js';
 import { moodleSession } from '@/hooks/moodle-session.js';
 import { ComponentArchiveModel } from '@/models/ComponentArchive.js';
 import { ComponentModel } from '@/models/Component.js';
+import { EnrollmentModel } from '@/models/Enrollment.js';
+import { UserModel } from '@/models/User.js';
 import {
-  ListComponent,
   listComponentsSchema,
-  PopulatedComponent,
+  type ListComponent,
+  type PopulatedComponent,
 } from '@/schemas/v2/components.js';
 import { ComponentsService } from '@/services/components-service.js';
 
@@ -30,9 +33,8 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
     },
     schema: {
       response: {
-        202: z.object({
-          status: z.string(),
-        }),
+        200: z.any(),
+        202: z.any(),
       },
       headers: z.object({
         'session-id': z.string(),
@@ -41,16 +43,42 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
     },
     handler: async (request, reply) => {
       const session = request.requestContext.get('moodleSession')!;
-      const moodleUser = request.requestContext.get('moodleUser');
       const hasLock = await request.acquireLock(session.sessionId, '24h');
       const isDevelopment = app.config.NODE_ENV !== 'prod'
-      
+
       if (!hasLock && !isDevelopment) {
         request.log.debug(
           { sessionId: session.sessionId },
           'Archives already processing'
         );
         return reply.status(202).send({ status: 'success' });
+      }
+
+      // Get user email from Moodle profile page
+      const moodleConnector = new MoodleConnector(request.id);
+      const userPage = await moodleConnector.getUserPage(session.sessionId);
+      const $ = load(userPage);
+      const email = $('#region-main > div > div > div.userprofile > div > section:nth-child(1) > div > ul > li:nth-child(2) > dl > dd > a').text();
+
+      // Find user enrollments to restrict matching scope
+      let enrolledCodigos: string[] | undefined;
+      if (email) {
+        const user = await UserModel.findOne({ email });
+        if (user?.ra) {
+          const season = currentQuad();
+          const [year, quad] = season.split(':').map(Number);
+          const enrollments = await EnrollmentModel.find({ ra: user.ra, year, quad });
+          const ufCodTurmas = enrollments
+            .map((e) => e.uf_cod_turma)
+            .filter((c): c is string => !!c);
+
+          if (ufCodTurmas.length > 0) {
+            const enrolledComponents = await ComponentModel.find({
+              uf_cod_turma: { $in: ufCodTurmas },
+            });
+            enrolledCodigos = [...new Set(enrolledComponents.map((c) => c.codigo))];
+          }
+        }
       }
 
       const componentsService = new ComponentsService({
@@ -61,7 +89,7 @@ const componentsController: FastifyPluginAsyncZod = async (app) => {
       const result = await componentsService.processComponentArchives(
         session,
         request.id,
-        moodleUser,
+        enrolledCodigos,
       );
 
       if (result.error) {

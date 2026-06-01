@@ -78,6 +78,21 @@ export class MoodleConnector extends BaseRequester {
     return response;
   }
 
+  async getUserPage(sessionId: string) {
+    const headers = new Headers();
+    headers.set('Cookie', `MoodleSession=${sessionId}`);
+
+    const response = await this.request<string>('/user/profile.php', {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+      responseType: 'text',
+      timeout: 10_000,
+    });
+
+    return response;
+  }
+
   async getComponents(sessionId: string, sessKey: string) {
     const headers = new Headers();
     headers.set('Cookie', `MoodleSession=${sessionId}`);
@@ -104,7 +119,7 @@ export class MoodleConnector extends BaseRequester {
     return response;
   }
 
-  async fetchUserListPage(sessionId: string, courseId: number) {
+  async getUsersByCoursePage(sessionId: string, courseId: number) {
     const headers = new Headers();
     headers.set('Cookie', `MoodleSession=${sessionId}`);
 
@@ -133,18 +148,6 @@ export class MoodleConnector extends BaseRequester {
     });
 
     return response;
-  }
-
-  private async rateLimit() {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-
-    if (timeSinceLastRequest < this.minRequestInterval) {
-      const delay = this.minRequestInterval - timeSinceLastRequest;
-      await sleep(delay);
-    }
-
-    this.lastRequestTime = Date.now();
   }
 
   async validatePdfLink(url: string, sessionId: string, sessionKey: string) {
@@ -208,5 +211,17 @@ export class MoodleConnector extends BaseRequester {
         return { isPdf: false, finalUrl: undefined };
       }
     }
+  }
+  
+  private async rateLimit() {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const delay = this.minRequestInterval - timeSinceLastRequest;
+      await sleep(delay);
+    }
+
+    this.lastRequestTime = Date.now();
   }
 }

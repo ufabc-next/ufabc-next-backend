@@ -1,3 +1,4 @@
+
 import { defineJob } from '@next/queues/client';
 import z from 'zod';
 
@@ -11,6 +12,7 @@ const componentSchema = z.object({
   shortname: z.string().optional(),
   idnumber: z.string().optional(),
   id: z.number(),
+  startdate: z.number().optional(),
 });
 
 export const componentsArchivesProcessingJob = defineJob(
@@ -24,12 +26,13 @@ export const componentsArchivesProcessingJob = defineJob(
         sessionId: z.string(),
         sessKey: z.string(),
       }),
+      enrolledCodigos: z.array(z.string()).optional(),
     }),
   )
   .iterator('component')
   .concurrency(3)
   .handler(async ({ job, manager }) => {
-    const { component, session } = job.data;
+    const { component, session, enrolledCodigos } = job.data;
     const globalTraceId = job.data.globalTraceId;
 
     const engine = new ArchiveEngine({ globalTraceId, session });
@@ -41,6 +44,7 @@ export const componentsArchivesProcessingJob = defineJob(
     const matchedComponent = await engine.findComponentByMoodleCourse(
       component,
       teacherNames,
+      enrolledCodigos,
     );
 
     if (!matchedComponent) {

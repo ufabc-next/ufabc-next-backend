@@ -1,19 +1,30 @@
 import { load } from 'cheerio';
 import { ofetch } from 'ofetch';
 
-import { currentQuad } from '@next/common';
-
 import { MoodleConnector } from '@/connectors/moodle.js';
 import { S3Connector } from '@/connectors/s3-connector.js';
 import { ComponentModel } from '@/models/Component.js';
-import {
-  TeacherModel,
-  findBestLevenshteinMatch,
-  normalizeName,
-} from '@/models/Teacher.js';
+import { findTeacher } from '@/models/Teacher.js';
 
 import { componentArchiveSchema } from '@/schemas/v2/components.js';
 import { logger as baseLogger } from '@/utils/logger.js';
+
+const ACCENT_MAP: Record<string, string> = {
+  a: '[aáàâãAÁÀÂÃ]',
+  e: '[eéêEÉÊ]',
+  i: '[iíIÍ]',
+  o: '[oóôõOÓÔÕ]',
+  u: '[uúüUÚÜ]',
+  c: '[cçCÇ]',
+};
+
+function buildAccentInsensitiveRegex(word: string): string {
+  let pattern = '';
+  for (const char of word.toLowerCase()) {
+    pattern += ACCENT_MAP[char] ?? char;
+  }
+  return pattern;
+}
 
 export type MoodleSession = {
   sessionId: string;
@@ -26,7 +37,54 @@ export type MoodleCourse = {
   shortname?: string;
   idnumber?: string;
   id: number;
+  startdate?: number;
 };
+
+function deriveSeason(startdate: number): { year: number; quad: number } | null {
+  const date = new Date(startdate * 1000);
+  if (isNaN(date.getTime())) return null;
+
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+
+  let quad: number;
+  if (month >= 2 && month <= 4) quad = 1;
+  else if (month >= 5 && month <= 8) quad = 2;
+  else if (month >= 9 || month <= 1) quad = 3;
+  else return null;
+
+  return { year, quad };
+}
+
+function extractKeywords(fullname: string): string[] {
+  return fullname
+    .toLowerCase()
+    .split(/[\s-]+/)
+    .filter((w) => w.length > 3 && !/\d/.test(w))
+    .slice(0, 4);
+}
+
+async function relaxedKeywordSearch(
+  keywords: string[],
+  extraFilter: Record<string, unknown>,
+  finder: (
+    subset: string[],
+    filter: Record<string, unknown>,
+  ) => unknown,
+): Promise<{ component: any; keywordsUsed: string[] } | null> {
+  const cleanKeywords = keywords.filter((w) => w.length > 3 && !/\d/.test(w));
+  if (cleanKeywords.length === 0) return null;
+
+  for (let count = cleanKeywords.length; count >= 1; count--) {
+    const subset = cleanKeywords.slice(0, count);
+    const result = await finder(subset, extraFilter);
+    if (result) {
+      return { component: result, keywordsUsed: subset };
+    }
+  }
+
+  return null;
+}
 
 export class ArchiveEngine {
   private readonly logger;
@@ -43,11 +101,11 @@ export class ArchiveEngine {
 
   async findComponentByMoodleCourse(
     moodleCourse: MoodleCourse,
-    teacherName?: string,
+    teacherNames?: string[],
+    enrolledCodigos?: string[],
   ) {
-    const season = currentQuad();
     this.logger.info(
-      { courseId: moodleCourse.id, courseName: moodleCourse.fullname, season },
+      { courseId: moodleCourse.id, courseName: moodleCourse.fullname },
       'Matching moodle course to internal component',
     );
 
@@ -71,81 +129,167 @@ export class ArchiveEngine {
 
     const uniqueCandidates = [...new Set(candidates)];
     this.logger.info(
-      { candidates: uniqueCandidates },
+      { candidates: uniqueCandidates, hasEnrolledFilter: !!enrolledCodigos?.length },
       'Extracted candidate codes from moodle course',
     );
 
-    let teacherId: string | undefined;
-    if (teacherName) {
-      const normalizedTeacherName = normalizeName(teacherName);
-      let teacher = await TeacherModel.findOne({
-        name: normalizedTeacherName,
-      });
+    const teacherIds: string[] = [];
+    if (teacherNames && teacherNames.length > 0) {
+      for (const teacherName of teacherNames) {
+        const teacherId = await findTeacher(teacherName);
+        if (teacherId) {
+          teacherIds.push(teacherId.toString());
+        }
+      }
+    }
 
-      if (!teacher) {
-        this.logger.info(
-          { teacherName, normalizedName: normalizedTeacherName },
-          'Exact teacher match not found, trying levenshtein',
-        );
-        const allTeachers = await TeacherModel.find({});
-        const levMatch = findBestLevenshteinMatch(teacherName, allTeachers);
-        if (levMatch) {
-          teacher = levMatch;
+    const uniqueTeacherIds = [...new Set(teacherIds)];
+
+    this.logger.info(
+      { teacherIds: uniqueTeacherIds, count: uniqueTeacherIds.length },
+      'Resolved teachers for matching',
+    );
+
+    const seasonFilter = moodleCourse.startdate
+      ? deriveSeason(moodleCourse.startdate)
+      : null;
+
+    if (seasonFilter) {
+      this.logger.info(
+        { derivedSeason: `${seasonFilter.year}:${seasonFilter.quad}` },
+        'Derived season from moodle course startdate',
+      );
+    }
+
+    const sortDesc = { year: -1 as const, quad: -1 as const };
+
+    const tryStrategies = async (
+      extraFilter: Record<string, unknown> = {},
+    ) => {
+      const findByKeywords = (
+        keywords: string[],
+        extraFilterInner: Record<string, unknown> = {},
+      ) => {
+        if (keywords.length === 0) return null;
+
+        const regexConditions = keywords.map((w) => ({
+          disciplina: { $regex: buildAccentInsensitiveRegex(w) },
+        }));
+
+        return ComponentModel.findOne({
+          $and: regexConditions,
+          ...extraFilterInner,
+        }).sort(sortDesc);
+      };
+
+      const enrolledCodigosFilter = enrolledCodigos && enrolledCodigos.length > 0
+        ? { codigo: { $in: enrolledCodigos } }
+        : {};
+
+      const isCodeAllowed = enrolledCodigos && enrolledCodigos.length > 0
+        ? (code: string) => enrolledCodigos.includes(code)
+        : () => true;
+
+      // Strategy 1: candidate code + teacher
+      if (uniqueCandidates.length > 0) {
+        const teacherFilter = uniqueTeacherIds.length > 0
+          ? { $or: [{ teoria: { $in: uniqueTeacherIds } }, { pratica: { $in: uniqueTeacherIds } }] }
+          : {};
+
+        for (const candidateCode of uniqueCandidates) {
+          if (!isCodeAllowed(candidateCode)) {
+            this.logger.info({ candidateCode }, 'Skipping candidate code not in enrollments');
+            continue;
+          }
+
+          const result = await ComponentModel.findOne({
+            codigo: candidateCode,
+            ...teacherFilter,
+            ...extraFilter,
+          }).sort(sortDesc);
+
+          if (result) {
+            this.logger.info(
+              { candidateCode, componentDbId: result._id, componentName: result.disciplina, season: `${result.year}:${result.quad}` },
+              'Matched component by candidate code',
+            );
+            return result;
+          }
+        }
+
+        // Strategy 2: candidate code only
+        if (uniqueTeacherIds.length > 0) {
+          for (const candidateCode of uniqueCandidates) {
+            if (!isCodeAllowed(candidateCode)) {
+              continue;
+            }
+            const result = await ComponentModel.findOne({
+              codigo: candidateCode,
+              ...extraFilter,
+            }).sort(sortDesc);
+
+            if (result) {
+              this.logger.info(
+                { candidateCode, componentDbId: result._id, componentName: result.disciplina, season: `${result.year}:${result.quad}` },
+                'Matched component by candidate code (no teacher)',
+              );
+              return result;
+            }
+          }
         }
       }
 
-      teacherId = teacher?._id?.toString();
-    }
+      // Strategy 3: disciplina keyword + teacher
+      if (uniqueTeacherIds.length > 0) {
+        const keywords = extractKeywords(moodleCourse.fullname);
+        this.logger.info({ keywords }, 'No candidate match, trying disciplina keywords');
 
-    this.logger.info(
-      { teacherId: teacherId ?? null },
-      'Resolved teacher for matching',
-    );
+        const match = await relaxedKeywordSearch(
+          keywords,
+          { $or: [{ teoria: { $in: uniqueTeacherIds } }, { pratica: { $in: uniqueTeacherIds } }], ...extraFilter, ...enrolledCodigosFilter },
+          findByKeywords,
+        );
+
+        if (match) {
+          this.logger.info(
+            { keywords: match.keywordsUsed, componentDbId: match.component._id, componentName: match.component.disciplina, season: `${match.component.year}:${match.component.quad}` },
+            'Matched component by disciplina keywords',
+          );
+          return match.component;
+        }
+      }
+
+      // Strategy 4: disciplina keyword only
+      {
+        const keywords = extractKeywords(moodleCourse.fullname);
+
+        const match = await relaxedKeywordSearch(keywords, { ...extraFilter, ...enrolledCodigosFilter }, findByKeywords);
+
+        if (match) {
+          this.logger.info(
+            { keywords: match.keywordsUsed, componentDbId: match.component._id, componentName: match.component.disciplina, season: `${match.component.year}:${match.component.quad}` },
+            'Matched component by disciplina keywords (no teacher)',
+          );
+          return match.component;
+        }
+      }
+
+      return null;
+    };
 
     let matchedComponent = null;
 
-    for (const candidateCode of uniqueCandidates) {
-      matchedComponent = await ComponentModel.findOne({
-        codigo: candidateCode,
-        season,
-        ...(teacherId && {
-          $or: [{ teoria: teacherId }, { pratica: teacherId }],
-        }),
-      });
+    // Try with season filter first
+    const seasonExtra = seasonFilter
+      ? { year: seasonFilter.year, quad: seasonFilter.quad }
+      : {};
 
-      if (matchedComponent) {
-        this.logger.info(
-          { candidateCode, componentDbId: matchedComponent._id },
-          'Matched component by candidate code',
-        );
-        break;
-      }
-    }
+    matchedComponent = await tryStrategies(seasonExtra);
 
-    if (!matchedComponent && teacherId) {
-      const words = moodleCourse.fullname
-        .toLowerCase()
-        .split(/[\s-]+/)
-        .filter((w) => w.length > 3)
-        .slice(0, 3);
-
-      this.logger.info({ words }, 'No candidate match, trying disciplina keywords');
-
-      for (const word of words) {
-        matchedComponent = await ComponentModel.findOne({
-          season,
-          disciplina: { $regex: word, $options: 'i' },
-          $or: [{ teoria: teacherId }, { pratica: teacherId }],
-        });
-
-        if (matchedComponent) {
-          this.logger.info(
-            { word, componentDbId: matchedComponent._id },
-            'Matched component by disciplina keyword',
-          );
-          break;
-        }
-      }
+    // Fall back to tenant-free if no match
+    if (!matchedComponent) {
+      this.logger.info('No match with season filter, falling back to tenant-free');
+      matchedComponent = await tryStrategies();
     }
 
     if (matchedComponent) {
@@ -154,7 +298,7 @@ export class ArchiveEngine {
       });
 
       this.logger.info(
-        { componentDbId: matchedComponent._id, moodleCourseId: moodleCourse.id },
+        { componentDbId: matchedComponent._id, moodleCourseId: moodleCourse.id, componentName: matchedComponent.disciplina },
         'Updated component with moodleCourseId',
       );
 
@@ -186,6 +330,37 @@ export class ArchiveEngine {
     }
 
     return { error: null, data: parsed.data! };
+  }
+
+  async extractTeacherNames(courseId: number) {
+    if (!this.session) {
+      this.logger.warn('No session available for teacher extraction');
+      return [];
+    }
+
+    const html = await this.moodleConnector.getUsersByCoursePage(
+      this.session.sessionId,
+      courseId,
+    );
+
+    const $ = load(html);
+    const teacherNames: string[] = [];
+
+    $('a[href*="user/view.php"]').each((_index, el) => {
+      const name = $(el).text().trim();
+      if (name && name.length > 2 && !/^\d+$/.test(name)) {
+        teacherNames.push(name);
+      }
+    });
+
+    const uniqueNames = [...new Set(teacherNames)];
+
+    this.logger.info(
+      { teacherNames: uniqueNames, courseId, count: uniqueNames.length },
+      'Found teachers via user/index.php',
+    );
+
+    return uniqueNames;
   }
 
   async extractFiles(

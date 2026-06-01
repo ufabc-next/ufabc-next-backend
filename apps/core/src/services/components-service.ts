@@ -23,6 +23,7 @@ export class ComponentsService {
   async processComponentArchives(
     session: MoodleSession,
     globalTraceId?: string,
+    enrolledCodigos?: string[],
   ) {
     const result = await this.engine.fetchAndValidateCourses(session);
     if (result.error) {
@@ -33,6 +34,7 @@ export class ComponentsService {
       component: result.data!,
       globalTraceId,
       session,
+      enrolledCodigos,
     });
 
     return { error: null };
