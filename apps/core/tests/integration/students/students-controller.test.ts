@@ -265,8 +265,8 @@ describe('studentsController - POST /students/sigaa', () => {
 
     const lastRaChange = {
       userId: 'user-id-2',
-      oldRa: '123456',
-      newRa: '999999',
+      oldRa: '999999',
+      newRa: '123456',
       createdAt: new Date(),
     };
 
@@ -321,7 +321,7 @@ describe('studentsController - POST /students/sigaa', () => {
 
     expect(mocks.userRaHistoryFindOne).toHaveBeenCalledWith({
       userId: 'user-id-2',
-      $or: [{ oldRa: '123456' }, { newRa: '123456' }],
+      newRa: '123456',
     });
 
     expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 });
@@ -400,7 +400,7 @@ describe('studentsController - POST /students/sigaa', () => {
 
     expect(mocks.userRaHistoryFindOne).toHaveBeenCalledWith({
       userId: 'user-id-2',
-      $or: [{ oldRa: '123456' }, { newRa: '123456' }],
+      newRa: '123456',
     });
 
     expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 });
@@ -497,7 +497,7 @@ describe('studentsController - POST /students/sigaa', () => {
 
     expect(mocks.userRaHistoryFindOne).toHaveBeenCalledWith({
       userId: 'user-id-2',
-      $or: [{ oldRa: '123456' }, { newRa: '123456' }],
+      newRa: '123456',
     });
 
     expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 });

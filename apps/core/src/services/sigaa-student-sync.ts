@@ -51,7 +51,7 @@ export async function syncStudentFromSigaa(
     if (userWithSameRa) {
       const lastRaChange = await UserRaHistoryModel.findOne({
         userId: userWithSameRa._id,
-        $or: [{ oldRa: currentRaString }, { newRa: currentRaString }],
+        newRa: currentRaString,
       }).sort({ createdAt: -1 });
 
       const RECENT_RA_CHANGE_WINDOW_DAYS = 30;
