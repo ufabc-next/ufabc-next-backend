@@ -49,23 +49,19 @@ export async function syncStudentFromSigaa(
     });
 
     if (userWithSameRa) {
-      const lastRaChange = await UserRaHistoryModel.findOne({
-        userId: userWithSameRa._id,
-        newRa: currentRaString,
-      }).sort({ createdAt: -1 });
-
       const RECENT_RA_CHANGE_WINDOW_DAYS = 30;
 
       const isRecentChange =
-        lastRaChange !== null &&
-        Date.now() - lastRaChange.createdAt.getTime() <
-        RECENT_RA_CHANGE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+        userWithSameRa.updatedAt !== null &&
+        userWithSameRa.updatedAt !== undefined &&
+        Date.now() - userWithSameRa.updatedAt.getTime() <
+          RECENT_RA_CHANGE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
       if (isRecentChange) {
         return {
           status: 'conflict',
           message:
-            'Este RA já foi alterado recentemente para outro usuário. A reatribuição automática foi bloqueada.',
+            'Este RA está associado a um usuário atualizado recentemente. A reatribuição automática foi bloqueada.',
         } as const;
       }
 
