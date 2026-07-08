@@ -250,7 +250,7 @@ describe('studentsController - POST /students/sigaa', () => {
     expect(mocks.syncStudent).not.toHaveBeenCalled();
   });
 
-  it('deve bloquear quando o RA foi sincronizado em outro usuário recentemente', async () => {
+  it('deve bloquear quando o RA está em outro usuário atualizado recentemente', async () => {
     const user = {
       _id: 'user-id-1',
       ra: 111111,
@@ -260,17 +260,9 @@ describe('studentsController - POST /students/sigaa', () => {
     const userWithSameRa = {
       _id: 'user-id-2',
       ra: 123456,
+      updatedAt: new Date(), // alteração recente no próprio UserModel
       save: vi.fn().mockResolvedValue(undefined),
     };
-
-    const lastRaChange = {
-      userId: 'user-id-2',
-      oldRa: '999999',
-      newRa: '123456',
-      createdAt: new Date(),
-    };
-
-    const sortMock = vi.fn().mockResolvedValue(lastRaChange);
 
     mocks.redisServiceGetJSON.mockResolvedValue({
       sessionId: 'session-fake',
@@ -281,8 +273,13 @@ describe('studentsController - POST /students/sigaa', () => {
       .mockResolvedValueOnce(user)
       .mockResolvedValueOnce(userWithSameRa);
 
-    mocks.userRaHistoryFindOne.mockReturnValue({
-      sort: sortMock,
+    // Esse mock é apenas para a criação/verificação do histórico inicial do usuário atual.
+    // Como ele já existe, a função não cria um novo histórico.
+    mocks.userRaHistoryFindOne.mockResolvedValueOnce({
+      _id: 'history-id-1',
+      userId: 'user-id-1',
+      oldRa: null,
+      newRa: '111111',
     });
 
     const response = await app.inject({
@@ -307,7 +304,7 @@ describe('studentsController - POST /students/sigaa', () => {
       statusCode: 409,
       error: 'Conflict',
       message:
-        'Este RA já foi alterado recentemente para outro usuário. A reatribuição automática foi bloqueada.',
+        'Este RA está associado a um usuário atualizado recentemente. A reatribuição automática foi bloqueada.',
     });
 
     expect(mocks.userFindOne).toHaveBeenNthCalledWith(1, {
@@ -319,12 +316,10 @@ describe('studentsController - POST /students/sigaa', () => {
       _id: { $ne: 'user-id-1' },
     });
 
+    expect(mocks.userRaHistoryFindOne).toHaveBeenCalledTimes(1);
     expect(mocks.userRaHistoryFindOne).toHaveBeenCalledWith({
-      userId: 'user-id-2',
-      newRa: '123456',
+      userId: 'user-id-1',
     });
-
-    expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 });
 
     expect(mocks.userRaHistoryCreate).not.toHaveBeenCalled();
 

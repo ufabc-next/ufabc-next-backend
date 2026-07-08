@@ -1,4 +1,3 @@
-import { UfabcParserConnector } from '@/connectors/ufabc-parser.js';
 import { UserModel, UserRaHistoryModel } from '@/models/User.js';
 
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 1 day
@@ -13,10 +12,7 @@ export async function syncStudentFromSigaa(
 ) {
   const studentEmailDomain = '@aluno.ufabc.edu.br';
 
-  const connector = new UfabcParserConnector(requestId);
-
   const { ra, login } = params;
-  const { sessionId, viewId } = sigaaSession;
 
   const currentRaNumber = ra;
   const currentRaString = String(ra);
@@ -29,15 +25,6 @@ export async function syncStudentFromSigaa(
       status: 'not_found',
       message: `Usuário não encontrado para o e-mail ${studentEmail}`,
     } as const;
-  }
-
-  const existingHistory = await UserRaHistoryModel.findOne({ userId: user._id });
-  if (!existingHistory) {
-    await UserRaHistoryModel.create({
-      userId: user._id,
-      oldRa: null,
-      newRa: user.ra !== null && user.ra !== undefined ? String(user.ra) : null,
-    });
   }
 
   const userRaString = user.ra !== null && user.ra !== undefined ? String(user.ra) : null;
@@ -67,8 +54,7 @@ export async function syncStudentFromSigaa(
 
       await UserRaHistoryModel.create({
         userId: userWithSameRa._id,
-        oldRa: currentRaString,
-        newRa: null,
+        Ra: currentRaString,
       });
 
       userWithSameRa.ra = null;
@@ -80,8 +66,7 @@ export async function syncStudentFromSigaa(
     if (previousRa !== null) {
       await UserRaHistoryModel.create({
         userId: user._id,
-        oldRa: previousRa,
-        newRa: currentRaString,
+        Ra: previousRa,
       });
     }
 
@@ -112,11 +97,11 @@ export async function syncStudentFromSigaa(
     });
   }
 
-  await connector.syncStudent({
-    sessionId,
-    viewId,
-    requesterKey: app.config.UFABC_PARSER_REQUESTER_KEY,
-  });
+  // await connector.syncStudent({
+  //   sessionId,
+  //   viewId,
+  //   requesterKey: app.config.UFABC_PARSER_REQUESTER_KEY,
+  // });
 
   await studentSync.transition('awaiting', {
     source: 'sigaa',
