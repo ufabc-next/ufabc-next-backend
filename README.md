@@ -1,3 +1,5 @@
+## Este projeto foi migrado para o monorepo que unifica o frontend, backend e extensão google. Confira em: https://github.com/org-nexus-projects/ufabc-next ##
+
 # UFABC Next Backend
 
 Repositório que contém todo o código que se refere ao backend que mantém o site de pé!
